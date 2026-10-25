@@ -11,6 +11,8 @@ const FILES = [
   "assets/terrain.webp",
   "assets/male.webp",
   "assets/female.webp",
+  "assets/champion_male.webp",
+  "assets/champion_female.webp",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/maskable-512.png",

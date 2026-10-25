@@ -406,6 +406,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
     <div class="orbs"><span class="orb-ico"></span><span id="orbCount">0</span> orbs</div>
     <span class="ver" id="verTag"></span>
     <button class="wood sm fsBtn" type="button">Full screen</button>
+    <button class="wood sm" data-open="admin" id="adminBtn" hidden>Admin</button>
     <button class="wood sm" data-open="quiz">Quiz</button>
     <button class="wood sm" data-open="feedback">Feedback</button>
     <button class="wood sm" id="logoutBtn">Logout</button>
@@ -469,7 +470,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
-const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp"};
+const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp"};
 const IMG={};
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -506,6 +507,7 @@ const SP=Object.fromEntries(SPELLS.map(s=>[s.id,s]));
 const BASIC=["arcane_shot","ember_ball","blink"];
 function slotsFor(l){return l>=50?16:l>=40?14:l>=30?12:l>=20?10:l>=15?8:l>=10?7:l>=5?5:3}
 function unlockedFor(l){return SPELLS.filter(s=>s.lvl<=l).map(s=>s.id)}
+function effLevel(u){return u.allSpells?50:u.level}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
 const AURAS=[null,{n:"Blue",c:"#3fa2ff"},{n:"Red",c:"#ff3b3b"},{n:"Purple",c:"#a64dff"},{n:"Green",c:"#36d96b"},{n:"Pink",c:"#ff6ad5"}];
 function xpNeed(l){return 100+30*(l-1)}
@@ -514,6 +516,8 @@ function rankName(r){let n=RANKS[0][1];for(const [t,name] of RANKS) if(r>=t) n=n
 const OUTFITS=[
  {id:"male",name:"Grey Wizard",gender:"male",price:0,img:"male"},
  {id:"female",name:"Grey Witch",gender:"female",price:0,img:"female"},
+ {id:"champion_male",name:"Champion Wizard",gender:"male",price:0,img:"champion_male",rank1:true},
+ {id:"champion_female",name:"Champion Witch",gender:"female",price:0,img:"champion_female",rank1:true},
  // Future designs go here: {id:"fire_robes",name:"Fire Robes",price:500,img:"fire_robes"}
 ];
 
@@ -556,7 +560,7 @@ function save(){const u=me(); if(u) u._ts=Date.now(); saveLocal(); if(sb&&u&&u.c
 const CLOUD={url:"https://hroooqbiywljchtyipnp.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyb29vcWJpeXdsamNodHlpcG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4ODgwNjcsImV4cCI6MjEwODQ2NDA2N30.OyNnR5eTht8kICGVu63rCKe3Sr-otZ4nGWVcbVATjow",google:false};
 let sb=null, pushT=null, onlineBoard=null;
 function initCloud(){ try{ if(window.supabase&&!/\{\{/.test(CLOUD.url)) sb=window.supabase.createClient(CLOUD.url,CLOUD.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"skyfall-auth"}}) }catch(e){sb=null} }
-const DATA_KEYS=["level","xp","prestige","rating","orbs","wins","losses","kills","games","spellbook","owned","outfit","friends","clan","opts","quizDay"];
+const DATA_KEYS=["level","xp","prestige","rating","orbs","wins","losses","kills","games","spellbook","owned","outfit","friends","clan","opts","quizDay","champion","allSpells"];
 function packData(u){const d={};for(const k of DATA_KEYS)d[k]=u[k];return d}
 async function pushProfile(){const u=me();if(!sb||!u||!u.cloudId)return;
   const {error}=await sb.from("profiles").update({level:u.level,rating:u.rating,prestige:u.prestige,data:packData(u),updated_at:new Date(u._ts||Date.now()).toISOString()}).eq("id",u.cloudId);
@@ -582,7 +586,7 @@ async function loadProfile(user,extra){
     if(r.error){ if(r.error.code==="23505") return "nameTaken"; throw r.error } row=r.data;
   }
   const u=newUser({username:row.username,email:user.email,provider:(user.app_metadata&&user.app_metadata.provider)==="google"?"google":"email",age:row.age,gender:row.gender});
-  Object.assign(u,row.data||{}); u.cloudId=user.id; u._ts=Date.parse(row.updated_at)||0;
+  Object.assign(u,row.data||{}); u.cloudId=user.id; u.isAdmin=!!row.is_admin; u._ts=Date.parse(row.updated_at)||0;
   // progress made offline on this device and never uploaded wins
   if(local&&local._ts>u._ts+2000){ Object.assign(u,packData(local)); u._ts=local._ts; }
   for(const k of Object.keys(DB.users)) if(DB.users[k].cloudId) delete DB.users[k];
@@ -605,9 +609,9 @@ const NPCS=[["Emberwick",2420,44,2],["Thornveil",2210,50,1],["Mirelda",2050,38,0
  .map(([name,rating,level,prestige],i)=>({name,rating,level,prestige,gender:i%3===1?"female":"male",npc:true}));
 function leaderboard(){
   const mine=me();
-  let real=onlineBoard?onlineBoard.map(r=>({name:r.username,rating:r.rating,level:r.level,prestige:r.prestige,gender:r.outfit==="female"?"female":"male",me:mine&&r.username.toLowerCase()===mine.username.toLowerCase()}))
-    :Object.values(DB.users).map(u=>({name:u.username,rating:u.rating,level:u.level,prestige:u.prestige,gender:u.outfit==="female"?"female":"male",me:u.username===DB.session}));
-  if(mine){ const r=real.find(x=>x.me); if(r){r.rating=mine.rating;r.level=mine.level;r.prestige=mine.prestige} else real.push({name:mine.username,rating:mine.rating,level:mine.level,prestige:mine.prestige,gender:mine.outfit==="female"?"female":"male",me:true}) }
+  let real=onlineBoard?onlineBoard.map(r=>({name:r.username,rating:r.rating,level:r.level,prestige:r.prestige,gender:imgKey(r.outfit),me:mine&&r.username.toLowerCase()===mine.username.toLowerCase()}))
+    :Object.values(DB.users).map(u=>({name:u.username,rating:u.rating,level:u.level,prestige:u.prestige,gender:outfitImg(u),me:u.username===DB.session}));
+  if(mine){ const r=real.find(x=>x.me); if(r){r.rating=mine.rating;r.level=mine.level;r.prestige=mine.prestige} else real.push({name:mine.username,rating:mine.rating,level:mine.level,prestige:mine.prestige,gender:outfitImg(mine),me:true}) }
   return [...NPCS,...real].sort((a,b)=>b.rating-a.rating);
 }
 
@@ -768,9 +772,14 @@ function refreshMenu(){
   const need=xpNeed(u.level); $("#hubXp").style.width=(u.level>=MAX_LEVEL?100:u.xp/need*100)+"%";
   $("#hubXpTxt").textContent=u.level>=MAX_LEVEL?(u.prestige<MAX_PRESTIGE?"Max level. Prestige is ready in Customize.":"Max level and max prestige."):`${u.xp} / ${need} XP to level ${u.level+1}`;
   $("#orbCount").textContent=u.orbs;
-  renderBoard();
+  $("#adminBtn").hidden=!u.isAdmin;
+  renderBoard(); checkChampion();
 }
-function outfitImg(u){const o=OUTFITS.find(o=>o.id===u.outfit);return o?o.img:(u.gender)}
+function imgKey(outfit){const o=OUTFITS.find(o=>o.id===outfit);return o?o.img:(outfit==="female"?"female":"male")}
+function outfitImg(u){const o=OUTFITS.find(o=>o.id===u.outfit);return o?o.img:(u.gender==="female"?"female":"male")}
+function checkChampion(){const u=me();if(!u||u.champion)return;const rows=leaderboard();if(!rows.length||!rows[0].me)return;
+  u.champion=true;for(const id of ["champion_male","champion_female"]) if(!u.owned.includes(id)) u.owned.push(id);save();sfx("level");
+  openModal("You're #1!",`<div class="cards">${OUTFITS.filter(o=>o.rank1).map(o=>`<div class="card"><img alt="" src="${IMG_SRC[o.img]}"><h4>${esc(o.name)}</h4></div>`).join("")}</div><p style="text-align:center;margin:0">You reached rank 1 on the leaderboard. Both Champion outfits are yours to keep. Wear one from Customize.</p>`,{w:520})}
 function avatar(gender,prestige){return `<span class="av" style="${prestige?"box-shadow:0 0 0 2px "+AURAS[prestige].c+",0 0 8px "+AURAS[prestige].c:""}"><img alt="" src="${IMG_SRC[gender]}"></span>`}
 function renderBoard(full){
   const rows=leaderboard(); const shown=full?rows:rows.slice(0,25);
@@ -824,12 +833,12 @@ const PANELS={
   const u=me();
   const b=openModal("Store",`<div class="row"><div class="orbs"><span class="orb-ico"></span>${u.orbs} orbs</div></div>
    <div class="info"><p>Character designs you buy here can be worn from Customize. Earn orbs by playing matches and the daily quiz.</p></div>
-   <div class="cards">${OUTFITS.map(o=>`<div class="card ${u.outfit===o.id?"sel":""}"><img alt="${esc(o.name)}" src="${IMG_SRC[o.img]}"><h4>${esc(o.name)}</h4><span class="muted">${o.price?o.price+" orbs":"Starter · Owned"}</span><button class="wood sm" data-wear="${o.id}">${u.outfit===o.id?"Wearing":"Wear"}</button></div>`).join("")}
+   <div class="cards">${OUTFITS.map(o=>{const own=u.owned.includes(o.id);return `<div class="card ${u.outfit===o.id?"sel":""}"><img alt="${esc(o.name)}" src="${IMG_SRC[o.img]}" style="${own?"":"filter:grayscale(1) brightness(.55)"}"><h4>${esc(o.name)}</h4><span class="muted">${o.rank1?(own?"Rank 1 reward · Owned":"Reach #1 on the leaderboard"):o.price?o.price+" orbs":"Starter · Owned"}</span><button class="wood sm" data-wear="${o.id}" ${own?"":"disabled"}>${!own?"Locked":u.outfit===o.id?"Wearing":"Wear"}</button></div>`}).join("")}
    ${[1,2,3,4].map(i=>`<div class="card"><div class="ph">NEW DESIGN</div><h4>Coming soon</h4><span class="muted">More designs on the way</span><button class="wood sm" disabled>Locked</button></div>`).join("")}</div>`);
   b.querySelectorAll("[data-wear]").forEach(x=>x.onclick=()=>{u.outfit=x.dataset.wear;save();sfx("click");PANELS.store()});
  },
  customize(){
-  const u=me(); const slots=slotsFor(u.level); const unl=new Set(unlockedFor(u.level));
+  const u=me(); const slots=slotsFor(effLevel(u)); const unl=new Set(unlockedFor(effLevel(u)));
   fixBook(u);
   const b=openModal("Customize",`
    <h3 class="gold">Spellbook <span class="muted" style="font-size:1rem">${u.spellbook.length} / ${slots} slots · level ${u.level}</span></h3>
@@ -915,6 +924,40 @@ const PANELS={
     if(+x.dataset.a===q[2]) score++; else x.classList.add("wrong");
     if(++answered===qs.length){const reward=done?0:score*10;u.orbs+=reward;if(!done)u.quizDay=today;save();b.querySelector("#qRes").textContent=`${score} / ${qs.length} correct${reward?` · +${reward} orbs`:""}`}});
  },
+ admin(){
+  const u=me(); if(!u||!u.isAdmin) return;
+  const b=openModal("Admin panel",`
+   <p class="note" style="margin:0">Only admins see this. Changes to yourself apply instantly; changes to other players apply the next time they open the game.</p>
+   <label>Player<input id="adWho" value="${esc(u.username)}" maxlength="16"></label>
+   <div class="grid2">
+    <label>Level (1–50)<input id="adLevel" type="number" min="1" max="50" value="${u.level}"></label>
+    <label>Prestige (0–5)<input id="adPres" type="number" min="0" max="5" value="${u.prestige}"></label>
+    <label>Rating<input id="adRating" type="number" min="0" max="9999" value="${u.rating}"></label>
+    <label>Orbs<input id="adOrbs" type="number" min="0" max="9999999" value="${u.orbs}"></label>
+    <label>Wins<input id="adWins" type="number" min="0" value="${u.wins}"></label>
+    <label>Knockouts<input id="adKills" type="number" min="0" value="${u.kills}"></label>
+   </div>
+   <div class="row">
+    <label style="flex-direction:row;display:flex;gap:8px;align-items:center"><input type="checkbox" id="adOutfits" style="width:auto" checked> Unlock every outfit</label>
+    <label style="flex-direction:row;display:flex;gap:8px;align-items:center"><input type="checkbox" id="adSpells" style="width:auto" ${u.allSpells?"checked":""}> Unlock every spell</label>
+   </div>
+   <div class="err" id="adErr"></div>
+   <div class="row"><button class="wood" id="adApply">Apply</button><button class="wood sm" id="adMax">Max everything</button></div>`,{w:600});
+  const v=id=>b.querySelector(id);
+  v("#adMax").onclick=()=>{v("#adLevel").value=50;v("#adPres").value=5;v("#adRating").value=3000;v("#adOrbs").value=999999;v("#adOutfits").checked=true;v("#adSpells").checked=true};
+  v("#adApply").onclick=async()=>{
+    const who=v("#adWho").value.trim(); const n=(id,lo,hi)=>clamp(parseInt(v(id).value,10)||0,lo,hi);
+    const st={level:n("#adLevel",1,50),prestige:n("#adPres",0,5),rating:n("#adRating",0,9999),orbs:n("#adOrbs",0,9999999),wins:n("#adWins",0,1e6),kills:n("#adKills",0,1e6)};
+    const allOut=OUTFITS.map(o=>o.id);
+    if(who.toLowerCase()===u.username.toLowerCase()){
+      Object.assign(u,st); if(u.level>=MAX_LEVEL) u.xp=0; if(v("#adOutfits").checked){u.owned=allOut;u.champion=true} u.allSpells=v("#adSpells").checked; fixBook(u); save(); toast("Saved to your account"); closeModal(); return }
+    if(!sb) return v("#adErr").textContent="Online accounts aren't connected.";
+    const data={...st}; if(v("#adOutfits").checked){data.owned=allOut;data.champion=true} data.allSpells=v("#adSpells").checked;
+    const {error}=await sb.rpc("admin_update_profile",{target:who,patch:{level:st.level,rating:st.rating,prestige:st.prestige,data}});
+    if(error) return v("#adErr").textContent=/no player/.test(error.message)?"No player with that username.":error.message;
+    toast("Updated "+who); refreshOnlineBoard();
+  };
+ },
  feedback(){
   const u=me();
   const b=openModal("Feedback",`<label>What should we add or fix?<textarea id="fbText" rows="6" maxlength="1000"></textarea></label><button class="wood" id="fbSend">Save feedback</button>
@@ -923,8 +966,8 @@ const PANELS={
   b.querySelector("#fbSend").onclick=()=>{const t=b.querySelector("#fbText").value.trim();if(!t) return toast("Write something first.");DB.feedback.push({u:u.username,t,at:Date.now()});save();toast("Feedback saved. Thank you!");closeModal()};
  }
 };
-function fixBook(u){const unl=new Set(unlockedFor(u.level));u.spellbook=u.spellbook.filter(id=>unl.has(id));const slots=slotsFor(u.level);
-  for(const id of unlockedFor(u.level)){ if(u.spellbook.length>=slots) break; if(!u.spellbook.includes(id)) u.spellbook.push(id);} u.spellbook=u.spellbook.slice(0,slots)}
+function fixBook(u){const L=effLevel(u);const unl=new Set(unlockedFor(L));u.spellbook=u.spellbook.filter(id=>unl.has(id));const slots=slotsFor(L);
+  for(const id of unlockedFor(L)){ if(u.spellbook.length>=slots) break; if(!u.spellbook.includes(id)) u.spellbook.push(id);} u.spellbook=u.spellbook.slice(0,slots)}
 
 /* ================= GAME ENGINE ================= */
 const W=1408,H=768,G=.25,SUB=4;
@@ -1375,7 +1418,7 @@ function drawUnit(u,active){
   if(u.prestige){ const c=AURAS[u.prestige].c; const g=cx.createRadialGradient(u.x,u.y-24,4,u.x,u.y-24,36+Math.sin(t*3)*3); g.addColorStop(0,c+"cc");g.addColorStop(.55,c+"55");g.addColorStop(1,c+"00"); cx.fillStyle=g;cx.beginPath();cx.ellipse(u.x,u.y-24,30,38,0,0,7);cx.fill();
     for(let i=0;i<3;i++){const a=t*2+i*2.1;cx.fillStyle=c;cx.globalAlpha=.8;cx.beginPath();cx.arc(u.x+Math.cos(a)*22,u.y-24+Math.sin(a*1.3)*26,2,0,7);cx.fill()} cx.globalAlpha=1 }
   if(u.shield){cx.strokeStyle="rgba(143,184,255,.9)";cx.lineWidth=3;cx.beginPath();cx.ellipse(u.x,u.y-24,22,30,0,0,7);cx.stroke();cx.lineWidth=1}
-  cx.save();cx.translate(u.x,u.y);if(u.face<0)cx.scale(-1,1);
+  cx.save();cx.translate(u.x,u.y);if(u.face>0)cx.scale(-1,1);
   if(u.frozen){cx.filter="hue-rotate(160deg) saturate(1.6)"}
   cx.drawImage(IMG[u.gender],-w/2,-h+2,w,h);cx.restore();
   // hp & name
@@ -1552,7 +1595,7 @@ function boot(){
   load(); initAuth(); initMenu(); initPWA(); initInstallButton(); setTimeout(offerInstall,600);
   const bg=`linear-gradient(rgba(10,18,28,.25),rgba(10,18,28,.45)), url(${IMG_SRC.terrain}) center 35%/min(1400px,140%) no-repeat, url(${IMG_SRC.sky}) center/cover`;
   $("#menu").style.background=bg; $("#auth").style.background=bg;
-  let n=0; for(const k of ["sky","terrain","male","female"]){const im=new Image();im.onload=()=>{if(++n===4)ready()};im.src=IMG_SRC[k];IMG[k]=im}
+  const keys=Object.keys(IMG_SRC); let n=0; for(const k of keys){const im=new Image();im.onload=im.onerror=()=>{if(++n===keys.length)ready()};im.src=IMG_SRC[k];IMG[k]=im}
 }
 async function ready(){
   initCloud();

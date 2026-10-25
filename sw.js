@@ -13,6 +13,8 @@ const FILES = [
   "assets/female.webp",
   "assets/champion_male.webp",
   "assets/champion_female.webp",
+  "assets/blue_wizard.webp",
+  "assets/pink_witch.webp",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/maskable-512.png",

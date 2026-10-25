@@ -126,6 +126,7 @@ label{display:grid;gap:4px;font-family:var(--ui);font-size:.95rem;letter-spacing
 .bottom-row{display:flex;gap:16px;justify-content:flex-end;flex-wrap:wrap;max-width:1400px;width:100%;margin:0 auto}
 .orbs{font-family:var(--ui);font-weight:700;font-size:1.2rem;color:var(--gold);display:flex;align-items:center;gap:6px;margin-right:auto}
 .orb-ico{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#7cc7f0 40%,#2b6d9c);box-shadow:0 0 8px #7cc7f0}
+.gem-ico{width:16px;height:16px;transform:rotate(45deg);background:linear-gradient(135deg,#d6f7ff,#56c8f0 50%,#1c6c9a);box-shadow:0 0 8px #56c8f0;border-radius:3px}
 
 /* ---------- MODAL ---------- */
 .modal-bg{position:fixed;inset:0;background:rgba(6,10,14,.7);display:flex;align-items:center;justify-content:center;z-index:50;
@@ -187,6 +188,29 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 .pbtn span{font-family:var(--ui);font-weight:700;font-size:.7rem;letter-spacing:.06em;margin-top:-2px}
 .pbtn.small{width:62px;height:62px}.pbtn.small svg{width:26px;height:26px}
 .pbtn.on{background:rgba(242,207,124,.55);border-color:var(--gold)}
+.spellbtn{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:12px;border:2px solid var(--gold);background:rgba(28,36,46,.85);color:var(--cream);box-shadow:0 4px 12px rgba(0,0,0,.45);text-align:left;font-family:var(--ui)}
+.spellbtn .sico{width:48px;height:48px}.spellbtn .sico svg{width:30px;height:30px}
+.spellbtn b{display:block;font-size:1.15rem;letter-spacing:.03em}.spellbtn small{color:var(--muted);font-size:.8rem;letter-spacing:.04em;text-transform:uppercase}
+.wheel-bg{position:fixed;inset:0;z-index:60;background:rgba(6,10,14,.72);display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:12px}
+.wheel-ring{position:relative;width:min(86vh,400px,90vw);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(242,207,124,.08) 0 30%,rgba(28,36,46,.75) 31% 70%,rgba(242,207,124,.18) 71% 72%,transparent 73%);flex:none}
+.wheel-ring .wsp{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;border:none;padding:0;display:grid;place-items:center;box-shadow:0 0 0 2px #0b1016,0 4px 8px rgba(0,0,0,.5);transition:transform .1s}
+.wheel-ring .wsp svg{width:28px;height:28px}
+.wheel-ring .wsp.sel{box-shadow:0 0 0 3px var(--gold),0 0 16px var(--gold);transform:scale(1.12)}
+.wheel-ring .wsp.off{filter:grayscale(1) brightness(.55)}
+.wheel-ring .wsp .cd{position:absolute;inset:0;display:grid;place-items:center;font-weight:700;font-size:1.2rem;color:#fff;text-shadow:0 2px 3px #000;font-family:var(--ui)}
+.wheel-ring .wsp .k{position:absolute;top:-4px;left:-2px;font-size:.7rem;color:#fff;background:#0b1016;border-radius:6px;padding:0 4px;font-family:var(--ui)}
+.wheel-ring .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:28%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:var(--ui);color:var(--gold);font-size:.85rem;letter-spacing:.05em;text-transform:uppercase}
+.wheel-info{width:min(300px,90vw);padding:14px;display:grid;gap:8px;max-height:92vh;overflow:auto}
+.wheel-info h3{color:var(--gold);font-size:1.4rem}
+.wheel-info p{margin:0;line-height:1.4;font-size:.95rem}
+.wheel-info .statgrid{font-size:1rem}
+.wheel-info .why{color:var(--bad);font-family:var(--ui);font-size:1rem}
+@media (max-height:560px){.wheel-ring{width:min(92vh,360px)}.wheel-ring .wsp{width:44px;height:44px;margin:-22px 0 0 -22px}.wheel-ring .wsp svg{width:24px;height:24px}.wheel-info{width:min(270px,44vw);padding:10px;gap:6px}.wheel-info h3{font-size:1.15rem}.wheel-info p{font-size:.85rem}.wheel-info .statgrid{font-size:.85rem;gap:2px 12px}}
+.slot{position:relative}
+.slot button.rm{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:var(--bad);color:#fff;font-weight:700;font-size:.8rem;line-height:1;padding:0;box-shadow:0 0 0 2px #0b1016}
+.slot.empty{border:1px dashed var(--slate-line);box-shadow:none}
+.spell .meta{display:block;color:var(--gold);font-family:var(--ui);font-size:.85rem;letter-spacing:.02em;margin-top:2px}
 .keyhint{text-align:center;font-family:var(--ui);color:var(--muted);font-size:.9rem;letter-spacing:.03em}
 @media (pointer:coarse){
   .keyhint{display:none}
@@ -197,7 +221,8 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
   #game .hud-top{position:fixed;z-index:4;top:calc(4px + env(safe-area-inset-top,0px));left:max(6px,env(safe-area-inset-left,0px));right:max(6px,env(safe-area-inset-right,0px));pointer-events:none}
   #game .hud-top>*{pointer-events:auto}
   #game .hud-box.panel{background:rgba(28,36,46,.7)}
-  #game .bar-row{position:fixed;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 2*(12px + 78px + 62px + 30px))}
+  #game .bar-row{position:fixed;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+  #game .spellbtn small{display:none}#game .spellbtn{padding:4px 12px 4px 4px}#game .spellbtn .sico{width:44px;height:44px}
   #game .spellbar{flex-wrap:nowrap;overflow-x:auto;padding:4px;max-width:100%}
   #game .spell-tip{display:none}
   .zoom{top:auto;bottom:110px;right:max(12px,env(safe-area-inset-right,0px))}
@@ -390,7 +415,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
         </div>
         <div class="hub-stats">
           <div><span id="hubName" class="gold"></span></div>
-          <div>RANK: <span class="tag" id="hubRank"></span> | LEVEL: <span class="tag" id="hubLevel"></span> <span id="hubPrestige" class="muted"></span></div>
+          <div>RANK: <span class="tag" id="hubRank"></span> | K/D: <span class="tag" id="hubKd"></span><br> | LEVEL: <span class="tag" id="hubLevel"></span> <span id="hubPrestige" class="muted"></span></div>
           <div class="xpbar" title="Experience"><i id="hubXp"></i></div>
           <div class="muted" style="font-size:.95rem" id="hubXpTxt"></div>
         </div>
@@ -403,7 +428,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
     </div>
   </div>
   <div class="bottom-row">
-    <div class="orbs"><span class="orb-ico"></span><span id="orbCount">0</span> orbs</div>
+    <div class="orbs"><span class="orb-ico"></span><span id="orbCount">0</span> orbs <span class="gem-ico" style="margin-left:12px"></span><span id="gemCount">0</span> gems</div>
     <span class="ver" id="verTag"></span>
     <button class="wood sm fsBtn" type="button">Full screen</button>
     <button class="wood sm" data-open="admin" id="adminBtn" hidden>Admin</button>
@@ -443,9 +468,13 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
   </div>
   <div class="spell-tip" id="spellTip"></div>
   <div class="row bar-row" style="justify-content:center">
-    <div class="spellbar" id="spellbar"></div>
+    <button class="spellbtn" id="spellBtn" type="button" aria-label="Open spell wheel"><span id="spellBtnIco"></span><span class="sbt"><b id="spellBtnName"></b><small>Tap for spells (E)</small></span></button>
   </div>
-  <div class="keyhint" id="keyHint">A / D walk · W jump · Space high jump · 1–9 spells · Q skip · mouse wheel zoom</div>
+  <div class="wheel-bg" id="wheel" hidden>
+    <div class="wheel-ring" id="wheelRing"></div>
+    <div class="panel wheel-info" id="wheelInfo"></div>
+  </div>
+  <div class="keyhint" id="keyHint">A / D walk · W jump · Space high jump · E spell wheel · 1–9 quick pick · Q skip · right-drag to look around · wheel to zoom</div>
 </section>
 
 <div id="modalRoot"></div>
@@ -470,7 +499,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
-const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp"};
+const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp"};
 const IMG={};
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -501,21 +530,41 @@ const SPELLS=[
  {id:"black_hole",name:"Black Hole",lvl:30,type:"lob",kind:"hole",col:"#a05cff",dmg:25,rad:22,pull:170,grav:1,wind:1,cd:4,desc:"Pulls everyone nearby into the impact point."},
  {id:"dragon_breath",name:"Dragon Breath",lvl:30,type:"shot",kind:"cone",col:"#ff9c3a",dmg:12,rad:14,cd:3,desc:"Short-range spray of seven flames."},
  {id:"starfall",name:"Starfall",lvl:40,type:"self",kind:"arena",col:"#ffd6ff",dmg:30,rad:26,uses:1,desc:"Stars rain on every enemy. Once per match."},
- {id:"cataclysm",name:"Cataclysm",lvl:50,type:"target",kind:"ult",col:"#ff3d6e",dmg:90,rad:110,uses:1,desc:"Huge blast anywhere on the map. Once per match."}
+ {id:"cataclysm",name:"Cataclysm",lvl:50,type:"target",kind:"ult",col:"#ff3d6e",dmg:90,rad:110,uses:1,desc:"Huge blast anywhere on the map. Once per match."},
+ {id:"ward",name:"Ward",lvl:5,type:"self",kind:"ward",col:"#7fd0ff",absorb:80,turns:3,cd:3,desc:"A bubble that soaks up the next 80 damage. Lasts 3 turns."},
+ {id:"tower_shield",name:"Tower Shield",lvl:25,type:"self",kind:"ward",col:"#c9b27a",absorb:150,turns:3,cd:4,desc:"A heavy shield that soaks up the next 150 damage. Lasts 3 turns."},
+ {id:"hailstorm",name:"Hailstorm",lvl:35,type:"lob",kind:"hail",col:"#cfefff",dmg:25,rad:22,grav:1,wind:1,shards:4,cd:3,desc:"Lobbed ice ball that bursts into 4 more ice shards."},
+ {id:"tremor",name:"Tremor",lvl:45,type:"self",kind:"tremor",col:"#b08a5a",dmg:25,rad:18,cd:5,desc:"Shake the island. Every enemy standing on the ground takes damage and is thrown up."},
+ // prestige spells: one strong attack and one defence per prestige
+ {id:"comet_lance",name:"Comet Lance",pres:1,lvl:1,type:"shot",kind:"lance",col:"#7af0ff",dmg:70,rad:20,speed:24,grav:0,pierce:1,uses:1,desc:"Piercing beam that hits every wizard in its line. Once per match."},
+ {id:"stone_skin",name:"Stone Skin",pres:1,lvl:1,type:"self",kind:"ward",col:"#a49a8a",absorb:100,turns:3,cd:4,desc:"Rock armour that soaks up 100 damage. Lasts 3 turns."},
+ {id:"inferno_rain",name:"Inferno Rain",pres:2,lvl:1,type:"target",kind:"rain",col:"#ff7a2e",dmg:28,rad:28,count:6,uses:1,desc:"Six fireballs rain down around the target. Once per match."},
+ {id:"mirror_ward",name:"Mirror Ward",pres:2,lvl:1,type:"self",kind:"ward",col:"#e3e8ff",absorb:60,reflect:.5,turns:3,cd:4,desc:"Soaks up 60 damage and sends half of every hit back at the attacker."},
+ {id:"storm_wrath",name:"Storm Wrath",pres:3,lvl:1,type:"target",kind:"storm",col:"#b9d4ff",dmg:45,rad:26,count:3,uses:1,desc:"Three lightning bolts strike across the target area. Once per match."},
+ {id:"sanctuary",name:"Sanctuary",pres:3,lvl:1,type:"self",kind:"heal",col:"#9cffc0",heal:100,allyHeal:40,cd:5,desc:"Heal yourself 100 HP and nearby allies 40 HP."},
+ {id:"void_rift",name:"Void Rift",pres:4,lvl:1,type:"lob",kind:"hole",col:"#7a2cff",dmg:70,rad:60,pull:230,grav:1,wind:1,uses:1,desc:"Tears open a rift that drags everyone in and blows up. Once per match."},
+ {id:"frost_armor",name:"Frost Armor",pres:4,lvl:1,type:"self",kind:"ward",col:"#aee9ff",absorb:120,freezeHit:1,turns:3,cd:4,desc:"Soaks up 120 damage. Anyone who hits you is frozen next turn."},
+ {id:"aegis_tower",name:"Aegis Tower",pres:5,lvl:1,type:"self",kind:"aegis",col:"#ffd36a",absorb:300,turns:3,cd:6,desc:"A golden tower shield surrounds you and soaks up 300 damage. You can't move while it stands (3 turns)."},
+ {id:"dread_mask",name:"Dread Mask",pres:5,lvl:1,type:"self",kind:"mask",col:"#3a1a4a",mult:2,turns:5,uses:1,desc:"A white mask and creepy aura cover you for 5 turns. All your spell damage is doubled."},
+ {id:"skyfall",name:"Skyfall",pres:5,lvl:1,type:"target",kind:"skyfall",col:"#ff4d2e",dmg:40,rad:42,count:8,uses:1,desc:"Eight meteors rain across the target area. Once per match."}
 ];
 const SP=Object.fromEntries(SPELLS.map(s=>[s.id,s]));
 const BASIC=["arcane_shot","ember_ball","blink"];
 function slotsFor(l){return l>=50?16:l>=40?14:l>=30?12:l>=20?10:l>=15?8:l>=10?7:l>=5?5:3}
-function unlockedFor(l){return SPELLS.filter(s=>s.lvl<=l).map(s=>s.id)}
+function unlockedFor(l,p=0){return SPELLS.filter(s=>s.pres?p>=s.pres:s.lvl<=l).map(s=>s.id)}
 function effLevel(u){return u.allSpells?50:u.level}
+function effPres(u){return u.allSpells?5:(u.prestige||0)}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
 const AURAS=[null,{n:"Blue",c:"#3fa2ff"},{n:"Red",c:"#ff3b3b"},{n:"Purple",c:"#a64dff"},{n:"Green",c:"#36d96b"},{n:"Pink",c:"#ff6ad5"}];
 function xpNeed(l){return 100+30*(l-1)}
 const RANKS=[[0,"Novice"],[900,"Apprentice"],[1100,"Acolyte"],[1300,"Messenger"],[1500,"Mage"],[1800,"High Mage"],[2200,"Arch Mage"],[2700,"Grand Arcanist"]];
+function kd(w,l){w=w||0;l=l||0;return (l?w/l:w).toFixed(1)}
 function rankName(r){let n=RANKS[0][1];for(const [t,name] of RANKS) if(r>=t) n=name;return n}
 const OUTFITS=[
  {id:"male",name:"Grey Wizard",gender:"male",price:0,img:"male"},
  {id:"female",name:"Grey Witch",gender:"female",price:0,img:"female"},
+ {id:"blue_wizard",name:"Sky Wizard",gender:"male",price:100,img:"blue_wizard"},
+ {id:"pink_witch",name:"Blossom Witch",gender:"female",price:100,img:"pink_witch"},
  {id:"champion_male",name:"Champion Wizard",gender:"male",price:0,img:"champion_male",rank1:true},
  {id:"champion_female",name:"Champion Witch",gender:"female",price:0,img:"champion_female",rank1:true},
  // Future designs go here: {id:"fire_robes",name:"Fire Robes",price:500,img:"fire_robes"}
@@ -541,10 +590,36 @@ function icon(kind){
    hole:'<circle cx="16" cy="16" r="6" fill="#000" stroke="#fff" stroke-width="2"/><path d="M16 4a12 12 0 0 1 12 12M28 16a12 12 0 0 1-12 12M16 28A12 12 0 0 1 4 16M4 16A12 12 0 0 1 16 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-dasharray="4 3"/>',
    cone:'<path d="M5 16l22-10M5 16h23M5 16l22 10" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>',
    arena:'<path d="M16 3l3.8 8 8.7 1-6.4 6 1.7 8.6L16 22.4 8.2 26.6 9.9 18l-6.4-6 8.7-1z" fill="#fff"/>',
+   ward:'<path d="M16 4l10 4v7c0 7-5 11-10 13C11 26 6 22 6 15V8z" fill="none" stroke="#fff" stroke-width="2.6"/><path d="M11 16l4 4 7-8" stroke="#fff" stroke-width="2.6" fill="none"/>',
+   aegis:'<path d="M8 28V9l4 3 4-5 4 5 4-3v19z" fill="#fff"/><path d="M16 12v13M11 18h10" stroke="#000" stroke-width="2"/>',
+   mask:'<ellipse cx="16" cy="16" rx="10" ry="12" fill="#fff"/><path d="M10 14l4 2M22 14l-4 2" stroke="#000" stroke-width="2.6" stroke-linecap="round"/><path d="M12 22q4 2 8 0" stroke="#000" stroke-width="1.6" fill="none"/>',
+   lance:'<path d="M2 26L26 6" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="27" cy="5" r="3.5" fill="#fff"/><path d="M6 14l4 4M14 6l4 4" stroke="#fff" stroke-width="1.6"/>',
+   hail:'<circle cx="16" cy="13" r="7" fill="#fff"/><circle cx="7" cy="24" r="3" fill="#fff"/><circle cx="16" cy="27" r="3" fill="#fff"/><circle cx="25" cy="24" r="3" fill="#fff"/>',
+   tremor:'<path d="M2 20l5-6 4 8 5-12 4 10 4-6 6 6" stroke="#fff" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M4 28h24" stroke="#fff" stroke-width="2"/>',
+   rain:'<circle cx="9" cy="9" r="4" fill="#fff"/><circle cx="21" cy="12" r="4" fill="#fff"/><circle cx="14" cy="22" r="4" fill="#fff"/><path d="M6 4l2 3M18 6l2 3M11 16l2 3" stroke="#fff" stroke-width="1.6"/>',
+   storm:'<path d="M8 3L3 14h4l-2 8 7-10H8zM20 6l-5 11h4l-2 8 7-10h-4z" fill="#fff"/>',
+   skyfall:'<circle cx="10" cy="21" r="5" fill="#fff"/><circle cx="23" cy="12" r="4" fill="#fff"/><path d="M2 8l6 8M14 2l6 6M24 22l4 6" stroke="#fff" stroke-width="2"/>',
    ult:'<circle cx="16" cy="16" r="5" fill="#fff"/><path d="M16 1v7M16 24v7M1 16h7M24 16h7M5 5l5 5M22 22l5 5M27 5l-5 5M10 22l-5 5" stroke="#fff" stroke-width="2.4"/>'
   };
   return '<svg viewBox="0 0 32 32" aria-hidden="true">'+(P[kind]||P.shot)+'</svg>';
 }
+function spellStats(s,u){
+  const T={shot:"Straight shot: aim and tap/click to fire",lob:"Lobbed: hold to charge, release to throw",target:"Targeted: tap/click any spot",self:"Cast on yourself"};
+  const size=r=>r<20?"Small":r<45?"Medium":"Large";
+  const rows=[["How to cast",s.kind==="build"&&s.type==="shot"?"Aim, then tap/click to grow":T[s.type]||""]];
+  if(s.dmg) rows.push(["Damage",s.count?`${s.dmg} × ${s.count} hits`:s.shards?`${s.dmg} + ${s.shards} shards of 18`:String(s.dmg)]);
+  if(s.rad&&s.dmg) rows.push(["Blast size",size(s.rad)]);
+  if(s.absorb) rows.push(["Blocks",s.absorb+" damage"]);
+  if(s.heal) rows.push(["Heals",s.heal+(s.allyHeal||s.kind==="heal"?` (allies ${s.allyHeal||20})`:"")]);
+  if(s.mult) rows.push(["Damage boost","×"+s.mult+" for "+s.turns+" turns"]);
+  if(s.turns&&!s.mult) rows.push(["Lasts",s.turns+" turns"]);
+  if(s.range) rows.push(["Range",s.range>=250?"Long":"Medium"]);
+  if(s.wind) rows.push(["Wind","Pushes it"]);
+  rows.push(["Recharge",s.uses?"Once per match":s.cd?s.cd+" turn"+(s.cd>1?"s":""):"Every turn"]);
+  return `<div class="statgrid">${rows.map(r=>`<span>${r[0]}</span><span>${esc(r[1])}</span>`).join("")}</div>`;
+}
+function spellMeta(s){const b=[];if(s.dmg)b.push(s.count?`${s.dmg}×${s.count} dmg`:`${s.dmg} dmg`);if(s.absorb)b.push(`blocks ${s.absorb}`);if(s.heal)b.push(`heals ${s.heal}`);if(s.mult)b.push(`×${s.mult} dmg`);
+  b.push(s.uses?"once per match":s.cd?`recharge ${s.cd}`:"every turn");return b.join(" · ")}
 function sico(s){return `<span class="sico" style="background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})">${icon(s.kind)}</span>`}
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>clamp(Math.round(v+(p/100)*255),0,255);return `rgb(${f(r)},${f(g)},${f(b)})`}
 
@@ -560,7 +635,7 @@ function save(){const u=me(); if(u) u._ts=Date.now(); saveLocal(); if(sb&&u&&u.c
 const CLOUD={url:"https://hroooqbiywljchtyipnp.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyb29vcWJpeXdsamNodHlpcG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4ODgwNjcsImV4cCI6MjEwODQ2NDA2N30.OyNnR5eTht8kICGVu63rCKe3Sr-otZ4nGWVcbVATjow",google:false};
 let sb=null, pushT=null, onlineBoard=null;
 function initCloud(){ try{ if(window.supabase&&!/\{\{/.test(CLOUD.url)) sb=window.supabase.createClient(CLOUD.url,CLOUD.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"skyfall-auth"}}) }catch(e){sb=null} }
-const DATA_KEYS=["level","xp","prestige","rating","orbs","wins","losses","kills","games","spellbook","owned","outfit","friends","clan","opts","quizDay","champion","allSpells"];
+const DATA_KEYS=["gems","rWins","rLosses","level","xp","prestige","rating","orbs","wins","losses","kills","games","spellbook","owned","outfit","friends","clan","opts","quizDay","champion","allSpells"];
 function packData(u){const d={};for(const k of DATA_KEYS)d[k]=u[k];return d}
 async function pushProfile(){const u=me();if(!sb||!u||!u.cloudId)return;
   const {error}=await sb.from("profiles").update({level:u.level,rating:u.rating,prestige:u.prestige,data:packData(u),updated_at:new Date(u._ts||Date.now()).toISOString()}).eq("id",u.cloudId);
@@ -592,12 +667,12 @@ async function loadProfile(user,extra){
   for(const k of Object.keys(DB.users)) if(DB.users[k].cloudId) delete DB.users[k];
   DB.users[u.username]=u; DB.session=u.username; save(); return u;
 }
-async function refreshOnlineBoard(){ if(!sb) return; const {data,error}=await sb.rpc("get_leaderboard",{lim:100}); if(!error&&data){onlineBoard=data; if(!$("#menu").hidden) renderBoard()} }
+async function refreshOnlineBoard(){ if(!sb) return; let {data,error}=await sb.rpc("get_leaderboard_v2",{lim:100}); if(error) ({data,error}=await sb.rpc("get_leaderboard",{lim:100})); if(!error&&data){onlineBoard=data; if(!$("#menu").hidden) renderBoard()} }
 function me(){return DB.session&&DB.users[DB.session]}
 async function hash(s){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("skyfall:"+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return "x"+h}}
 function newUser(o){
   return {username:o.username,email:o.email,provider:o.provider,pw:o.pw||null,age:o.age,gender:o.gender,outfit:o.gender,
-    owned:["male","female"],level:1,xp:0,prestige:0,rating:1000,orbs:100,wins:0,losses:0,kills:0,games:0,
+    owned:["male","female"],level:1,xp:0,prestige:0,rating:1000,orbs:100,gems:0,rWins:0,rLosses:0,wins:0,losses:0,kills:0,games:0,
     spellbook:BASIC.slice(),friends:[],clan:null,opts:{sound:true,vol:.6,turn:30,dmgNums:true,difficulty:"normal",mode:"standard"},
     created:Date.now(),quizDay:null};
 }
@@ -606,12 +681,12 @@ function newUser(o){
 const NPCS=[["Emberwick",2420,44,2],["Thornveil",2210,50,1],["Mirelda",2050,38,0],["Quillon",1930,41,0],["Saffra",1880,35,1],["GolemFan",1760,33,0],
  ["Brannoch",1690,29,0],["Vexa Moon",1620,31,0],["Orrin",1550,27,0],["Tidecaller",1490,24,0],["Pip Ashgrove",1430,22,0],["Runera",1390,20,0],
  ["Calder",1320,18,0],["Wisp",1260,16,0],["Morrow",1210,14,0],["Juniper",1150,12,0],["Fenwick",1100,11,0],["Ottilie",1040,9,0],["Hobb",990,7,0],["Lark",930,5,0]]
- .map(([name,rating,level,prestige],i)=>({name,rating,level,prestige,gender:i%3===1?"female":"male",npc:true}));
+ .map(([name,rating,level,prestige],i)=>({name,rating,level,prestige,gender:i%3===1?"female":"male",npc:true,wins:level*7+(i*13)%40,losses:level*3+(i*7)%25}));
 function leaderboard(){
   const mine=me();
-  let real=onlineBoard?onlineBoard.map(r=>({name:r.username,rating:r.rating,level:r.level,prestige:r.prestige,gender:imgKey(r.outfit),me:mine&&r.username.toLowerCase()===mine.username.toLowerCase()}))
-    :Object.values(DB.users).map(u=>({name:u.username,rating:u.rating,level:u.level,prestige:u.prestige,gender:outfitImg(u),me:u.username===DB.session}));
-  if(mine){ const r=real.find(x=>x.me); if(r){r.rating=mine.rating;r.level=mine.level;r.prestige=mine.prestige} else real.push({name:mine.username,rating:mine.rating,level:mine.level,prestige:mine.prestige,gender:outfitImg(mine),me:true}) }
+  let real=onlineBoard?onlineBoard.map(r=>({name:r.username,rating:r.rating,level:r.level,prestige:r.prestige,wins:r.wins,losses:r.losses,gender:imgKey(r.outfit),me:mine&&r.username.toLowerCase()===mine.username.toLowerCase()}))
+    :Object.values(DB.users).map(u=>({name:u.username,rating:u.rating,level:u.level,prestige:u.prestige,wins:u.wins,losses:u.losses,gender:outfitImg(u),me:u.username===DB.session}));
+  if(mine){ const r=real.find(x=>x.me); if(r){r.rating=mine.rating;r.level=mine.level;r.prestige=mine.prestige;r.wins=mine.wins;r.losses=mine.losses} else real.push({name:mine.username,rating:mine.rating,level:mine.level,prestige:mine.prestige,wins:mine.wins,losses:mine.losses,gender:outfitImg(mine),me:true}) }
   return [...NPCS,...real].sort((a,b)=>b.rating-a.rating);
 }
 
@@ -767,11 +842,11 @@ function refreshMenu(){
   const a=$("#hubAura"); a.hidden=!u.prestige; a.style.background=auraCss(u.prestige);
   $("#hubName").textContent=u.username;
   $("#hubRank").textContent="["+rankName(u.rating).toUpperCase()+"]";
-  $("#hubLevel").textContent=u.level;
+  $("#hubLevel").textContent=u.level; $("#hubKd").textContent=kd(u.wins,u.losses);
   $("#hubPrestige").textContent=u.prestige?`· Prestige ${u.prestige} (${AURAS[u.prestige].n})`:"";
   const need=xpNeed(u.level); $("#hubXp").style.width=(u.level>=MAX_LEVEL?100:u.xp/need*100)+"%";
   $("#hubXpTxt").textContent=u.level>=MAX_LEVEL?(u.prestige<MAX_PRESTIGE?"Max level. Prestige is ready in Customize.":"Max level and max prestige."):`${u.xp} / ${need} XP to level ${u.level+1}`;
-  $("#orbCount").textContent=u.orbs;
+  $("#orbCount").textContent=u.orbs; $("#gemCount").textContent=u.gems||0;
   $("#adminBtn").hidden=!u.isAdmin;
   renderBoard(); checkChampion();
 }
@@ -783,10 +858,10 @@ function checkChampion(){const u=me();if(!u||u.champion)return;const rows=leader
 function avatar(gender,prestige){return `<span class="av" style="${prestige?"box-shadow:0 0 0 2px "+AURAS[prestige].c+",0 0 8px "+AURAS[prestige].c:""}"><img alt="" src="${IMG_SRC[gender]}"></span>`}
 function renderBoard(full){
   const rows=leaderboard(); const shown=full?rows:rows.slice(0,25);
-  const html=`<thead><tr><th>Rank</th><th>Player name</th><th class="num">Score</th><th class="num">Level</th><th>Icon</th></tr></thead><tbody>`+
-    shown.map((r,i)=>`<tr class="${r.me?"me":""}"><td>${i<3?`<span class="medal m${i+1}">${i+1}</span>`:i+1}</td><td>${esc(r.name)}${r.prestige?` <span style="color:${AURAS[r.prestige].c}" title="Prestige ${r.prestige}">✦${r.prestige}</span>`:""}</td><td class="num">${r.rating}</td><td class="num">${r.level}</td><td>${avatar(r.gender,r.prestige)}</td></tr>`).join("")+"</tbody>";
+  const html=`<thead><tr><th>Rank</th><th>Player name</th><th class="num">Score</th><th class="num">Level</th><th class="num">K/D</th><th>Icon</th></tr></thead><tbody>`+
+    shown.map((r,i)=>`<tr class="${r.me?"me":""}"><td>${i<3?`<span class="medal m${i+1}">${i+1}</span>`:i+1}</td><td>${esc(r.name)}${r.prestige?` <span style="color:${AURAS[r.prestige].c}" title="Prestige ${r.prestige}">✦${r.prestige}</span>`:""}</td><td class="num">${r.rating}</td><td class="num">${r.level}</td><td class="num">${kd(r.wins,r.losses)}</td><td>${avatar(r.gender,r.prestige)}</td></tr>`).join("")+"</tbody>";
   if(full) return html; $("#lbTable").innerHTML=html;
-  const myIdx=rows.findIndex(r=>r.me); if(myIdx>=25){const r=rows[myIdx];$("#lbTable").insertAdjacentHTML("beforeend",`<tbody><tr class="me"><td>${myIdx+1}</td><td>${esc(r.name)}</td><td class="num">${r.rating}</td><td class="num">${r.level}</td><td>${avatar(r.gender,r.prestige)}</td></tr></tbody>`)}
+  const myIdx=rows.findIndex(r=>r.me); if(myIdx>=25){const r=rows[myIdx];$("#lbTable").insertAdjacentHTML("beforeend",`<tbody><tr class="me"><td>${myIdx+1}</td><td>${esc(r.name)}</td><td class="num">${r.rating}</td><td class="num">${r.level}</td><td class="num">${kd(r.wins,r.losses)}</td><td>${avatar(r.gender,r.prestige)}</td></tr></tbody>`)}
 }
 function initMenu(){
   $$("[data-open]").forEach(b=>b.onclick=()=>{sfx("click");PANELS[b.dataset.open]()});
@@ -825,26 +900,28 @@ const PANELS={
  },
  ranking(){
   const u=me(); const rows=leaderboard(); const pos=rows.findIndex(r=>r.me)+1;
-  openModal("Ranking",`<div class="statgrid"><span>Your rating</span><span>${u.rating}</span><span>Your title</span><span>${rankName(u.rating)}</span><span>Leaderboard position</span><span>#${pos} of ${rows.length}</span><span>Ranked wins / losses</span><span>${u.wins} / ${u.losses}</span></div>
+  openModal("Ranking",`<div class="statgrid"><span>Your rating</span><span>${u.rating}</span><span>Your title</span><span>${rankName(u.rating)}</span><span>Leaderboard position</span><span>#${pos} of ${rows.length}</span><span>Wins / losses</span><span>${u.wins} / ${u.losses}</span><span>K/D</span><span>${kd(u.wins,u.losses)}</span><span>Ranked wins / losses</span><span>${u.rWins||0} / ${u.rLosses||0}</span><span>Gems</span><span>${u.gems||0}</span></div>
    <div class="info"><p>Everyone starts at 1000. Ranked wins raise it and losses lower it, more so against stronger opponents. Titles: ${RANKS.map(r=>`${r[1]} (${r[0]}+)`).join(", ")}.</p></div>
    <div class="lb-wrap" style="max-height:none"><table class="lb">${renderBoard(true)}</table></div>`);
  },
  store(){
   const u=me();
-  const b=openModal("Store",`<div class="row"><div class="orbs"><span class="orb-ico"></span>${u.orbs} orbs</div></div>
-   <div class="info"><p>Character designs you buy here can be worn from Customize. Earn orbs by playing matches and the daily quiz.</p></div>
-   <div class="cards">${OUTFITS.map(o=>{const own=u.owned.includes(o.id);return `<div class="card ${u.outfit===o.id?"sel":""}"><img alt="${esc(o.name)}" src="${IMG_SRC[o.img]}" style="${own?"":"filter:grayscale(1) brightness(.55)"}"><h4>${esc(o.name)}</h4><span class="muted">${o.rank1?(own?"Rank 1 reward · Owned":"Reach #1 on the leaderboard"):o.price?o.price+" orbs":"Starter · Owned"}</span><button class="wood sm" data-wear="${o.id}" ${own?"":"disabled"}>${!own?"Locked":u.outfit===o.id?"Wearing":"Wear"}</button></div>`}).join("")}
-   ${[1,2,3,4].map(i=>`<div class="card"><div class="ph">NEW DESIGN</div><h4>Coming soon</h4><span class="muted">More designs on the way</span><button class="wood sm" disabled>Locked</button></div>`).join("")}</div>`);
+  const b=openModal("Store",`<div class="row"><div class="orbs"><span class="orb-ico"></span>${u.orbs} orbs <span class="gem-ico" style="margin-left:12px"></span>${u.gems||0} gems</div></div>
+   <div class="info"><p>Character designs you buy here can be worn from Customize. Orbs are what you spend here. Earn them by winning: 5 per PvE win, 20 per ranked win (plus 10 gems). The daily quiz pays orbs too.</p></div>
+   <div class="cards">${OUTFITS.map(o=>{const own=u.owned.includes(o.id);return `<div class="card ${u.outfit===o.id?"sel":""}"><img alt="${esc(o.name)}" src="${IMG_SRC[o.img]}" style="${own?"":"filter:grayscale(1) brightness(.55)"}"><h4>${esc(o.name)}</h4><span class="muted">${o.rank1?(own?"Rank 1 reward · Owned":"Reach #1 on the leaderboard"):o.price?(own?"Owned":o.price+" orbs"):"Starter · Owned"}</span>${!own&&o.price?`<button class="wood sm" data-buy="${o.id}" ${u.orbs>=o.price?"":"disabled"}>Buy · ${o.price}</button>`:`<button class="wood sm" data-wear="${o.id}" ${own?"":"disabled"}>${!own?"Locked":u.outfit===o.id?"Wearing":"Wear"}</button>`}</div>`}).join("")}
+   ${[1,2].map(i=>`<div class="card"><div class="ph">NEW DESIGN</div><h4>Coming soon</h4><span class="muted">More designs on the way</span><button class="wood sm" disabled>Locked</button></div>`).join("")}</div>`);
   b.querySelectorAll("[data-wear]").forEach(x=>x.onclick=()=>{u.outfit=x.dataset.wear;save();sfx("click");PANELS.store()});
+  b.querySelectorAll("[data-buy]").forEach(x=>x.onclick=()=>{const o=OUTFITS.find(o=>o.id===x.dataset.buy);if(!o||u.owned.includes(o.id))return;if(u.orbs<o.price)return toast(`You need ${o.price-u.orbs} more orbs.`);
+    u.orbs-=o.price;u.owned.push(o.id);u.outfit=o.id;save();sfx("level");toast(o.name+" unlocked and equipped!");PANELS.store()});
  },
  customize(){
-  const u=me(); const slots=slotsFor(effLevel(u)); const unl=new Set(unlockedFor(effLevel(u)));
+  const u=me(); const slots=slotsFor(effLevel(u)); const unl=new Set(unlockedFor(effLevel(u),effPres(u)));
   fixBook(u);
   const b=openModal("Customize",`
    <h3 class="gold">Spellbook <span class="muted" style="font-size:1rem">${u.spellbook.length} / ${slots} slots · level ${u.level}</span></h3>
-   <div class="slots">${Array.from({length:slots},(_,i)=>{const s=SP[u.spellbook[i]];return `<div class="slot" title="${s?esc(s.name):"Empty slot"}">${s?sico(s):""}</div>`}).join("")}</div>
-   <p class="note" style="margin:0">Tap a spell to add or remove it. New slots open at levels 5, 10, 15, 20, 30, 40 and 50.</p>
-   <div class="spellgrid">${SPELLS.map(s=>{const inB=u.spellbook.includes(s.id),lk=!unl.has(s.id);return `<button class="spell ${inB?"in":""} ${lk?"locked":""}" data-sp="${s.id}" ${lk?"disabled":""}>${sico(s)}<span><b>${esc(s.name)}${lk?` · Lv ${s.lvl}`:""}</b><small>${esc(s.desc)}${s.dmg?` ${s.dmg} dmg.`:""}</small></span></button>`}).join("")}</div>
+   <div class="slots">${Array.from({length:slots},(_,i)=>{const s=SP[u.spellbook[i]];return s?`<div class="slot" title="${esc(s.name)}">${sico(s)}<button class="rm" type="button" data-rm="${i}" aria-label="Remove ${esc(s.name)}">×</button></div>`:`<div class="slot empty" title="Empty slot"></div>`}).join("")}</div>
+   <div class="row"><p class="note" style="margin:0;flex:1;min-width:200px">Tap × on a slot to take a spell out, then tap any spell below to put it in. New slots open at levels 5, 10, 15, 20, 30, 40 and 50.</p><button class="wood sm" id="clearBook" type="button">Empty spellbook</button></div>
+   <div class="spellgrid">${SPELLS.map(s=>{const inB=u.spellbook.includes(s.id),lk=!unl.has(s.id);return `<button class="spell ${inB?"in":""} ${lk?"locked":""}" data-sp="${s.id}" ${lk?"disabled":""}>${sico(s)}<span><b>${esc(s.name)}${lk?(s.pres?` · Prestige ${s.pres}`:` · Lv ${s.lvl}`):inB?" ✓":""}</b><small>${esc(s.desc)}</small><span class="meta">${esc(spellMeta(s))}</span></span></button>`}).join("")}</div>
    <h3 class="gold">Character</h3>
    <div class="cards">${OUTFITS.filter(o=>u.owned.includes(o.id)).map(o=>`<button class="card ${u.outfit===o.id?"sel":""}" data-out="${o.id}" style="border:none;color:inherit"><img alt="" src="${IMG_SRC[o.img]}"><h4>${esc(o.name)}</h4></button>`).join("")}</div>
    <h3 class="gold">Prestige <span class="muted" style="font-size:1rem">${u.prestige} / ${MAX_PRESTIGE}</span></h3>
@@ -852,10 +929,12 @@ const PANELS={
    <p class="note" style="margin:0">Reach level 50 to prestige. You go back to level 1 and relearn your spells, but keep your rating, orbs and outfits, earn 500 orbs, and your wizard glows with the next aura.</p>
    <button class="wood" id="prestigeBtn" ${u.level>=MAX_LEVEL&&u.prestige<MAX_PRESTIGE?"":"disabled"}>${u.prestige>=MAX_PRESTIGE?"Max prestige reached":u.level>=MAX_LEVEL?"Prestige now":"Prestige unlocks at level 50"}</button>
    <h3 class="gold">Stats</h3>
-   <div class="statgrid"><span>Matches</span><span>${u.games}</span><span>Ranked wins / losses</span><span>${u.wins} / ${u.losses}</span><span>Knockouts</span><span>${u.kills}</span><span>Signed in with</span><span>${u.provider==="google"?"Google":"Email"}</span></div>`);
+   <div class="statgrid"><span>Matches</span><span>${u.games}</span><span>Ranked wins / losses</span><span>${u.rWins||0} / ${u.rLosses||0}</span><span>K/D (all matches)</span><span>${kd(u.wins,u.losses)}</span><span>Knockouts</span><span>${u.kills}</span><span>Signed in with</span><span>${u.provider==="google"?"Google":"Email"}</span></div>`);
   b.querySelectorAll("[data-sp]").forEach(x=>x.onclick=()=>{const id=x.dataset.sp;const i=u.spellbook.indexOf(id);
-    if(i>=0){ if(u.spellbook.length<=1) return toast("Keep at least one spell."); u.spellbook.splice(i,1);} else { if(u.spellbook.length>=slots) return toast(`All ${slots} slots are full. Remove a spell first.`); u.spellbook.push(id);} save();PANELS.customize()});
+    if(i>=0){ u.spellbook.splice(i,1);} else { if(u.spellbook.length>=slots) return toast(`All ${slots} slots are full. Remove a spell first.`); u.spellbook.push(id);} save();PANELS.customize()});
   b.querySelectorAll("[data-out]").forEach(x=>x.onclick=()=>{u.outfit=x.dataset.out;save();PANELS.customize()});
+  b.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>{u.spellbook.splice(+x.dataset.rm,1);save();PANELS.customize()});
+  b.querySelector("#clearBook").onclick=()=>{u.spellbook=[];save();PANELS.customize()};
   let armed=false; const pb=b.querySelector("#prestigeBtn");
   pb.onclick=()=>{if(!armed){armed=true;pb.textContent="Tap again: reset to level 1 and prestige";return}
     u.prestige++;u.level=1;u.xp=0;u.orbs+=500;u.spellbook=BASIC.slice();save();sfx("level");
@@ -934,6 +1013,7 @@ const PANELS={
     <label>Prestige (0–5)<input id="adPres" type="number" min="0" max="5" value="${u.prestige}"></label>
     <label>Rating<input id="adRating" type="number" min="0" max="9999" value="${u.rating}"></label>
     <label>Orbs<input id="adOrbs" type="number" min="0" max="9999999" value="${u.orbs}"></label>
+    <label>Gems<input id="adGems" type="number" min="0" max="9999999" value="${u.gems||0}"></label>
     <label>Wins<input id="adWins" type="number" min="0" value="${u.wins}"></label>
     <label>Knockouts<input id="adKills" type="number" min="0" value="${u.kills}"></label>
    </div>
@@ -944,13 +1024,13 @@ const PANELS={
    <div class="err" id="adErr"></div>
    <div class="row"><button class="wood" id="adApply">Apply</button><button class="wood sm" id="adMax">Max everything</button></div>`,{w:600});
   const v=id=>b.querySelector(id);
-  v("#adMax").onclick=()=>{v("#adLevel").value=50;v("#adPres").value=5;v("#adRating").value=3000;v("#adOrbs").value=999999;v("#adOutfits").checked=true;v("#adSpells").checked=true};
+  v("#adMax").onclick=()=>{v("#adLevel").value=50;v("#adPres").value=5;v("#adRating").value=3000;v("#adOrbs").value=999999;v("#adGems").value=99999;v("#adOutfits").checked=true;v("#adSpells").checked=true};
   v("#adApply").onclick=async()=>{
     const who=v("#adWho").value.trim(); const n=(id,lo,hi)=>clamp(parseInt(v(id).value,10)||0,lo,hi);
-    const st={level:n("#adLevel",1,50),prestige:n("#adPres",0,5),rating:n("#adRating",0,9999),orbs:n("#adOrbs",0,9999999),wins:n("#adWins",0,1e6),kills:n("#adKills",0,1e6)};
+    const st={level:n("#adLevel",1,50),prestige:n("#adPres",0,5),rating:n("#adRating",0,9999),orbs:n("#adOrbs",0,9999999),gems:n("#adGems",0,9999999),wins:n("#adWins",0,1e6),kills:n("#adKills",0,1e6)};
     const allOut=OUTFITS.map(o=>o.id);
     if(who.toLowerCase()===u.username.toLowerCase()){
-      Object.assign(u,st); if(u.level>=MAX_LEVEL) u.xp=0; if(v("#adOutfits").checked){u.owned=allOut;u.champion=true} u.allSpells=v("#adSpells").checked; fixBook(u); save(); toast("Saved to your account"); closeModal(); return }
+      Object.assign(u,st); if(u.level>=MAX_LEVEL) u.xp=0; if(v("#adOutfits").checked){u.owned=allOut;u.champion=true} u.allSpells=v("#adSpells").checked; fixBook(u,true); save(); toast("Saved to your account"); closeModal(); return }
     if(!sb) return v("#adErr").textContent="Online accounts aren't connected.";
     const data={...st}; if(v("#adOutfits").checked){data.owned=allOut;data.champion=true} data.allSpells=v("#adSpells").checked;
     const {error}=await sb.rpc("admin_update_profile",{target:who,patch:{level:st.level,rating:st.rating,prestige:st.prestige,data}});
@@ -966,8 +1046,8 @@ const PANELS={
   b.querySelector("#fbSend").onclick=()=>{const t=b.querySelector("#fbText").value.trim();if(!t) return toast("Write something first.");DB.feedback.push({u:u.username,t,at:Date.now()});save();toast("Feedback saved. Thank you!");closeModal()};
  }
 };
-function fixBook(u){const L=effLevel(u);const unl=new Set(unlockedFor(L));u.spellbook=u.spellbook.filter(id=>unl.has(id));const slots=slotsFor(L);
-  for(const id of unlockedFor(L)){ if(u.spellbook.length>=slots) break; if(!u.spellbook.includes(id)) u.spellbook.push(id);} u.spellbook=u.spellbook.slice(0,slots)}
+function fixBook(u,fill){const L=effLevel(u),P=effPres(u);const unl=new Set(unlockedFor(L,P));u.spellbook=u.spellbook.filter(id=>unl.has(id));const slots=slotsFor(L);if(!fill&&u.spellbook.length){u.spellbook=u.spellbook.slice(0,slots);return}
+  for(const id of unlockedFor(L,P)){ if(u.spellbook.length>=slots) break; if(!u.spellbook.includes(id)) u.spellbook.push(id);} u.spellbook=u.spellbook.slice(0,slots)}
 
 /* ================= GAME ENGINE ================= */
 const W=1408,H=768,G=.25,SUB=4;
@@ -1028,8 +1108,8 @@ function jump(u,high){ if(!u.grounded) return; u.grounded=false; u.y-=2; if(high
 
 /* ----- match setup ----- */
 const BOT_NAMES=["Ashby","Nimue","Corvin","Elowen","Garrick","Isolde","Talon","Wren","Bram","Liora","Fennick","Sable","Orla","Dax","Mabyn","Rook"];
-function makeBook(level,random){
-  const unl=random?SPELLS.map(s=>s.id):unlockedFor(level); const n=Math.min(slotsFor(level),unl.length);
+function makeBook(level,random,pres=0){
+  const unl=random?SPELLS.map(s=>s.id):unlockedFor(level,pres); const n=Math.min(slotsFor(level),unl.length);
   if(!random&&n>=unl.length) return unl.slice();
   const book=random?[]:BASIC.filter(b=>unl.includes(b)).slice(0,Math.min(2,n)); const pool=unl.filter(x=>!book.includes(x)).sort(()=>Math.random()-.5);
   while(book.length<n&&pool.length) book.push(pool.pop()); return book;
@@ -1043,7 +1123,7 @@ function spawnPoints(team,count){
   return out;
 }
 function startMatch(cfg){
-  const u=me(); fixBook(u); save();
+  const u=me(); fixBook(u,!u.spellbook.length); if(!u.spellbook.length) u.spellbook=BASIC.slice(); save();
   if(!IMG.terrain.complete){toast("Loading map…");return}
   buildTerrain();
   const random=u.opts.mode==="random";
@@ -1059,7 +1139,7 @@ function startMatch(cfg){
       const gender=isPlayer?outfitImg(u):(Math.random()<.5?"male":"female");
       units.push({id:units.length,name:isPlayer?u.username:names.pop(),team,isPlayer,bot:!isPlayer,diff,gender,prestige:pres,level:lvl,
         x:pts[i][0],y:pts[i][1],vx:0,vy:0,grounded:false,face:team===0?1:-1,hp:250,maxHp:250,alive:true,
-        spells:isPlayer?(random?makeBook(lvl,true):u.spellbook.slice()):makeBook(lvl,random),cool:{},used:{},shield:false,frozen:0,dmg:0,kills:0,lastHitBy:null});
+        spells:isPlayer?(random?makeBook(lvl,true):u.spellbook.slice()):makeBook(lvl,random,pres),cool:{},used:{},shield:false,frozen:0,absorb:0,absorbT:0,rooted:0,maskT:0,mult:1,reflect:0,freezeHit:0,dmg:0,kills:0,lastHitBy:null});
     }
   }
   M={cfg,units,imps:[],proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
@@ -1088,6 +1168,10 @@ function nextTurn(first){
   M.wind=Math.round(rand(-10,10))/10;
   for(const k in u.cool) if(u.cool[k]>0) u.cool[k]--;
   u.shield=false;
+  if(u.absorbT>0&&--u.absorbT===0){u.absorb=0;u.reflect=0;u.freezeHit=0}
+  if(u.rooted>0) u.rooted--;
+  if(u.maskT>0&&--u.maskT===0){u.mult=1;M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Mask fades",life:60,max:60})}
+  CAM.manual=0;
   M.selSpell=Math.min(M.selSpell,u.spells.length-1);
   if(u.isPlayer) M.selSpell=M.selSpell||0;
   // armageddon
@@ -1132,7 +1216,9 @@ function stepProj(p,sim){
     }
     for(const u of (sim?sim.units:allBodies())){
       if(u===p.ownerUnit&&p.age<14) continue; if(u.dead||u.alive===false) continue;
-      if(Math.abs(p.x-u.x)<9&&p.y>u.y-38&&p.y<u.y+2){ if(p.bounce) {p.vx*=-.3;continue} return {x:p.x,y:p.y,unit:u} }
+      if(Math.abs(p.x-u.x)<9&&p.y>u.y-38&&p.y<u.y+2){ if(p.bounce) {p.vx*=-.3;continue}
+        if(p.pierce&&!sim){ p.hitSet=p.hitSet||new Set(); if(!p.hitSet.has(u)&&u.team!==p.team){ p.hitSet.add(u); explode(p.x,p.y,{...p.spell,nodig:true,rad:16},p.owner) } continue }
+        return {x:p.x,y:p.y,unit:u} }
     }
   }
   p.age++; if(p.timer!=null&&--p.timer<=0) return {x:p.x,y:p.y};
@@ -1149,9 +1235,9 @@ function explode(x,y,sp,owner,opts={}){
   const reach=r+14;
   for(const u of [...M.units.filter(u=>u.alive),...M.imps.filter(i=>!i.dead)]){
     const d=Math.hypot(u.x-x,u.y-18-y); if(d>reach) continue;
-    const f=1-d/reach*.55; const dmg=Math.round((sp.dmg||0)*f);
+    const f=1-d/reach*.55; const dmg=Math.round((sp.dmg||0)*f*((owner&&owner.mult&&u.team!==owner.team)?owner.mult:1));
     const push=(sp.push||Math.max(2,r/9))*(1-d/reach*.6); const ang=Math.atan2(u.y-18-y,u.x-x);
-    u.vx+=Math.cos(ang)*push*.7; u.vy+=Math.min(-1.5,Math.sin(ang)*push)-1; u.grounded=false; u.y-=2;
+    if(!u.rooted){ u.vx+=Math.cos(ang)*push*.7; u.vy+=Math.min(-1.5,Math.sin(ang)*push)-1; u.grounded=false; u.y-=2; }
     if(u.imp){ if(dmg>0) impBoom(u); continue }
     if(dmg>0) hurt(u,dmg,owner);
     if(sp.freeze&&u!==owner) u.frozen=1;
@@ -1160,6 +1246,14 @@ function explode(x,y,sp,owner,opts={}){
 }
 function hurt(u,dmg,by,how){
   if(!u.alive) return; if(u.shield) dmg=Math.round(dmg/2);
+  const raw=dmg;
+  if(u.absorb>0&&dmg>0){ const take=Math.min(u.absorb,dmg); u.absorb-=take; dmg-=take;
+    if(M.dmgNums) M.nums.push({x:u.x,y:u.y-62,t:"blocked "+take,life:60,col:"#9fdcff"});
+    if(u.absorb<=0){u.absorbT=0;u.rooted=0;M.fx.push({t:"ring",x:u.x,y:u.y-24,r:34,life:20,max:20,col:"#ffffff"})} }
+  if(how!=="reflect"&&by&&by!==u&&by.alive&&by.team!==u.team){
+    if(u.reflect&&raw>0) hurt(by,Math.round(raw*u.reflect),u,"reflect");
+    if(u.freezeHit) by.frozen=1; }
+  if(dmg<=0) return;
   u.hp=Math.max(0,u.hp-dmg); if(by&&by!==u){u.lastHitBy=by; if(by.team!==u.team) by.dmg+=dmg}
   if(M.dmgNums) M.nums.push({x:u.x,y:u.y-46,t:"-"+dmg,life:60,col:"#ffd0c8"});
   if(u.hp<=0) knockOut(u);
@@ -1202,6 +1296,17 @@ function castSpell(u,id,tx,ty,power){
       M.fx.push({t:"wait",life:20,max:20,block:true}); break;
     case "tower": addRock(c=>{c.beginPath();c.roundRect(u.x-22,u.y-72,44,80,5);c.fill();c.stroke()},u.x-22,u.y-72,44,80); u.y-=74; unstick(u); u.grounded=false; M.fx.push({t:"wait",life:20,max:20,block:true}); break;
     case "heal": heal(u,s.heal); for(const a of M.units) if(a!==u&&a.team===u.team&&Math.hypot(a.x-u.x,a.y-u.y)<160) heal(a,20); sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-20,r:60,life:30,max:30,col:s.col}); M.fx.push({t:"wait",life:40,max:40,block:true}); break;
+    case "ward": u.absorb=s.absorb; u.absorbT=s.turns+1; u.reflect=s.reflect||0; u.freezeHit=s.freezeHit||0; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:30,max:30,col:s.col}); M.fx.push({t:"wait",life:30,max:30,block:true}); break;
+    case "aegis": u.absorb=s.absorb; u.absorbT=s.turns+1; u.rooted=s.turns+1; u.vx=0; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:50,life:36,max:36,col:s.col}); M.fx.push({t:"wait",life:36,max:36,block:true}); break;
+    case "mask": u.mult=s.mult; u.maskT=s.turns+1; sfx("zap"); M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Damage ×2",life:80,max:80}); for(let i=0;i<40;i++){const a=rand(0,6.28);M.parts.push({x:u.x,y:u.y-24,vx:Math.cos(a)*rand(.5,3),vy:Math.sin(a)*rand(.5,3)-1,life:60,col:i%2?"#1a0a22":"#5b2a7a",sz:4})} M.fx.push({t:"wait",life:40,max:40,block:true}); break;
+    case "lance": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,pierce:true,life:120,big:true})); break;
+    case "hail": {const v=4+power*11;M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,wind:1,hail:true}));break}
+    case "tremor": { sfx("boom"); for(const e of M.units.filter(e=>e.alive&&e.team!==u.team&&e.grounded)){ carve(e.x,e.y+6,s.rad); e.vy=-6; e.vx=rand(-2,2); e.grounded=false; hurt(e,Math.round(s.dmg*(u.mult||1)),u) } M.fx.push({t:"shake",life:40,max:40,block:true}); break }
+    case "rain": case "skyfall": case "storm": { let delay=0; const sp2={...s,col:s.col};
+      for(let k=0;k<s.count;k++){ const ex=tx+(s.count===1?0:(k/(s.count-1)-.5)*(s.kind==="skyfall"?260:s.kind==="storm"?120:180))+rand(-12,12);
+        if(s.kind==="storm") M.fx.push({t:"later",life:delay,max:Math.max(1,delay),block:true,fn:()=>strike(ex,sp2,u)});
+        else M.fx.push({t:"later",life:delay,max:Math.max(1,delay),block:true,fn:()=>M.proj.push(mkProj({...base,ownerUnit:null,spell:sp2,x:ex-(s.kind==="skyfall"?140:40),y:-40,vx:s.kind==="skyfall"?7:2,vy:13,big:s.kind==="skyfall"}))});
+        delay+=s.kind==="storm"?18:10 } break }
     case "shield": u.shield=true; M.fx.push({t:"ring",x:u.x,y:u.y-20,r:30,life:30,max:30,col:s.col}); M.fx.push({t:"wait",life:30,max:30,block:true}); break;
     case "minion": M.imps.push({imp:true,owner:u,team:u.team,x:u.x+u.face*16,y:u.y-4,vx:u.face*1.5,vy:-2,grounded:false,face:u.face,life:3,dead:false}); M.fx.push({t:"wait",life:40,max:40,block:true}); break;
     case "bolt": strike(tx,s,u); break;
@@ -1218,14 +1323,14 @@ function chainHit(p,res){
   const s=p.spell; explode(res.x,res.y,{...s,nodig:false},p.owner);
   let from=res.unit, hit=[from];
   for(let j=0;j<2;j++){ const n=nearestEnemy(from.x,from.y-18,p.team,hit); if(!n||Math.hypot(n.x-from.x,n.y-from.y)>230) break;
-    M.fx.push({t:"zap",x1:from.x,y1:from.y-20,x2:n.x,y2:n.y-20,life:20,max:20,block:true,col:s.col}); hurt(n,18,p.owner); hit.push(n); from=n }
+    M.fx.push({t:"zap",x1:from.x,y1:from.y-20,x2:n.x,y2:n.y-20,life:20,max:20,block:true,col:s.col}); hurt(n,Math.round(18*((p.owner&&p.owner.mult)||1)),p.owner); hit.push(n); from=n }
 }
 
 /* ----- bot AI ----- */
 function simShot(u,spellId,ang,power,target){
   const s=SP[spellId]; const ox=u.x,oy=u.y-24;
   let p;
-  if(s.kind==="lob"||s.kind==="hole"){const v=4+power*11;p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,wind:s.wind?1:0})}
+  if(s.kind==="lob"||s.kind==="hole"||s.kind==="hail"){const v=4+power*11;p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,wind:s.wind?1:0})}
   else if(s.kind==="bomb"){const v=4+power*10;p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,bounce:true,timer:s.fuse})}
   else p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*(s.speed||9),vy:Math.sin(ang)*(s.speed||9),grav:s.kind==="cone"?.4:(s.grav||0),life:s.kind==="cone"?45:160});
   p.ownerUnit=u; p.team=u.team;
@@ -1245,19 +1350,24 @@ function planBot(u){
   const enemies=M.units.filter(e=>e.alive&&e.team!==u.team);
   if(!enemies.length) return {skip:true};
   if(u.hp<120&&avail.includes("healing_mist")) options.push({spell:"healing_mist",tx:u.x,ty:u.y,score:70});
+  if(u.hp<140&&avail.includes("sanctuary")) options.push({spell:"sanctuary",tx:u.x,ty:u.y,score:95});
+  if(u.absorb<=0) for(const id of ["aegis_tower","frost_armor","tower_shield","mirror_ward","stone_skin","ward"]) if(avail.includes(id)&&u.hp<170&&Math.random()<.6){options.push({spell:id,tx:u.x,ty:u.y,score:SP[id].absorb*.45});break}
+  if(avail.includes("dread_mask")&&u.maskT<=0) options.push({spell:"dread_mask",tx:u.x,ty:u.y,score:70});
+  if(avail.includes("tremor")){const g=M.units.filter(e=>e.alive&&e.team!==u.team&&e.grounded).length;if(g) options.push({spell:"tremor",tx:u.x,ty:u.y,score:g*28})}
   if(u.hp<110&&avail.includes("arcane_shield")&&Math.random()<.4) options.push({spell:"arcane_shield",tx:u.x,ty:u.y,score:40});
   if(avail.includes("imp")&&enemies.length) options.push({spell:"imp",tx:u.x,ty:u.y,score:35});
   if(avail.includes("starfall")&&enemies.length>=2) options.push({spell:"starfall",tx:u.x,ty:u.y,score:enemies.length*45});
   for(const e of enemies.slice().sort((a,b)=>Math.abs(a.x-u.x)-Math.abs(b.x-u.x)).slice(0,2)){
     const tx=e.x,ty=e.y-18;
     for(const id of avail){ const s=SP[id];
+      if(["rain","storm","skyfall"].includes(s.kind)){ const near=enemies.filter(o=>Math.abs(o.x-e.x)<120).length; if(Math.hypot(e.x-u.x,e.y-u.y)>200) options.push({spell:id,tx,ty:e.y-10,score:s.dmg*s.count*.35*near*(u.mult||1),targeted:true}); continue }
       if(s.kind==="bolt"||s.kind==="meteor"||s.kind==="ult"){ const sc=(s.dmg+(s.dmg>=e.hp?60:0))*(s.kind==="ult"&&enemies.length===1&&e.hp>s.dmg?.6:1) - (Math.hypot(e.x-u.x,e.y-u.y)<s.rad+20?200:0); options.push({spell:id,tx,ty:e.y-10,score:sc*.9,targeted:true}); continue }
-      if(["shot","arrow","wind","chain","cone"].includes(s.kind)&&s.type==="shot"){
+      if(["shot","arrow","wind","chain","cone","lance"].includes(s.kind)&&s.type==="shot"){
         if(s.kind==="cone"&&Math.hypot(e.x-u.x,e.y-u.y)>200) continue;
         const base=Math.atan2(ty-(u.y-24),tx-u.x);
         for(const da of [0,-.04,.04,-.1,.1,-.2,.2]){const r=simShot(u,id,base+da,1,e);const sc=scoreImpact(u,s,r)*(s.kind==="cone"?4:1)+(s.kind==="wind"&&r&&r.unit&&(e.x<200||e.x>W-200)?40:0);if(sc>0)options.push({spell:id,ang:base+da,power:1,score:sc});}
       }
-      if(s.kind==="lob"||s.kind==="bomb"||s.kind==="hole"){
+      if(s.kind==="lob"||s.kind==="bomb"||s.kind==="hole"||s.kind==="hail"){
         let best=null;
         for(let a=-170;a<=-10;a+=10){ const ang=a*Math.PI/180; if((tx-u.x)*Math.cos(ang)<-20&&Math.abs(tx-u.x)>80) continue;
           for(let pw=.25;pw<=1.001;pw+=.1){ const r=simShot(u,id,ang,pw,e); const sc=scoreImpact(u,s,r); if(!best||sc>best.score) best={spell:id,ang,power:pw,score:sc} } }
@@ -1284,7 +1394,7 @@ function runBot(u){
   const bp=M.botPlan; bp.t++;
   if(bp.t===35){ bp.plan=planBot(u); if(bp.plan.skip){endTurnSoon();return} bp.walkLeft=Math.abs(bp.plan.walk||0); bp.walkDir=Math.sign(bp.plan.walk||0); }
   if(!bp.plan) return;
-  if(u.frozen) bp.walkLeft=0;
+  if(u.frozen||u.rooted) bp.walkLeft=0;
   if(bp.walkLeft>0){ const bx=u.x; walk(u,bp.walkDir); if(Math.abs(u.x-bx)<.1){ if(bp.jumped) bp.walkLeft=0; else {jump(u);bp.jumped=true}} bp.walkLeft-=1.6; if(bp.walkLeft<=0){bp.replan=true} return }
   if(!u.grounded) return;
   if(bp.replan){bp.replan=false;bp.plan=planBot(u);if(bp.plan.walk) bp.plan.walk=0; bp.aimT=0}
@@ -1331,7 +1441,8 @@ function tick(){
   for(const p of M.proj.slice()){
     p.trail.push([p.x,p.y]); if(p.trail.length>10) p.trail.shift();
     const r=stepProj(p);
-    if(r){ M.proj.splice(M.proj.indexOf(p),1); if(!r.out){ if(p.chain&&r.unit) chainHit(p,r); else explode(r.x,r.y,p.spell,p.owner) } }
+    if(r){ M.proj.splice(M.proj.indexOf(p),1); if(!r.out){ if(p.chain&&r.unit) chainHit(p,r); else explode(r.x,r.y,p.spell,p.owner);
+      if(p.hail){ for(let k=0;k<p.spell.shards;k++){const a=-Math.PI/2+(k-1.5)*.45;M.proj.push(mkProj({spell:{dmg:18,rad:16,col:p.spell.col},owner:p.owner,team:p.team,x:r.x,y:r.y-8,vx:Math.cos(a)*5,vy:Math.sin(a)*6,grav:1}))} } } }
   }
   for(const f of M.fx){ f.life--; if(f.t==="later"&&f.life<=0&&f.fn){f.fn();f.fn=null} }
   M.fx=M.fx.filter(f=>f.life>0);
@@ -1346,7 +1457,7 @@ function tick(){
       M.timer-=1/60;
       if(M.timer<=0){ M.cast=true; M.timer=0; toast(u.isPlayer?"Time's up!":u.name+" ran out of time"); }
       if(u.isPlayer){
-        if(!u.frozen){ if(keys.left) walk(u,-1); if(keys.right) walk(u,1) }
+        if(!u.frozen&&!u.rooted){ if(keys.left) walk(u,-1); if(keys.right) walk(u,1) }
         if(M.charging){ M.charge=Math.min(1,M.charge+1/70) }
       } else runBot(u);
     }
@@ -1417,10 +1528,19 @@ function drawUnit(u,active){
   const h=54,w=h*IMG[u.gender].width/IMG[u.gender].height, t=performance.now()/1000;
   if(u.prestige){ const c=AURAS[u.prestige].c; const g=cx.createRadialGradient(u.x,u.y-24,4,u.x,u.y-24,36+Math.sin(t*3)*3); g.addColorStop(0,c+"cc");g.addColorStop(.55,c+"55");g.addColorStop(1,c+"00"); cx.fillStyle=g;cx.beginPath();cx.ellipse(u.x,u.y-24,30,38,0,0,7);cx.fill();
     for(let i=0;i<3;i++){const a=t*2+i*2.1;cx.fillStyle=c;cx.globalAlpha=.8;cx.beginPath();cx.arc(u.x+Math.cos(a)*22,u.y-24+Math.sin(a*1.3)*26,2,0,7);cx.fill()} cx.globalAlpha=1 }
+  if(u.maskT>0){ for(let i=0;i<6;i++){const a=t*1.6+i*1.05;cx.fillStyle=i%2?"rgba(20,6,28,.55)":"rgba(90,40,120,.45)";cx.beginPath();cx.ellipse(u.x+Math.cos(a)*16,u.y-26+Math.sin(a*1.3)*20,9,14,a,0,7);cx.fill()} }
+  if(u.absorb>0&&!u.rooted){cx.fillStyle="rgba(127,208,255,.16)";cx.strokeStyle="rgba(170,225,255,.95)";cx.lineWidth=2.5;cx.beginPath();cx.ellipse(u.x,u.y-26,26,34,0,0,7);cx.fill();cx.stroke();cx.lineWidth=1}
   if(u.shield){cx.strokeStyle="rgba(143,184,255,.9)";cx.lineWidth=3;cx.beginPath();cx.ellipse(u.x,u.y-24,22,30,0,0,7);cx.stroke();cx.lineWidth=1}
   cx.save();cx.translate(u.x,u.y);if(u.face>0)cx.scale(-1,1);
   if(u.frozen){cx.filter="hue-rotate(160deg) saturate(1.6)"}
+  if(u.maskT>0){cx.filter=(cx.filter&&cx.filter!=="none"?cx.filter+" ":"")+"brightness(.75) saturate(.6)"}
   cx.drawImage(IMG[u.gender],-w/2,-h+2,w,h);cx.restore();
+  if(u.maskT>0){ const mx=u.x+(u.face>0?1:-1)*1, my=u.y-h*0.43; cx.fillStyle="#f4f1ea";cx.strokeStyle="#111";cx.lineWidth=1.2;cx.beginPath();cx.ellipse(mx,my,w*0.2,h*0.12,0,0,7);cx.fill();cx.stroke();
+    cx.fillStyle="#120814";cx.beginPath();cx.ellipse(mx-w*0.08,my-1,2.6,1.6,.35,0,7);cx.ellipse(mx+w*0.08,my-1,2.6,1.6,-.35,0,7);cx.fill();cx.beginPath();cx.moveTo(mx-3,my+4);cx.quadraticCurveTo(mx,my+6,mx+3,my+4);cx.stroke(); }
+  if(u.rooted>0&&u.absorb>0){ cx.save();cx.globalAlpha=.85;const tw=46,th=70,tx0=u.x-tw/2,ty0=u.y-th+4;
+    const gr=cx.createLinearGradient(tx0,0,tx0+tw,0);gr.addColorStop(0,"rgba(255,211,106,.25)");gr.addColorStop(.5,"rgba(255,240,190,.12)");gr.addColorStop(1,"rgba(255,211,106,.25)");
+    cx.fillStyle=gr;cx.strokeStyle="#ffd36a";cx.lineWidth=3;cx.beginPath();cx.moveTo(tx0,ty0+10);for(let i=0;i<5;i++){cx.lineTo(tx0+i*tw/5,ty0+(i%2?0:10));cx.lineTo(tx0+(i+1)*tw/5,ty0+(i%2?0:10))}cx.lineTo(tx0+tw,u.y+4);cx.lineTo(tx0,u.y+4);cx.closePath();cx.fill();cx.stroke();cx.restore();cx.lineWidth=1 }
+  if(u.absorb>0){cx.font="bold 12px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";cx.strokeText("+"+u.absorb,u.x-32,u.y-52);cx.fillStyle="#9fdcff";cx.fillText("+"+u.absorb,u.x-32,u.y-52);cx.textAlign="left";cx.lineWidth=1}
   // hp & name
   const col=u.team?"#ff7a5c":"#5fb4ff";
   cx.font="bold 15px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";
@@ -1445,26 +1565,66 @@ function renderHud(){
   renderHudTimer();
 }
 function renderHudTimer(){const t=$("#hTimer");const v=Math.ceil(M.timer);t.textContent=v;t.classList.toggle("low",v<=5);if(M.active&&M.active.isPlayer&&v<=5&&v>0&&!M.cast&&Math.abs(M.timer-v)<.05)sfx("tick")}
+function spellState(u,id){const s=SP[id];const cd=u.cool[id]||0;const out=s.uses&&(u.used[id]||0)>=s.uses;return {cd,out,ok:!cd&&!out}}
 function renderSpellbar(){
-  if(!M) return; const me_=M.units.find(u=>u.isPlayer); const bar=$("#spellbar");
-  bar.innerHTML=me_.spells.map((id,i)=>{const s=SP[id];const cd=me_.cool[id]||0;const out=s.uses&&(me_.used[id]||0)>=s.uses;
-    return `<button class="sb ${i===M.selSpell?"sel":""}" data-i="${i}" style="background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" ${cd||out?"disabled":""} title="${esc(s.name)}">${icon(s.kind)}<span class="k">${i<10?(i+1)%10:""}</span>${cd?`<span class="cd">${cd}</span>`:out?'<span class="cd">✕</span>':""}</button>`}).join("");
-  bar.querySelectorAll(".sb").forEach(b=>b.onclick=()=>selectSpell(+b.dataset.i));
-  const s=SP[me_.spells[M.selSpell]]; $("#spellTip").innerHTML=s?`<b>${esc(s.name)}</b> · ${esc(s.desc)}${s.dmg?` ${s.dmg} damage.`:""}`:"";
+  if(!M) return; const me_=M.units.find(u=>u.isPlayer); const s=SP[me_.spells[M.selSpell]]; if(!s) return;
+  $("#spellBtnIco").innerHTML=sico(s); $("#spellBtnName").textContent=s.name;
+  const st=spellState(me_,s.id);
+  $("#spellTip").innerHTML=`<b>${esc(s.name)}</b> · ${esc(spellMeta(s))} · ${esc(s.desc)}${st.cd?` <span class="tag">Recharging ${st.cd}</span>`:st.out?' <span class="tag">Used</span>':""}`;
+  if(!$("#wheel").hidden) renderWheel();
+}
+let wheelPick=null;
+function openWheel(){ if(!M) return; wheelPick=M.selSpell; $("#wheel").hidden=false; renderWheel(); sfx("click") }
+function closeWheel(){ $("#wheel").hidden=true }
+function renderWheel(){
+  const me_=M.units.find(u=>u.isPlayer); const n=me_.spells.length; const ring=$("#wheelRing");
+  ring.innerHTML=me_.spells.map((id,i)=>{const s=SP[id],st=spellState(me_,id),a=-Math.PI/2+i/n*Math.PI*2,r=40;
+    return `<button class="wsp ${i===wheelPick?"sel":""} ${st.ok?"":"off"}" data-i="${i}" style="left:${50+Math.cos(a)*r}%;top:${50+Math.sin(a)*r}%;background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" aria-label="${esc(s.name)}">${icon(s.kind)}${i<10?`<span class="k">${(i+1)%10}</span>`:""}${st.cd?`<span class="cd">${st.cd}</span>`:st.out?'<span class="cd">✕</span>':""}</button>`}).join("")+`<div class="hub">Pick a<br>spell</div>`;
+  ring.querySelectorAll(".wsp").forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.i; if(wheelPick===i&&spellState(me_,me_.spells[i]).ok){selectSpell(i);closeWheel();return} wheelPick=i; renderWheel()});
+  const s=SP[me_.spells[wheelPick]], st=spellState(me_,s.id);
+  $("#wheelInfo").innerHTML=`<div class="row" style="gap:10px;flex-wrap:nowrap">${sico(s)}<h3>${esc(s.name)}</h3></div><p>${esc(s.desc)}</p>${spellStats(s,me_)}
+    ${st.cd?`<div class="why">Recharging: ready in ${st.cd} turn${st.cd>1?"s":""}</div>`:st.out?'<div class="why">Already used this match</div>':""}
+    <div class="row"><button class="wood" id="wUse" ${st.ok?"":"disabled"}>Use this spell</button><button class="wood sm" id="wClose">Close</button></div>`;
+  $("#wUse").onclick=()=>{selectSpell(wheelPick);closeWheel()}; $("#wClose").onclick=closeWheel;
 }
 function selectSpell(i){const me_=M.units.find(u=>u.isPlayer);if(i<0||i>=me_.spells.length)return;M.selSpell=i;M.charging=false;M.charge=0;sfx("click");renderSpellbar()}
+$("#spellBtn").onclick=openWheel;
+$("#wheel").addEventListener("click",e=>{if(e.target.id==="wheel")closeWheel()});
 
 /* ----- input ----- */
 function toWorld(e){const r=cv.getBoundingClientRect();const px=(e.clientX-r.left)*cv.width/r.width,py=(e.clientY-r.top)*cv.height/r.height;return{x:(px-CAM.ox)/CAM.scale,y:(py-CAM.oy)/CAM.scale}}
 function playerTurn(){return M&&M.phase==="turn"&&!M.cast&&M.active&&M.active.isPlayer&&M.active.alive}
-cv.addEventListener("pointermove",e=>{const p=toWorld(e);mouse.x=p.x;mouse.y=p.y});
-cv.addEventListener("pointerdown",e=>{const p=toWorld(e);mouse.x=p.x;mouse.y=p.y;cv.setPointerCapture(e.pointerId);if(!playerTurn())return;
-  const u=M.active,s=SP[u.spells[M.selSpell]];if(!s)return;
-  if(!canCast(u,s.id)){toast("That spell is recharging");return}
-  if(s.type==="lob"){M.charging=true;M.charge=0;return}
-  if(s.type==="self"){castSpell(u,s.id,u.x,u.y,1);return}
-  castSpell(u,s.id,p.x,p.y,1)});
-cv.addEventListener("pointerup",e=>{if(!M||!M.charging)return;M.charging=false;if(!playerTurn())return;const u=M.active;castSpell(u,u.spells[M.selSpell],mouse.x,mouse.y,Math.max(.08,M.charge))});
+let gest=null;
+function curSpell(){const u=M.active;return u&&SP[u.spells[M.selSpell]]}
+function beginAim(){ if(!playerTurn()) return false; const u=M.active,s=curSpell(); if(!s) return false;
+  if(!canCast(u,s.id)){toast("That spell is recharging. Pick another from the spell wheel.");return false}
+  M.aiming=true; if(s.type==="lob"){M.charging=true;M.charge=0} return true }
+function endAim(cancel){ if(!M) return; const was=M.aiming; M.aiming=false; const charging=M.charging; M.charging=false;
+  if(cancel||!was||!playerTurn()) return; const u=M.active,s=curSpell(); if(!s) return;
+  if(s.type==="lob") return castSpell(u,s.id,mouse.x,mouse.y,Math.max(.08,M.charge));
+  if(s.type==="self") return castSpell(u,s.id,u.x,u.y,1);
+  castSpell(u,s.id,mouse.x,mouse.y,1) }
+function panTo(e){ const dx=(e.clientX-gest.sx)*CAM.dpr/CAM.scale, dy=(e.clientY-gest.sy)*CAM.dpr/CAM.scale; CAM.x=gest.cx-dx; CAM.y=gest.cy-dy; CAM.manual=360 }
+cv.addEventListener("contextmenu",e=>e.preventDefault());
+cv.addEventListener("pointerdown",e=>{ if(!M) return; const p=toWorld(e); mouse.x=p.x; mouse.y=p.y; try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  const base={sx:e.clientX,sy:e.clientY,cx:CAM.x,cy:CAM.y,id:e.pointerId};
+  if(e.pointerType==="mouse"){ if(e.button!==0||!playerTurn()){ gest={...base,mode:"pan"}; return } gest={...base,mode:"aim"}; beginAim(); return }
+  // finger: drag = look around, hold still = aim, quick tap = fire at that spot
+  gest={...base,mode:"wait",t:performance.now()};
+  gest.timer=setTimeout(()=>{ if(gest&&gest.mode==="wait"){ gest.mode="aim"; if(!beginAim()) gest.mode="pan" } },230);
+});
+cv.addEventListener("pointermove",e=>{ if(!M) return; const p=toWorld(e);
+  if(!gest){ mouse.x=p.x; mouse.y=p.y; return }
+  if(gest.mode==="wait"&&Math.hypot(e.clientX-gest.sx,e.clientY-gest.sy)>12){ clearTimeout(gest.timer); gest.mode="pan" }
+  if(gest.mode==="pan") return panTo(e);
+  mouse.x=p.x; mouse.y=p.y });
+function pointerEnd(e,cancel){ if(!gest) return; clearTimeout(gest.timer); const g=gest; gest=null;
+  if(g.mode==="aim") return endAim(cancel);
+  if(g.mode==="wait"&&!cancel){ const s=M&&playerTurn()&&curSpell(); if(!s) return;
+    if(s.type==="lob"){ toast("Hold your finger on the map to charge, then let go to throw"); return }
+    const p=toWorld(e); mouse.x=p.x; mouse.y=p.y; if(beginAim()) endAim() } }
+cv.addEventListener("pointerup",e=>pointerEnd(e,false));
+cv.addEventListener("pointercancel",e=>pointerEnd(e,true));
 addEventListener("keydown",e=>{
   if($("#game").hidden||e.target.tagName==="INPUT") return;
   const k=e.key.toLowerCase(), c=e.code;
@@ -1473,9 +1633,11 @@ addEventListener("keydown",e=>{
   if(L) keys.left=true;
   if(Rr) keys.right=true;
   if((L||Rr||J||HJ)&&!e.repeat&&M&&!playerTurn()&&!M.over) toast(M.active&&M.active.isPlayer?"Wait for your spell to land":"Wait for your turn");
-  if(playerTurn()&&!M.active.frozen&&!e.repeat){ if(J) jump(M.active,false); if(HJ) jump(M.active,true) }
+  if(playerTurn()&&!M.active.frozen&&!M.active.rooted&&!e.repeat){ if(J) jump(M.active,false); if(HJ) jump(M.active,true) }
   if(k==="+"||k==="=") setZoom(CAM.zoom+.25); if(k==="-") setZoom(CAM.zoom-.25);
   if(/^[0-9]$/.test(k)) selectSpell(k==="0"?9:+k-1);
+  if((c==="KeyE"||k==="tab")&&!e.repeat){ e.preventDefault(); $("#wheel").hidden?openWheel():closeWheel() }
+  if(k==="escape") closeWheel();
   if(k==="q"&&playerTurn()) skipTurn();
 });
 addEventListener("keyup",e=>{const k=e.key.toLowerCase(),c=e.code;if(c==="KeyA"||k==="a"||k==="arrowleft")keys.left=false;if(c==="KeyD"||k==="d"||k==="arrowright")keys.right=false});
@@ -1483,7 +1645,7 @@ addEventListener("blur",()=>{keys.left=keys.right=false});
 $$(".pad [data-t]").forEach(b=>{const t=b.dataset.t;b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("pointerdown",e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){} b.classList.add("on");
     if(!playerTurn()){toast(M&&M.active&&M.active.isPlayer?"Wait for your spell to land":"Wait for your turn");return}
-    if(t==="left")keys.left=true;if(t==="right")keys.right=true;if(!M.active.frozen){if(t==="jump")jump(M.active,false);if(t==="high")jump(M.active,true)}else toast("You're frozen this turn")});
+    if(t==="left")keys.left=true;if(t==="right")keys.right=true;if(M.active.rooted){keys.left=keys.right=false;toast("You can't move while your Aegis Tower stands")}else if(!M.active.frozen){if(t==="jump")jump(M.active,false);if(t==="high")jump(M.active,true)}else toast("You're frozen this turn")});
   for(const ev of ["pointerup","pointercancel","lostpointercapture"]) b.addEventListener(ev,()=>{b.classList.remove("on");if(t==="left")keys.left=false;if(t==="right")keys.right=false})});
 function skipTurn(){if(!playerTurn())return;M.cast=true;M.fx.push({t:"wait",life:10,max:10,block:true});toast("Turn skipped")}
 $("#skipBtn").onclick=skipTurn;
@@ -1497,24 +1659,24 @@ $("#resignBtn").onclick=()=>{if(!M||M.over)return;if(!resignArmed){resignArmed=t
 
 /* ----- end of match & progression ----- */
 function endMatch(winner,reason){
-  if(M.over) return; M.over=true;
+  if(M.over) return; M.over=true; closeWheel();
   const u=me(), p=M.units.find(x=>x.isPlayer);
   const won=winner===0, draw=winner==null;
   let xp=(won?150:draw?90:60)+Math.floor(p.dmg/4)+p.kills*30+(M.cfg.ranked?30:0)+(M.cfg.size-1)*10;
-  let orbs=(won?40:15)+p.kills*5;
+  let orbs=won?(M.cfg.ranked?20:5):0, gems=won&&M.cfg.ranked?10:0;
   let dRating=0;
-  if(M.cfg.ranked&&!draw){const opp=M.units.find(x=>x.team===1);const oppR=clamp(u.rating+Math.round(rand(-150,150)),800,3000);const exp=1/(1+Math.pow(10,(oppR-u.rating)/400));dRating=Math.round(32*((won?1:0)-exp));u.rating=Math.max(0,u.rating+dRating);if(won)u.wins++;else u.losses++}
-  u.games++;u.kills+=p.kills;u.orbs+=orbs;
+  if(M.cfg.ranked&&!draw){const opp=M.units.find(x=>x.team===1);const oppR=clamp(u.rating+Math.round(rand(-150,150)),800,3000);const exp=1/(1+Math.pow(10,(oppR-u.rating)/400));dRating=Math.round(32*((won?1:0)-exp));u.rating=Math.max(0,u.rating+dRating);if(won)u.rWins=(u.rWins||0)+1;else u.rLosses=(u.rLosses||0)+1}
+  u.games++;u.kills+=p.kills;u.orbs+=orbs;u.gems=(u.gems||0)+gems; if(won)u.wins++;else if(!draw)u.losses++;
   const before=u.level; const levelUps=[];
   if(u.level<MAX_LEVEL){ u.xp+=xp; while(u.level<MAX_LEVEL&&u.xp>=xpNeed(u.level)){u.xp-=xpNeed(u.level);u.level++;levelUps.push(u.level)} if(u.level>=MAX_LEVEL) u.xp=0 }
   const newSpells=SPELLS.filter(s=>s.lvl>before&&s.lvl<=u.level);
-  const oldSlots=slotsFor(before); fixBook(u); save();
+  const oldSlots=slotsFor(before); fixBook(u,slotsFor(u.level)>oldSlots); save();
   if(levelUps.length) sfx("level");
   const title=draw?"Draw":won?"Victory!":"Defeat";
   setTimeout(()=>{
     const b=openModal(title,`<div class="result" style="width:auto">
      ${reason?`<p class="muted" style="margin:0;text-align:center">${esc(reason)}</p>`:""}
-     <div class="statgrid"><span>Damage dealt</span><span>${p.dmg}</span><span>Knockouts</span><span>${p.kills}</span><span>XP earned</span><span>+${u.level>=MAX_LEVEL&&!levelUps.length?0:xp}</span><span>Orbs earned</span><span>+${orbs}</span>
+     <div class="statgrid"><span>Damage dealt</span><span>${p.dmg}</span><span>Knockouts</span><span>${p.kills}</span><span>XP earned</span><span>+${u.level>=MAX_LEVEL&&!levelUps.length?0:xp}</span><span>Orbs earned</span><span>+${orbs}</span>${gems?`<span>Gems earned</span><span>+${gems}</span>`:""}<span>K/D</span><span>${kd(u.wins,u.losses)}</span>
      ${M.cfg.ranked?`<span>Rating</span><span>${u.rating} (${dRating>=0?"+":""}${dRating})</span>`:""}<span>Level</span><span>${u.level}${u.level>=MAX_LEVEL?" (max)":""}</span></div>
      <div class="xpbar"><i style="width:${u.level>=MAX_LEVEL?100:u.xp/xpNeed(u.level)*100}%"></i></div>
      ${levelUps.length?`<h3 class="gold" style="text-align:center;margin-top:10px">Level up! Now level ${u.level}</h3>`:""}

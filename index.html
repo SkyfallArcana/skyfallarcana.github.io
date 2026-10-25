@@ -141,6 +141,7 @@ label{display:grid;gap:4px;font-family:var(--ui);font-size:.95rem;letter-spacing
 .card img{height:110px}
 .card .ph{height:110px;width:80px;display:grid;place-items:center;color:var(--muted);font-family:var(--ui);font-size:.9rem;
   background:repeating-linear-gradient(45deg,#18222c 0 8px,#141c25 8px 16px);border-radius:6px}
+.mapcard{border:none;color:inherit;cursor:pointer;font:inherit}.mapcard img{height:auto;width:100%;aspect-ratio:352/192;object-fit:cover;border-radius:6px}.mapcard small{opacity:.75}.mapcard .pips{display:flex;gap:3px;align-items:center;justify-content:center;color:#f2cf7c;min-height:18px}.mapcard .pips b{margin-right:6px;font-weight:600;color:#fff}.mapcard.sel{box-shadow:0 0 0 2px #f2cf7c}.mapcard.win{box-shadow:0 0 0 3px #7be08a,0 0 18px #7be08a88}.mapcards{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .card h4{margin:0;font-family:var(--ui);font-size:1.1rem;letter-spacing:.03em}
 .card.sel{box-shadow:0 0 0 2px var(--gold)}
 .spellgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
@@ -512,7 +513,12 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
-const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp",aegis_tower:"assets/aegis_tower.webp"};
+const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp",aegis_tower:"assets/aegis_tower.webp",volcano:"assets/volcano.webp",fire_dragon:"assets/fire_dragon.webp",frost_dragon:"assets/frost_dragon.webp",terrain_clockwork:"assets/terrain_clockwork.webp",tw_clock_tower:"assets/tw_clock_tower.webp",tw_arcane_tower:"assets/tw_arcane_tower.webp",tw_fortress:"assets/tw_fortress.webp",tw_ice_castle:"assets/tw_ice_castle.webp",tw_light_castle:"assets/tw_light_castle.webp",tw_dark_keep:"assets/tw_dark_keep.webp",tw_world_tree:"assets/tw_world_tree.webp",tw_world_tree_front:"assets/tw_world_tree_front.webp"};
+const MAPS=[
+ {id:"skyfall",name:"Skyfall Isle",terrain:"terrain",thumb:"assets/map_skyfall_thumb.jpg",desc:"The classic floating island."},
+ {id:"clockwork",name:"Clockwork Isles",terrain:"terrain_clockwork",thumb:"assets/map_clockwork_thumb.jpg",desc:"Two brass-plated islands joined by a stone bridge."}
+];
+const MAPK=Object.fromEntries(MAPS.map(m=>[m.id,m]));
 const IMG={};
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -610,9 +616,9 @@ const MINIONS={
  sea_lord:{name:"Sea Lord",hp:300,dmg:45,style:"melee",col:"#2f7fb8",shape:"troll",size:17,speed:.6,swim:1,weak:1.5},
  wolf:{name:"Wolf",hp:45,dmg:18,style:"melee",col:"#8b8f96",shape:"beast",size:10,speed:1.8},
  treant:{name:"Treant",hp:200,dmg:40,style:"melee",col:"#5d7a3a",shape:"treant",size:17,speed:.4},
- fire_dragon:{name:"Fire Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#ff7a2e",shape:"dragon",size:16,fly:1,elem:"flame"},
+ fire_dragon:{name:"Fire Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#ff7a2e",shape:"dragon",size:20,fly:1,elem:"flame",img:"fire_dragon"},
  storm_dragon:{name:"Storm Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#9ad1ff",shape:"dragon",size:20,fly:1,elem:"storm",img:"storm_dragon"},
- frost_dragon:{name:"Frost Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#bfefff",shape:"dragon",size:16,fly:1,elem:"frost"}
+ frost_dragon:{name:"Frost Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#bfefff",shape:"dragon",size:20,fly:1,elem:"frost",img:"frost_dragon"}
 };
 // [book, tier, id, name, props, description]
 const SPELL_ROWS=[
@@ -640,7 +646,7 @@ const SPELL_ROWS=[
  ["flame",2,"flame_wall","Flame Wall",{type:"self",kind:"firewall",dmg:50,turns:5,cd:5,pair:"flame_shield"},"A wall of fire in front of you. Burns the first enemy to touch it for 50 and blocks one spell each round."],
  ["flame",2,"napalm_bomb","Napalm Bomb",{type:"lob",kind:"bomb",dmg:25,rad:24,fuse:150,split:{n:15,dmg:5,rad:8,napalm:1},charges:4,cd:1,pair:"napalm"},"Bomb that scatters 15 blobs of napalm."],
  ["flame",2,"rain_of_arrows","Rain of Arrows",{type:"target",kind:"barrage",mode:"focus",count:5,dmg:15,rad:18,init:5,cd:5,pair:"rain_of_fire"},"Five fire arrows rain down on exactly the spot you pick."],
- ["flame",3,"volcano","Volcano",{type:"target",kind:"geyser",waves:[1,2,3,4,5],dmg:25,rad:26,charges:1,init:5},"A volcano erupts under the target for 5 turns, firing more lava each turn."],
+ ["flame",3,"volcano","Volcano",{type:"target",kind:"volcano",waves:[1,2,3,4,5],dmg:25,rad:26,charges:1,init:5},"Pick a spot: a volcano grows up out of the ground there and spills lava over the area, then erupts again each turn for 5 turns."],
  ["flame",3,"fire_dragon","Summon Fire Dragon",{type:"target",kind:"minion",range:240,minion:"fire_dragon",charges:1,init:5},"Summon a flying fire dragon that breathes flames on enemies."],
  // ---- Stone ----
  ["stone",1,"pebble_shot","Pebble Shot",{type:"shot",kind:"spray",count:10,dmg:5,rad:12,speed:13,spread:.08,grav:.25,cd:1},"Fires 10 pebbles. Digs through the ground fast."],
@@ -782,7 +788,19 @@ function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book!=="minion"&&(s.book==
 function effLevel(u){return u.allSpells?50:u.level}
 function effPres(u){return u.allSpells?5:(u.prestige||0)}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
-const AEGIS_H=150, AEGIS_LIFT=AEGIS_H-16;
+const AEGIS_H=105, AEGIS_TOP=11, AEGIS_LIFT=AEGIS_H-AEGIS_TOP;
+// Tower artwork: h = drawn height, fx/fy = where the wizard's feet go (fraction of the image), ws = wizard scale, over = tower drawn in front of the wizard
+const TOWER_ART={
+ clock_tower:{img:"tw_clock_tower",h:122,fx:.776,fy:.633,ws:.68,over:false},
+ arcane_tower:{img:"tw_arcane_tower",h:100,fx:.5,fy:.107,ws:.82,over:true,glow:"#9b7bff"},
+ fortress:{img:"tw_fortress",h:104,fx:.5,fy:.107,ws:.82,over:true},
+ ice_castle:{img:"tw_ice_castle",h:102,fx:.5,fy:.119,ws:.82,over:true,glow:"#c8f3ff",spark:"#ffffff"},
+ light_castle:{img:"tw_light_castle",h:100,fx:.5,fy:.107,ws:.82,over:true,glow:"#ffe58a",spark:"#fff7c8"},
+ dark_keep:{img:"tw_dark_keep",h:108,fx:.5,fy:.169,ws:.82,over:true,glow:"#8d63d6"},
+ world_tree:{img:"tw_world_tree",front:"tw_world_tree_front",h:132,fx:.479,fy:.342,ws:.78,over:false,glow:"#9be38f",spark:"#fff3a0"}
+};
+function towerArt(u){ const ta=!u.imp&&u.tower&&TOWER_ART[u.tower.id], im=ta&&IMG[ta.img]; return im&&im.naturalWidth?ta:null }
+function towerBox(u){ const ta=towerArt(u); if(!ta) return null; const im=IMG[ta.img]; return {hh:ta.h,hw:Math.max(12,ta.h*im.width/im.height*.36)} }
 const AURAS=[null,{n:"Blue",c:"#3fa2ff"},{n:"Red",c:"#ff3b3b"},{n:"Purple",c:"#a64dff"},{n:"Green",c:"#36d96b"},{n:"Pink",c:"#ff6ad5"}];
 function xpNeed(l){return 100+30*(l-1)}
 const RANKS=[[0,"Novice"],[900,"Apprentice"],[1100,"Acolyte"],[1300,"Messenger"],[1500,"Mage"],[1800,"High Mage"],[2200,"Arch Mage"],[2700,"Grand Arcanist"]];
@@ -1119,7 +1137,7 @@ function renderBoard(full){
 }
 function initMenu(){
   $$("[data-open]").forEach(b=>b.onclick=()=>{sfx("click");PANELS[b.dataset.open]()});
-  $$("[data-start]").forEach(b=>b.onclick=()=>{sfx("click");const v=b.dataset.start;startMatch(v==="ranked"?{size:1,ranked:true}:{size:+v,ranked:false})});
+  $$("[data-start]").forEach(b=>b.onclick=()=>{sfx("click");const v=b.dataset.start;mapVote(v==="ranked"?{size:1,ranked:true}:{size:+v,ranked:false})});
   $("#lbRefresh").onclick=async()=>{await refreshOnlineBoard();renderBoard();toast("Leaderboard refreshed")};
   $("#chatForm").onsubmit=e=>{e.preventDefault();const v=$("#chatIn").value.trim();if(!v)return;chatPush(me().username,v);$("#chatIn").value="";save()};
   let armed=false;
@@ -1153,7 +1171,7 @@ const PANELS={
   b.querySelector("#optMode").value=u.opts.mode; b.querySelector("#optDiff").value=u.opts.difficulty;
   b.querySelector("#optMode").onchange=e=>{u.opts.mode=e.target.value;save()};
   b.querySelector("#optDiff").onchange=e=>{u.opts.difficulty=e.target.value;save()};
-  b.querySelectorAll("[data-go]").forEach(x=>x.onclick=()=>{const v=x.dataset.go;closeModal();startMatch(v==="ranked"?{size:1,ranked:true}:{size:+v,ranked:false})});
+  b.querySelectorAll("[data-go]").forEach(x=>x.onclick=()=>{const v=x.dataset.go;closeModal();mapVote(v==="ranked"?{size:1,ranked:true}:{size:+v,ranked:false})});
  },
  ranking(){
   const u=me(); const rows=leaderboard(); const pos=rows.findIndex(r=>r.me)+1;
@@ -1336,12 +1354,12 @@ let tCan,tctx,solid,rockPat;
 let M=null; // match state
 let keys={}, mouse={x:0,y:0,down:false};
 
-function buildTerrain(){
+function buildTerrain(map){ const TI=IMG[(map||MAPS[0]).terrain];
   tCan=document.createElement("canvas");tCan.width=W;tCan.height=H;tctx=tCan.getContext("2d",{willReadFrequently:true});
-  tctx.drawImage(IMG.terrain,0,0,W,H);
+  tctx.drawImage(TI,0,0,W,H);
   const d=tctx.getImageData(0,0,W,H).data; solid=new Uint8Array(W*H);
   for(let i=0;i<W*H;i++) solid[i]=d[i*4+3]>110?1:0;
-  const pc=document.createElement("canvas");pc.width=160;pc.height=70;pc.getContext("2d").drawImage(IMG.terrain,300,480,160,70,0,0,160,70);
+  const pc=document.createElement("canvas");pc.width=160;pc.height=70;pc.getContext("2d").drawImage(TI,300,480,160,70,0,0,160,70);
   rockPat=tctx.createPattern(pc,"repeat");
 }
 function resync(x0,y0,w,h){x0=Math.max(0,Math.floor(x0));y0=Math.max(0,Math.floor(y0));w=Math.min(W-x0,Math.ceil(w));h=Math.min(H-y0,Math.ceil(h));if(w<=0||h<=0)return;
@@ -1434,10 +1452,35 @@ function spawnPoints(team,count){
   while(out.length<count) out.push(cands[out.length]||[team?W-200:200,300]);
   return out;
 }
+/* ----- Map vote: everyone in the lobby votes, the map with the most votes is played (ties are random) ----- */
+let VOTE=null;
+function mapVote(cfg){
+  const n=cfg.size*2, secs=10;
+  VOTE={cfg,votes:{},mine:null,left:secs,done:false,timers:[]};
+  const b=openModal("Vote for a map",`<p style="margin:0 0 10px;color:var(--muted,#b9c3cf)">${cfg.ranked?"Ranked 1v1":cfg.size+"v"+cfg.size} · ${n} players voting. The map with the most votes wins.</p>
+   <div class="cards mapcards">${MAPS.map(m=>`<button class="card mapcard" type="button" data-map="${m.id}"><img alt="" src="${m.thumb}"><h4>${esc(m.name)}</h4><small>${esc(m.desc)}</small><div class="pips" data-pips="${m.id}"></div></button>`).join("")}</div>
+   <p id="voteInfo" style="text-align:center;margin:12px 0 0;font-weight:600">Pick a map · <span id="voteLeft">${secs}</span>s</p>`,{noClose:false,w:640});
+  b.querySelectorAll("[data-map]").forEach(c=>c.onclick=()=>{ if(VOTE.done) return; sfx("click"); VOTE.mine=c.dataset.map; VOTE.votes.you=c.dataset.map; drawVotes(); if(Object.keys(VOTE.votes).length>=n) finishVote() });
+  // the other players vote over the next few seconds
+  for(let i=1;i<n;i++) VOTE.timers.push(setTimeout(()=>{ if(!VOTE||VOTE.done) return; VOTE.votes["p"+i]=pick(MAPS).id; drawVotes(); if(Object.keys(VOTE.votes).length>=n&&VOTE.mine) finishVote() },rand(900,secs*1000-1500)));
+  VOTE.timers.push(setInterval(()=>{ if(!VOTE||VOTE.done) return; if(!document.getElementById("voteLeft")){ cancelVote(); return } VOTE.left--; $("#voteLeft").textContent=Math.max(0,VOTE.left); if(VOTE.left<=0) finishVote() },1000));
+  drawVotes();
+}
+function cancelVote(){ if(!VOTE) return; VOTE.timers.forEach(t=>{clearTimeout(t);clearInterval(t)}); VOTE=null }
+function drawVotes(){ if(!VOTE) return; const tally={}; for(const v of Object.values(VOTE.votes)) tally[v]=(tally[v]||0)+1;
+  for(const m of MAPS){ const el=document.querySelector(`[data-pips="${m.id}"]`); if(!el) continue; const c=tally[m.id]||0;
+    el.innerHTML=`<b>${c} vote${c===1?"":"s"}</b>`+"<span>●</span>".repeat(c); const card=el.closest(".mapcard"); card.classList.toggle("sel",VOTE.mine===m.id) } }
+function finishVote(){ if(!VOTE||VOTE.done) return; VOTE.done=true; VOTE.timers.forEach(t=>{clearTimeout(t);clearInterval(t)});
+  const tally={}; for(const v of Object.values(VOTE.votes)) tally[v]=(tally[v]||0)+1;
+  const best=Math.max(0,...Object.values(tally)); const top=best?MAPS.filter(m=>tally[m.id]===best):MAPS; const win=pick(top);
+  const info=$("#voteInfo"); if(info) info.innerHTML=`${esc(win.name)} wins${best?` with ${best} vote${best===1?"":"s"}`:""}!${top.length>1?" (tie broken at random)":""}`;
+  document.querySelectorAll(".mapcard").forEach(c=>c.classList.toggle("win",c.dataset.map===win.id));
+  const cfg=VOTE.cfg; setTimeout(()=>{ VOTE=null; closeModal(); startMatch({...cfg,map:win.id}) },1400) }
 function startMatch(cfg){
   const u=me(); fixBook(u,!u.spellbook.length); if(!u.spellbook.length) u.spellbook=BASIC.slice(); save();
-  if(!IMG.terrain.complete){toast("Loading map…");return}
-  buildTerrain();
+  const map=MAPK[cfg.map]||MAPS[0]; cfg.map=map.id;
+  if(!IMG[map.terrain].complete){toast("Loading map…");return}
+  buildTerrain(map);
   const random=u.opts.mode==="random";
   const diff=cfg.ranked?(u.rating>1500?"hard":"normal"):u.opts.difficulty;
   const names=BOT_NAMES.slice().sort(()=>Math.random()-.5);
@@ -1461,7 +1504,7 @@ function startMatch(cfg){
         spells,elems,fams,famLvl:0,cool,used:{},shield:false,frozen:0,absorb:0,absorbT:0,rooted:0,maskT:0,mult:1,reflect:0,freezeHit:0,dmg:0,kills:0,lastHitBy:null,tower:null});
     }
   }
-  M={cfg,units,imps:[],zones:[],ctrl:null,ctrlQueue:[],rewindDone:false,proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
+  M={cfg,map,units,imps:[],zones:[],ctrl:null,ctrlQueue:[],rewindDone:false,proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
      water:H-6,wind:0,phase:"start",active:null,timer:u.opts.turn,selSpell:0,charge:0,charging:false,
      armaAt:40,warned:false,ff:false,over:false,botPlan:null,startedAt:Date.now(),dmgNums:u.opts.dmgNums};
   for(const un of units) unstick(un);
@@ -1589,7 +1632,7 @@ function stepProj(p,sim){
     for(const u of (sim?sim.units:allBodies())){
       if(u===p.ownerUnit&&p.age<14) continue; if(u.dead||u.alive===false) continue;
       if(p.skipUnit===u&&p.age<p.skipUntil) continue;
-      const hh=u.imp?u.spec.size*2:38, hw=u.imp?Math.max(8,u.spec.size):9;
+      const tb=sim?null:towerBox(u), hh=tb?tb.hh:(u.imp?u.spec.size*2:38), hw=tb?tb.hw:(u.imp?Math.max(8,u.spec.size):9);
       if(Math.abs(p.x-u.x)<hw&&p.y>u.y-hh&&p.y<u.y+2){
         if(p.boulder) return {x:p.x,y:p.y,unit:u};
         if(p.bounce){p.vx*=-.3;continue}
@@ -1611,7 +1654,7 @@ function explode(x,y,sp,owner,opts={}){
   const reach=r+14, elem=sp.elem||sp.book||""; let dealt=0;
   for(const u of [...M.units.filter(u=>u.alive),...M.imps.filter(i=>!i.dead)]){
     if(opts.exclude===u) continue;
-    const cy=u.imp?u.y-u.spec.size:u.y-18, d=Math.hypot(u.x-x,cy-y); if(d>reach) continue;
+    const tbx=towerBox(u), cy=u.imp?u.y-u.spec.size:(tbx?clamp(y,u.y-tbx.hh,u.y-18):u.y-18), d=Math.hypot(u.x-x,cy-y); if(d>reach) continue;
     const f=1-d/reach*.55; let base=sp.dmg||0;
     if(owner&&owner.energyT>0&&sp.book==="arcane"&&base>0) base+=5;
     if(owner&&owner.fams&&owner.fams.includes("flame")&&sp.book==="flame") base*=1+.1*owner.famLvl;
@@ -1754,6 +1797,8 @@ function castSpell(u,id,tx,ty,power){
     case "meteor": case "ult": { const sx=tx-260, sy=-60, d=Math.hypot(tx-sx,ty-sy);
       M.proj.push(mkProj({...base,ownerUnit:null,x:sx,y:sy,vx:(tx-sx)/d*15,vy:(ty-sy)/d*15,big:!s.cog,bounce:!!s.cog,boulder:!!s.cog,hits:0,timer:s.cog?240:null,grav:s.cog?1:0})); break }
     case "cloud": { const z={type:"cloud",owner:u,team:u.team,x:tx,y:ty,cy:clamp(ty-170,50,160),turns:s.turns,total:s.turns,mode:s.mode,count:s.count,dmg:s.dmg,rad:s.rad,col:s.col,step:0,spell:s}; M.zones.push(z); cloudTick(z); break }
+    case "volcano": { const sy=surfaceY(tx|0,Math.max(0,ty-160)); const base=(sy==null?ty:sy)+6;
+      const z={type:"volcano",owner:u,team:u.team,x:tx,base,turns:s.waves.length,waves:s.waves,step:0,col:s.col,spell:s,p:0,rising:true}; M.zones.push(z); volcanoRise(z); break }
     case "geyser": { const z={type:"geyser",owner:u,team:u.team,x:tx,y:ty,turns:s.waves.length,waves:s.waves,step:0,col:s.col,spell:s}; M.zones.push(z); geyserTick(z); break }
     case "firewall": M.zones.push({type:"firewall",owner:u,team:u.team,x:u.x+u.face*26,y:u.y,dmg:s.dmg,turns:s.turns,ready:true,col:s.col,elem:s.elem,thorn:s.book==="nature"}); waitFx(25); break;
     case "deflect": u.deflectT=s.turns+1; u.deflectOnce=!!s.once; u.deflectReady=true; u.deflectCol=s.col; M.fx.push({t:"ring",x:u.x,y:u.y-24,r:36,life:30,max:30,col:s.col}); waitFx(30); break;
@@ -1820,6 +1865,35 @@ function geyserTick(z){ const n=z.waves[z.step]||0; z.step++; const s=z.spell;
   for(let k=0;k<n;k++){ const x=z.x+rand(-60,60); later(1+k*7,()=>{ const sy=surfaceY(x|0,Math.max(0,z.y-120)); const y0=(sy==null?z.y:sy)+4;
     M.proj.push(mkProj({spell:{...s},owner:z.owner,team:z.team,x,y:y0,vx:rand(-1.6,1.6),vy:-rand(8,12),grav:.5,noclip:10})); for(let i=0;i<6;i++)M.parts.push({x,y:y0,vx:rand(-2,2),vy:-rand(2,5),life:30,col:s.col,sz:3}) }) }
 }
+/* ----- Volcano: grows up out of the ground, becomes real (destructible) terrain, then erupts ----- */
+const VOLC_W=170;
+function volcRect(z,p){ const im=IMG.volcano, full=VOLC_W*(im.naturalWidth?im.height/im.width:.58);
+  const sc=.35+.65*p, w=VOLC_W*sc, h=full*sc, bottom=z.base+(1-p)*full*.75; return {x:z.x-w/2,y:bottom-h,w,h,full} }
+function volcanoStamp(z){ if(!IMG.volcano.naturalWidth) return; const r=volcRect(z,z.p);
+  tctx.save(); tctx.beginPath(); tctx.rect(r.x-2,0,r.w+4,z.base+10); tctx.clip(); tctx.drawImage(IMG.volcano,r.x,r.y,r.w,r.h); tctx.restore();
+  resync(r.x-4,r.y-4,r.w+8,Math.min(r.h,z.base+14-r.y)+8); for(const b of allBodies()) if(!b.dead) unstick(b) }
+function volcanoRise(z){
+  for(let k=0;k<30;k++) later(1+k,()=>{ for(let i=0;i<3;i++) M.parts.push({x:z.x+rand(-70,70),y:z.base-2,vx:rand(-1,1),vy:-rand(1,3),life:rand(20,40),col:Math.random()<.5?"#6b4a2b":"#ff7a2e",sz:rand(2,4)}) });
+  later(4,()=>{ sfx("boom"); M.fx.push({t:"text",x:z.x,y:z.base-40,txt:"The ground rumbles…",life:60,max:60}) });
+  const N=34; for(let k=1;k<=N;k++) later(30+k*2,()=>{ z.p=k/N; if(k%2===0||k===N) volcanoStamp(z);
+    for(let i=0;i<2;i++) M.parts.push({x:z.x+rand(-60,60),y:z.base-4,vx:rand(-2,2),vy:-rand(1,4),life:30,col:"#7a5534",sz:3}) });
+  later(30+N*2+4,()=>{ z.p=1; z.rising=false; volcanoStamp(z); const r=volcRect(z,1); z.cx=z.x-r.w*.03; z.cy=r.y+r.h*.06; z.top=r.y; z.w=r.w;
+    // anyone standing where it burst up gets flung
+    for(const b of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead)]) if(Math.abs(b.x-z.x)<r.w*.45&&b.y>r.y-10&&b.y<z.base+20) dmgAny(b,20,z.owner,"flame");
+    volcanoErupt(z,true) });
+}
+function volcanoErupt(z,first){ const n=z.waves[z.step]||0; z.step++; const s=z.spell; if(z.cx==null) return;
+  sfx("boom"); M.fx.push({t:"ring",x:z.cx,y:z.cy,r:30,life:20,max:20,col:"#ff7a2e"});
+  for(let i=0;i<24;i++) M.parts.push({x:z.cx+rand(-10,10),y:z.cy,vx:rand(-2.5,2.5),vy:-rand(3,8),life:rand(30,60),col:Math.random()<.5?"#ff7a2e":"#ffd166",sz:rand(2,5)});
+  for(let k=0;k<n;k++) later(1+k*8,()=>{ M.proj.push(mkProj({spell:{...s,napalm:1},owner:z.owner,team:z.team,x:z.cx+rand(-8,8),y:z.cy-4,vx:rand(-3.4,3.4),vy:-rand(7,11),grav:.5,noclip:16})) });
+  // lava spills down the slopes and over the area around it
+  const spill=first?14:5;
+  for(let k=0;k<spill;k++){ const side=k%2?1:-1, x=z.cx+side*rand(12,(z.w||140)*(first?.95:.6)), sy=surfaceY(x|0,Math.max(0,(z.top||z.base)-30));
+    if(sy==null) continue; later(4+k*3,()=>{ M.zones.push({type:"napalm",owner:z.owner,team:z.team,x,y:sy,dmg:5,turns:5});
+      for(let i=0;i<4;i++) M.parts.push({x,y:sy-2,vx:rand(-1,1),vy:-rand(1,3),life:25,col:"#ff9a3c",sz:3}) }) }
+}
+function drawVolcanoes(){ for(const z of M.zones){ if(z.type!=="volcano"||!z.rising||!IMG.volcano.naturalWidth) continue; const r=volcRect(z,z.p);
+  cx.save(); cx.beginPath(); cx.rect(r.x-2,0,r.w+4,z.base+10); cx.clip(); cx.drawImage(IMG.volcano,r.x+Math.sin(performance.now()/30)*1.5,r.y,r.w,r.h); cx.restore() } }
 function zonesTurnStart(u){
   for(const z of M.zones){
     if(z.type==="napalm") for(const e of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead)]) if(Math.abs(e.x-z.x)<12&&Math.abs(e.y-z.y)<14) dmgAny(e,z.dmg,z.owner,"flame");
@@ -1829,6 +1903,7 @@ function zonesTurnStart(u){
     if(z.type==="aura") auraHit(z);
     else if(z.type==="cloud") cloudTick(z);
     else if(z.type==="geyser") geyserTick(z);
+    else if(z.type==="volcano") volcanoErupt(z);
   }
   M.zones=M.zones.filter(z=>z.turns>0);
 }
@@ -1888,7 +1963,7 @@ function powerFamiliar(u){ if(!u.fams||!u.fams.length) return;
 function famName(u){return u.fams.map(b=>BK[b].fam.name).join(" + ")}
 
 /* ----- bot AI ----- */
-const AI_AIM=["shot","spray","chain","arrow","lance"], AI_LOB=["ball","bomb","boulder","hole"], AI_TGT=["strike","barrage","meteor","cloud","geyser","aura","rain","skyfall","storm","root","ult"], AI_DEF=["ward","deflect","invuln","tower","aegis","stasis","firewall","icewall","zapaura"];
+const AI_AIM=["shot","spray","chain","arrow","lance"], AI_LOB=["ball","bomb","boulder","hole"], AI_TGT=["strike","barrage","meteor","cloud","geyser","volcano","aura","rain","skyfall","storm","root","ult"], AI_DEF=["ward","deflect","invuln","tower","aegis","stasis","firewall","icewall","zapaura"];
 function estDmg(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];return m.dmg*2}
   let d=(s.dmg||0)*(s.count||1); if(s.split) d+=s.split.n*s.split.dmg*.35;
   if(s.waves) d=s.dmg*s.waves.reduce((a,b)=>a+b,0)*.25; if(s.kind==="cloud") d=s.dmg*(s.count||2)*s.turns*.35; if(s.kind==="aura") d=s.dmg*s.turns*.5;
@@ -2106,6 +2181,7 @@ function draw(){
   cx.drawImage(IMG.sky,0,0,W,H);
   // water band
   if(M.water<H-6){cx.fillStyle="rgba(40,110,170,.55)";cx.fillRect(0,M.water,W,H-M.water);cx.fillStyle="rgba(200,240,255,.6)";cx.fillRect(0,M.water,W,3)}
+  drawVolcanoes();
   cx.drawImage(tCan,0,0);
   if(M.water<H-6){cx.fillStyle="rgba(40,110,170,.35)";cx.fillRect(0,M.water,W,H-M.water)}
   const u=M.active;
@@ -2139,7 +2215,21 @@ function draw(){
   cx.font="bold 20px Barlow Condensed, sans-serif";cx.textAlign="center";
   for(const n of M.nums){cx.globalAlpha=Math.min(1,n.life/25);cx.strokeStyle="#000";cx.lineWidth=4;cx.strokeText(n.t,n.x,n.y);cx.fillStyle=n.col;cx.fillText(n.t,n.x,n.y)} cx.globalAlpha=1;cx.textAlign="left";cx.lineWidth=1;
 }
+let NO_LABELS=false, IN_TOWER_ART=false;
 function drawUnit(u,active){
+  const ta=towerArt(u); if(!ta){ drawUnitCore(u,active); return }
+  const im=IMG[ta.img], th=ta.h, tw=th*im.width/im.height, x0=u.x-tw/2, y0=u.y+4-th, fx=x0+ta.fx*tw, fy=y0+ta.fy*th, t=performance.now()/1000;
+  if(ta.glow){ const g=cx.createRadialGradient(u.x,y0+th*.45,6,u.x,y0+th*.45,th*.75); g.addColorStop(0,ta.glow+"66"); g.addColorStop(1,ta.glow+"00"); cx.fillStyle=g; cx.beginPath(); cx.ellipse(u.x,y0+th*.45,tw*.9,th*.7,0,0,7); cx.fill() }
+  if(!ta.over) cx.drawImage(im,x0,y0,tw,th);
+  cx.save(); cx.translate(fx,fy); cx.scale(ta.ws,ta.ws); cx.translate(-u.x,-u.y); NO_LABELS=true; IN_TOWER_ART=true; drawUnitCore(u,active); NO_LABELS=false; IN_TOWER_ART=false; cx.restore();
+  if(ta.over) cx.drawImage(im,x0,y0,tw,th);
+  if(ta.front&&IMG[ta.front]&&IMG[ta.front].naturalWidth) cx.drawImage(IMG[ta.front],x0,y0,tw,th);
+  if(ta.spark){ cx.fillStyle=ta.spark; for(let k=0;k<5;k++){ const ph=(t*.5+k/5)%1; cx.globalAlpha=Math.sin(ph*Math.PI)*.9; cx.beginPath(); cx.arc(u.x+Math.sin(k*2.7+t)*tw*.45,y0+th*(1-ph),1.8,0,7); cx.fill() } cx.globalAlpha=1 }
+  const ly=Math.min(fy-54*ta.ws,y0-12)+54, tr=u.tower;
+  cx.fillStyle="#111"; cx.fillRect(u.x-22,ly-47,44,4); cx.fillStyle=tr.col||"#e8d9b0"; cx.fillRect(u.x-22,ly-47,44*clamp(tr.hp/tr.max,0,1),4);
+  drawLabels(u,active,u.x,ly,0);
+}
+function drawUnitCore(u,active){
   const h=54,w=h*IMG[u.gender].width/IMG[u.gender].height, t=performance.now()/1000;
   if(u.prestige){ const c=AURAS[u.prestige].c; const g=cx.createRadialGradient(u.x,u.y-24,4,u.x,u.y-24,36+Math.sin(t*3)*3); g.addColorStop(0,c+"cc");g.addColorStop(.55,c+"55");g.addColorStop(1,c+"00"); cx.fillStyle=g;cx.beginPath();cx.ellipse(u.x,u.y-24,30,38,0,0,7);cx.fill();
     for(let i=0;i<3;i++){const a=t*2+i*2.1;cx.fillStyle=c;cx.globalAlpha=.8;cx.beginPath();cx.arc(u.x+Math.cos(a)*22,u.y-24+Math.sin(a*1.3)*26,2,0,7);cx.fill()} cx.globalAlpha=1 }
@@ -2160,11 +2250,11 @@ function drawUnit(u,active){
   cx.drawImage(IMG[u.gender],-w/2,-h+2,w,h);cx.restore();
   if(u.maskT>0){ const mx=u.x+(u.face>0?1:-1)*1, my=u.y-h*0.5; cx.fillStyle="#f4f1ea";cx.strokeStyle="#111";cx.lineWidth=1.2;cx.beginPath();cx.ellipse(mx,my,w*0.24,h*0.135,0,0,7);cx.fill();cx.stroke();
     cx.fillStyle="#120814";cx.beginPath();cx.ellipse(mx-w*0.08,my-1,2.6,1.6,.35,0,7);cx.ellipse(mx+w*0.08,my-1,2.6,1.6,-.35,0,7);cx.fill();cx.beginPath();cx.moveTo(mx-3,my+4);cx.quadraticCurveTo(mx,my+6,mx+3,my+4);cx.stroke(); }
-  if(u.tower){ const tw=u.tower, tx0=u.x-25, ty0=u.y-74; cx.save(); cx.globalAlpha=.88; cx.fillStyle=tw.col+"66"; cx.strokeStyle=tw.col; cx.lineWidth=3;
+  if(u.tower&&!IN_TOWER_ART){ const tw=u.tower, tx0=u.x-25, ty0=u.y-74; cx.save(); cx.globalAlpha=.88; cx.fillStyle=tw.col+"66"; cx.strokeStyle=tw.col; cx.lineWidth=3;
     cx.beginPath(); cx.moveTo(tx0,u.y+4); cx.lineTo(tx0,ty0+12); for(let i=0;i<5;i++){cx.lineTo(tx0+i*10,ty0+(i%2?0:12));cx.lineTo(tx0+(i+1)*10,ty0+(i%2?0:12))} cx.lineTo(tx0+50,u.y+4); cx.closePath(); cx.fill(); cx.stroke();
     cx.globalAlpha=1; cx.fillStyle="#111"; cx.fillRect(u.x-22,ty0-8,44,4); cx.fillStyle=tw.col; cx.fillRect(u.x-22,ty0-8,44*clamp(tw.hp/tw.max,0,1),4); cx.restore(); cx.lineWidth=1 }
   if(u.rooted>0&&!u.aegisT){ cx.strokeStyle="#3f8f3a"; cx.lineWidth=3; for(const d of [-1,1]){cx.beginPath();cx.moveTo(u.x+d*14,u.y+2);cx.quadraticCurveTo(u.x+d*4,u.y-14,u.x+d*10,u.y-22);cx.stroke()} cx.lineWidth=1 }
-  if(u.aegisT>0&&u.absorb>0&&IMG.aegis_tower&&IMG.aegis_tower.naturalWidth){ const im=IMG.aegis_tower, th=AEGIS_H, tw=th*im.width/im.height, top=u.y-16;
+  if(u.aegisT>0&&u.absorb>0&&IMG.aegis_tower&&IMG.aegis_tower.naturalWidth){ const im=IMG.aegis_tower, th=AEGIS_H, tw=th*im.width/im.height, top=u.y-AEGIS_TOP;
     cx.drawImage(im,u.x-tw/2,top,tw,th);
     // dome hovering over the wizard, like the artwork
     const dy=u.y-h+1, dw=28; cx.save(); cx.fillStyle="#3d4452"; cx.strokeStyle="#151a22"; cx.lineWidth=2.5;
@@ -2176,12 +2266,15 @@ function drawUnit(u,active){
   if(u.absorb>0){cx.font="bold 12px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";const ay2=u.y-52-((u.aegisT>0&&u.absorb>0)?38:0);cx.strokeText("+"+u.absorb,u.x-32,ay2);cx.fillStyle="#9fdcff";cx.fillText("+"+u.absorb,u.x-32,ay2);cx.textAlign="left";cx.lineWidth=1}
   // hp & name
   const yo=(u.aegisT>0&&u.absorb>0)?38:0;
+  if(!NO_LABELS) drawLabels(u,active,u.x,u.y,yo);
+}
+function drawLabels(u,active,lx,ly,yo){ const t=performance.now()/1000;
   const col=u.team?"#ff7a5c":"#5fb4ff";
   cx.font="bold 15px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";
-  cx.strokeText(u.name,u.x,u.y-62-yo);cx.fillStyle=active?"#f2cf7c":"#fff";cx.fillText(u.name,u.x,u.y-62-yo);
-  cx.fillStyle="#111";cx.fillRect(u.x-20,u.y-58-yo,40,6);cx.fillStyle=col;cx.fillRect(u.x-20,u.y-58-yo,40*u.hp/u.maxHp,6);
-  cx.font="bold 13px Barlow Condensed, sans-serif";cx.strokeText(u.hp,u.x+30,u.y-52-yo);cx.fillStyle="#fff";cx.fillText(u.hp,u.x+30,u.y-52-yo);
-  if(active){cx.fillStyle="#f2cf7c";cx.beginPath();const b=Math.sin(t*6)*3;cx.moveTo(u.x-7,u.y-80+b-yo);cx.lineTo(u.x+7,u.y-80+b-yo);cx.lineTo(u.x,u.y-71+b-yo);cx.fill()}
+  cx.strokeText(u.name,lx,ly-62-yo);cx.fillStyle=active?"#f2cf7c":"#fff";cx.fillText(u.name,lx,ly-62-yo);
+  cx.fillStyle="#111";cx.fillRect(lx-20,ly-58-yo,40,6);cx.fillStyle=col;cx.fillRect(lx-20,ly-58-yo,40*u.hp/u.maxHp,6);
+  cx.font="bold 13px Barlow Condensed, sans-serif";cx.strokeText(u.hp,lx+30,ly-52-yo);cx.fillStyle="#fff";cx.fillText(u.hp,lx+30,ly-52-yo);
+  if(active){cx.fillStyle="#f2cf7c";cx.beginPath();const b=Math.sin(t*6)*3;cx.moveTo(lx-7,ly-80+b-yo);cx.lineTo(lx+7,ly-80+b-yo);cx.lineTo(lx,ly-71+b-yo);cx.fill()}
   cx.textAlign="left";cx.lineWidth=1;
 }
 function drawZones(){ const t=performance.now()/1000;
@@ -2195,6 +2288,9 @@ function drawZones(){ const t=performance.now()/1000;
     else if(z.type==="beacon"){ cx.fillStyle="#d9a441"; cx.strokeStyle="#5a3c0a"; cx.beginPath(); cx.moveTo(z.x-7,z.y+6); cx.quadraticCurveTo(z.x-7,z.y-10,z.x,z.y-10); cx.quadraticCurveTo(z.x+7,z.y-10,z.x+7,z.y+6); cx.closePath(); cx.fill(); cx.stroke() }
     else if(z.type==="cloud"){ const c=z.mode==="lightning"?"#59627a":z.mode==="stars"?"#fff2b8":z.mode==="snow"?"#e8f2f8":"#7d8fa3"; cx.fillStyle=c; cx.globalAlpha=.9; for(let k=-2;k<=2;k++){cx.beginPath();cx.ellipse(z.x+k*22,z.cy+Math.abs(k)*4,26,16,0,0,7);cx.fill()} cx.globalAlpha=1;
       cx.font="bold 13px Barlow Condensed, sans-serif"; cx.textAlign="center"; cx.fillStyle="#111"; cx.fillText(z.turns,z.x,z.cy+5); cx.textAlign="left" }
+    else if(z.type==="volcano"){ if(z.cx!=null){ for(let k=0;k<5;k++){ const ph=(t*.35+k/5)%1, px=z.cx+Math.sin(k*2.3+t)*10+ph*26, py=z.cy-6-ph*70, pr=7+ph*16;
+        cx.globalAlpha=(1-ph)*.85; cx.fillStyle=k%2?"#fff6e0":"#f3e3c3"; cx.strokeStyle="rgba(120,100,80,.6)"; cx.lineWidth=2; cx.beginPath(); cx.arc(px,py,pr,0,7); cx.fill(); cx.stroke() } cx.globalAlpha=1; cx.lineWidth=1;
+        cx.fillStyle=`rgba(255,${150+Math.sin(t*8)*50|0},40,.9)`; cx.beginPath(); cx.ellipse(z.cx,z.cy+2,9,4,0,0,7); cx.fill() } }
     else if(z.type==="geyser"){ cx.fillStyle="rgba(255,255,255,.5)"; for(let k=0;k<3;k++){cx.beginPath();cx.arc(z.x+Math.sin(t*3+k*2)*40,z.y-((t*40+k*20)%40),2,0,7);cx.fill()} }
   }
 }
@@ -2424,7 +2520,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.25-1741";
+const APP_VERSION="2026.10.25-1834";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

@@ -513,7 +513,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
-const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp",aegis_tower:"assets/aegis_tower.webp",volcano:"assets/volcano.webp",fire_dragon:"assets/fire_dragon.webp",frost_dragon:"assets/frost_dragon.webp",terrain_clockwork:"assets/terrain_clockwork.webp",tw_clock_tower:"assets/tw_clock_tower.webp",tw_arcane_tower:"assets/tw_arcane_tower.webp",tw_fortress:"assets/tw_fortress.webp",tw_ice_castle:"assets/tw_ice_castle.webp",tw_light_castle:"assets/tw_light_castle.webp",tw_dark_keep:"assets/tw_dark_keep.webp",tw_world_tree:"assets/tw_world_tree.webp",tw_world_tree_front:"assets/tw_world_tree_front.webp"};
+const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp",aegis_tower:"assets/aegis_tower.webp",volcano:"assets/volcano.webp",fire_dragon:"assets/fire_dragon.webp",frost_dragon:"assets/frost_dragon.webp",terrain_clockwork:"assets/terrain_clockwork.webp",tw_clock_tower:"assets/tw_clock_tower.webp",tw_arcane_tower:"assets/tw_arcane_tower.webp",tw_fortress:"assets/tw_fortress.webp",tw_ice_castle:"assets/tw_ice_castle.webp",tw_light_castle:"assets/tw_light_castle.webp",tw_dark_keep:"assets/tw_dark_keep.webp",tw_world_tree:"assets/tw_world_tree.webp",tw_world_tree_front:"assets/tw_world_tree_front.webp",water_troll:"assets/water_troll.webp",sea_lord:"assets/sea_lord.webp",dark_knight:"assets/dark_knight.webp",paladin:"assets/paladin.webp"};
 const MAPS=[
  {id:"skyfall",name:"Skyfall Isle",terrain:"terrain",thumb:"assets/map_skyfall_thumb.jpg",desc:"The classic floating island."},
  {id:"clockwork",name:"Clockwork Isles",terrain:"terrain_clockwork",thumb:"assets/map_clockwork_thumb.jpg",desc:"Two brass-plated islands joined by a stone bridge."}
@@ -606,14 +606,14 @@ const MINIONS={
  snow_sprite:{name:"Snow Sprite",hp:40,dmg:15,style:"shot",range:260,col:"#e6f8ff",shape:"spirit",size:8,fly:1,elem:"frost"},
  frost_giant:{name:"Frost Giant",hp:160,dmg:35,style:"melee",col:"#9fd6f0",shape:"golem",size:16,speed:.5},
  swarm:{name:"Swarm",hp:25,dmg:15,style:"aura",range:60,col:"#5b3a6e",shape:"swarm",size:10,fly:1,undead:1,elem:"underdark"},
- dark_knight:{name:"Dark Knight",hp:180,dmg:40,style:"melee",col:"#3b3350",shape:"knight",size:13,speed:.7},
+ dark_knight:{name:"Dark Knight",hp:180,dmg:40,style:"melee",col:"#3b3350",shape:"knight",size:13,speed:.7,img:"dark_knight"},
  wraith:{name:"Wraith",hp:80,dmg:25,style:"melee",col:"#8e7bb0",shape:"spirit",size:11,fly:1,undead:1,elem:"underdark"},
  pegasus:{name:"Pegasus",hp:70,dmg:15,style:"melee",col:"#f4f0ff",shape:"beast",size:12,fly:1},
- paladin:{name:"Paladin",hp:160,dmg:35,style:"melee",col:"#f2d27a",shape:"knight",size:13,speed:.7,elem:"overlight"},
+ paladin:{name:"Paladin",hp:160,dmg:35,style:"melee",col:"#f2d27a",shape:"knight",size:13,speed:.7,elem:"overlight",img:"paladin"},
  pixie:{name:"Pixie",hp:20,dmg:8,style:"shot",range:240,col:"#ffd6f4",shape:"spirit",size:6,fly:1,elem:"overlight"},
- troll:{name:"Water Troll",hp:60,dmg:8,style:"melee",col:"#4f9c8f",shape:"troll",size:12,speed:.9,swim:1},
+ troll:{name:"Water Troll",hp:60,dmg:8,style:"melee",col:"#4f9c8f",shape:"troll",size:12,speed:.9,swim:1,img:"water_troll"},
  goblin:{name:"Salt Goblin",hp:40,dmg:10,style:"melee",col:"#c9c3b5",shape:"goblin",size:9,speed:1.2,deathBoom:{dmg:40,rad:40,col:"#e8e4da"}},
- sea_lord:{name:"Sea Lord",hp:300,dmg:45,style:"melee",col:"#2f7fb8",shape:"troll",size:17,speed:.6,swim:1,weak:1.5},
+ sea_lord:{name:"Sea Lord",hp:300,dmg:45,style:"melee",col:"#2f7fb8",shape:"troll",size:17,speed:.6,swim:1,weak:1.5,img:"sea_lord"},
  wolf:{name:"Wolf",hp:45,dmg:18,style:"melee",col:"#8b8f96",shape:"beast",size:10,speed:1.8},
  treant:{name:"Treant",hp:200,dmg:40,style:"melee",col:"#5d7a3a",shape:"treant",size:17,speed:.4},
  fire_dragon:{name:"Fire Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#ff7a2e",shape:"dragon",size:20,fly:1,elem:"flame",img:"fire_dragon"},
@@ -2572,7 +2572,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.25-1944";
+const APP_VERSION="2026.10.25-1949";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

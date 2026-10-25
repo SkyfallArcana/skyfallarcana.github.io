@@ -486,7 +486,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
     <div class="wheel-ring" id="wheelRing"></div>
     <div class="panel wheel-info" id="wheelInfo"></div>
   </div>
-  <div class="keyhint" id="keyHint">A / D walk · W jump · Space high jump · E spell wheel · 1–9 quick pick · Q skip · right-drag to look around · wheel to zoom</div>
+  <div class="keyhint" id="keyHint">A / D walk · W jump (hold W/S to fly up/down) · Space high jump · E spell wheel · 1–9 quick pick · Q skip · right-drag to look around · wheel to zoom</div>
 </section>
 
 <div id="modalRoot"></div>
@@ -511,7 +511,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
-const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp"};
+const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp"};
 const IMG={};
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -537,6 +537,59 @@ const BOOKS=[
 ];
 const BK=Object.fromEntries(BOOKS.map(b=>[b.id,b]));
 BK.prestige={id:"prestige",name:"Prestige",col:"#ffd36a",unlock:[1,1,1],fam:null};
+BK.minion={id:"minion",name:"Minion",col:"#c9c2b5",unlock:[999,999,999],fam:null};
+const MINION_ABIL={
+ imp:["m_arcane_bolt","m_imp_boom"], dwarf:["m_pick","m_dynamite","m_dig"], golem:["m_smash","m_boulder_toss"], cyclops:["m_punch","m_eye_beam"],
+ storm_spirit:["m_zap","m_thunderclap"], snow_sprite:["m_ice_shard","m_snowball"], frost_giant:["m_club","m_frost_breath"], swarm:["m_sting","m_swarm_cloud"],
+ dark_knight:["m_slash","m_shield_bash"], wraith:["m_soul_drain","m_wail"], pegasus:["m_kick","m_charge"], paladin:["m_holy_strike","m_lay_hands"],
+ pixie:["m_spark","m_pixie_portal"], troll:["m_troll_club","m_water_spit"], goblin:["m_scratch","m_goblin_boom"], sea_lord:["m_trident","m_wave"],
+ wolf:["m_bite","m_pounce"], treant:["m_root_slam","m_thorns"], fire_dragon:["m_fire_breath","m_dragon_fireball"], storm_dragon:["m_lightning_breath","m_thunder_strike"], frost_dragon:["m_ice_breath","m_dragon_ice_bomb"]
+};
+const MINION_SPELLS=[
+ {id:"m_arcane_bolt",name:"Arcane Bolt",type:"shot",kind:"shot",dmg:10,rad:12,speed:14,grav:0,cd:1,elem:"arcane",desc:"A small arcane bolt."},
+ {id:"m_imp_boom",name:"Self Destruct",type:"self",kind:"selfboom",rad:30,cd:1,elem:"arcane",desc:"The imp explodes for damage equal to its health."},
+ {id:"m_pick",name:"Pick Swing",type:"shot",kind:"melee",dmg:20,range:44,cd:1,desc:"Hit an enemy next to you with the pick."},
+ {id:"m_dynamite",name:"Dynamite",type:"lob",kind:"bomb",dmg:40,rad:34,fuse:120,cd:3,elem:"stone",desc:"Throw a stick of dynamite. Explodes after 2 seconds."},
+ {id:"m_dig",name:"Dig Tunnel",type:"shot",kind:"dig",cd:1,desc:"Dig a tunnel in the aimed direction."},
+ {id:"m_smash",name:"Smash",type:"shot",kind:"melee",dmg:35,range:46,push:10,cd:1,desc:"A heavy punch that knocks enemies back."},
+ {id:"m_boulder_toss",name:"Boulder Toss",type:"lob",kind:"ball",dmg:30,rad:24,cd:2,elem:"stone",desc:"Throw a boulder."},
+ {id:"m_punch",name:"Punch",type:"shot",kind:"melee",dmg:30,range:44,push:8,cd:1,desc:"A big punch."},
+ {id:"m_eye_beam",name:"Eye Beam",type:"shot",kind:"shot",dmg:25,rad:14,speed:20,grav:0,cd:2,elem:"storm",desc:"A crackling beam from the cyclops' eye."},
+ {id:"m_zap",name:"Zap",type:"shot",kind:"shot",dmg:15,rad:12,speed:18,grav:0,cd:1,elem:"storm",desc:"A quick bolt of lightning."},
+ {id:"m_thunderclap",name:"Thunderclap",type:"self",kind:"flash",dmg:20,rad:55,push:12,cd:3,elem:"storm",desc:"Blast nearby enemies away."},
+ {id:"m_ice_shard",name:"Ice Shards",type:"shot",kind:"spray",count:6,dmg:5,rad:8,speed:13,spread:.08,grav:.2,cd:1,elem:"frost",desc:"Throw 6 small ice shards."},
+ {id:"m_snowball",name:"Snowball",type:"lob",kind:"ball",dmg:15,rad:16,snow:1,cd:1,elem:"frost",desc:"A snowball that leaves a heap of snow."},
+ {id:"m_club",name:"Club",type:"shot",kind:"melee",dmg:35,range:50,push:8,cd:1,desc:"Swing a huge icy club."},
+ {id:"m_frost_breath",name:"Frost Breath",type:"shot",kind:"spray",count:6,dmg:6,rad:10,speed:9,spread:.1,grav:.15,freeze:1,cd:2,elem:"frost",desc:"Freezing breath. Targets can't move next turn."},
+ {id:"m_sting",name:"Sting",type:"shot",kind:"melee",dmg:15,range:40,cd:1,elem:"underdark",desc:"The swarm stings an enemy."},
+ {id:"m_swarm_cloud",name:"Plague Cloud",type:"target",kind:"aura",dmg:10,rad:45,turns:3,cd:4,elem:"underdark",col:"#5b3a6e",desc:"A cloud of bugs: 10 damage a turn for 3 turns."},
+ {id:"m_slash",name:"Sword Slash",type:"shot",kind:"melee",dmg:40,range:46,cd:1,desc:"A heavy sword slash."},
+ {id:"m_shield_bash",name:"Shield Bash",type:"shot",kind:"melee",dmg:20,range:44,push:15,cd:2,desc:"Bash an enemy far away with the shield."},
+ {id:"m_soul_drain",name:"Soul Drain",type:"shot",kind:"shot",dmg:25,rad:14,speed:12,grav:0,drain:1,cd:1,elem:"underdark",desc:"Drains life from the target and heals your wizard."},
+ {id:"m_wail",name:"Wail",type:"self",kind:"flash",dmg:15,rad:60,push:10,cd:3,elem:"underdark",desc:"A ghostly scream hurts everyone nearby."},
+ {id:"m_kick",name:"Kick",type:"shot",kind:"melee",dmg:15,range:46,push:12,cd:1,desc:"A strong kick."},
+ {id:"m_charge",name:"Charge",type:"target",kind:"pounce",dmg:20,range:170,cd:2,desc:"Fly at an enemy and slam into them."},
+ {id:"m_holy_strike",name:"Holy Strike",type:"shot",kind:"melee",dmg:35,range:46,cd:1,elem:"overlight",desc:"A glowing sword strike. Double damage to undead."},
+ {id:"m_lay_hands",name:"Lay on Hands",type:"self",kind:"mheal",heal:30,cd:3,desc:"Heal your wizard (or the nearest ally) for 30."},
+ {id:"m_spark",name:"Spark",type:"shot",kind:"shot",dmg:8,rad:10,speed:15,grav:0,cd:1,elem:"overlight",desc:"A tiny spark."},
+ {id:"m_pixie_portal",name:"Pixie Portal",type:"self",kind:"portal",cd:1,desc:"The pixie sacrifices itself to teleport your wizard to it."},
+ {id:"m_troll_club",name:"Troll Club",type:"shot",kind:"melee",dmg:15,range:44,cd:1,desc:"Bonk an enemy."},
+ {id:"m_water_spit",name:"Water Spit",type:"shot",kind:"shot",dmg:10,rad:12,speed:13,grav:.2,cd:1,elem:"seas",desc:"Spit a jet of water."},
+ {id:"m_scratch",name:"Scratch",type:"shot",kind:"melee",dmg:10,range:40,cd:1,desc:"Scratch an enemy."},
+ {id:"m_goblin_boom",name:"Salt Explosion",type:"self",kind:"selfboom",dmg:40,rad:40,salt:1,cd:1,elem:"seas",desc:"The goblin explodes into salt."},
+ {id:"m_trident",name:"Trident",type:"shot",kind:"melee",dmg:45,range:52,push:8,cd:1,desc:"Stab with a giant trident."},
+ {id:"m_wave",name:"Wave",type:"shot",kind:"spray",count:8,dmg:6,rad:10,speed:11,spread:.1,grav:.3,cd:2,elem:"seas",desc:"Send a wave of water."},
+ {id:"m_bite",name:"Bite",type:"shot",kind:"melee",dmg:18,range:42,cd:1,desc:"Bite an enemy."},
+ {id:"m_pounce",name:"Pounce",type:"target",kind:"pounce",dmg:18,range:150,cd:2,desc:"Leap at an enemy and bite."},
+ {id:"m_root_slam",name:"Root Slam",type:"shot",kind:"melee",dmg:40,range:52,root:1,cd:1,elem:"nature",desc:"Slam with roots. The target can't move next turn."},
+ {id:"m_thorns",name:"Thorn Spray",type:"shot",kind:"spray",count:6,dmg:6,rad:10,speed:13,spread:.08,grav:.25,cd:1,elem:"nature",desc:"Spray 6 thorns."},
+ {id:"m_fire_breath",name:"Fire Breath",type:"shot",kind:"spray",count:7,dmg:15,rad:14,speed:9,spread:.1,grav:.15,cd:1,elem:"flame",desc:"Breathe a cone of fire."},
+ {id:"m_dragon_fireball",name:"Dragon Fireball",type:"lob",kind:"ball",dmg:50,rad:32,cd:2,elem:"flame",desc:"A huge fireball."},
+ {id:"m_lightning_breath",name:"Lightning Breath",type:"shot",kind:"chain",dmg:40,rad:14,speed:22,jumps:2,jdmg:25,cd:1,elem:"storm",desc:"Breathe lightning that jumps to 2 more enemies."},
+ {id:"m_thunder_strike",name:"Thunder Strike",type:"target",kind:"strike",dmg:45,rad:26,cd:2,elem:"storm",desc:"Call lightning down on any spot."},
+ {id:"m_ice_breath",name:"Ice Breath",type:"shot",kind:"spray",count:7,dmg:12,rad:12,speed:9,spread:.1,grav:.15,freeze:1,cd:1,elem:"frost",desc:"Freezing breath. Targets can't move next turn."},
+ {id:"m_dragon_ice_bomb",name:"Ice Bomb",type:"lob",kind:"bomb",dmg:50,rad:30,fuse:150,split:{n:6,dmg:15,rad:12},cd:3,elem:"frost",desc:"A bomb of ice that bursts into shards."}
+];
 const MINIONS={
  imp:{name:"Imp",hp:25,dmg:10,style:"shot",range:240,col:"#ff5d7a",shape:"imp",size:9,speed:1,elem:"arcane"},
  dwarf:{name:"Dwarf",hp:60,dmg:20,style:"melee",col:"#b9855a",shape:"dwarf",size:10,speed:1},
@@ -557,7 +610,7 @@ const MINIONS={
  wolf:{name:"Wolf",hp:45,dmg:18,style:"melee",col:"#8b8f96",shape:"beast",size:10,speed:1.8},
  treant:{name:"Treant",hp:200,dmg:40,style:"melee",col:"#5d7a3a",shape:"treant",size:17,speed:.4},
  fire_dragon:{name:"Fire Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#ff7a2e",shape:"dragon",size:16,fly:1,elem:"flame"},
- storm_dragon:{name:"Storm Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#9ad1ff",shape:"dragon",size:16,fly:1,elem:"storm"},
+ storm_dragon:{name:"Storm Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#9ad1ff",shape:"dragon",size:20,fly:1,elem:"storm",img:"storm_dragon"},
  frost_dragon:{name:"Frost Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#bfefff",shape:"dragon",size:16,fly:1,elem:"frost"}
 };
 // [book, tier, id, name, props, description]
@@ -708,9 +761,11 @@ const PRESTIGE_SPELLS=[
 ];
 const SPELLS=[
  ...SPELL_ROWS.map(([book,tier,id,name,p,desc])=>{const b=BK[book];return Object.assign({id,name,book,tier,elem:book,col:b.col,lvl:p.lvl||(tier===3?b.unlock[2]:tier===2?b.unlock[1]:b.unlock[0]),desc},p)}),
- ...PRESTIGE_SPELLS.map(s=>Object.assign({book:"prestige",tier:0,lvl:1,elem:"prestige"},s))
+ ...PRESTIGE_SPELLS.map(s=>Object.assign({book:"prestige",tier:0,lvl:1,elem:"prestige"},s)),
+ ...MINION_SPELLS.map(s=>Object.assign({book:"minion",tier:0,lvl:999,col:"#c9c2b5"},s))
 ];
 const SP=Object.fromEntries(SPELLS.map(s=>[s.id,s]));
+for(const [k,ids] of Object.entries(MINION_ABIL)) for(const id of ids) if(SP[id]) SP[id].col=MINIONS[k].col;
 const BASIC=["arcane_shot","fireball","arcane_gate"];
 const bookSpells=b=>SPELLS.filter(s=>s.book===b).map(s=>s.id);
 function chargesOf(s){return s.charges||s.uses||0}
@@ -722,7 +777,7 @@ function reqProblem(set,id){const s=SP[id];if(!s)return "Unknown spell";
 function validBook(list){let book=list.filter(id=>SP[id]);for(let pass=0;pass<4;pass++){const set=new Set(book);const next=book.filter(id=>!reqProblem(set,id));if(next.length===book.length)break;book=next}return book}
 function famBooks(list){const set=new Set(list);return BOOKS.filter(b=>b.fam&&bookSpells(b.id).every(id=>set.has(id))).map(b=>b.id)}
 function slotsFor(l){return l>=50?16:l>=40?14:l>=30?12:l>=20?10:l>=15?8:l>=10?7:l>=5?5:3}
-function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book==="prestige"?p>=s.pres:s.lvl<=l).map(s=>s.id)}
+function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book!=="minion"&&(s.book==="prestige"?p>=s.pres:s.lvl<=l)).map(s=>s.id)}
 function effLevel(u){return u.allSpells?50:u.level}
 function effPres(u){return u.allSpells?5:(u.prestige||0)}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
@@ -791,9 +846,10 @@ function dmgText(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];return `${m
 function chargeText(s){const c=chargesOf(s);return c===1?"Once per match":c?`${c} per match`:"Unlimited"}
 function rechargeText(s){return chargesOf(s)===1?"—":(s.cd||0)<=1?"Every turn":`${s.cd} turns`}
 function spellStats(s){
-  const T={shot:"Straight: aim and tap/click to fire",lob:"Lobbed: hold to charge, release to throw",target:"Targeted: tap/click any spot",self:"Cast on yourself"};
+  const T={shot:s.kind==="melee"?"Aim at an enemy next to you and tap/click":"Straight: aim and tap/click to fire",lob:"Lobbed: hold to charge, release to throw",target:"Targeted: tap/click any spot",self:"Cast on yourself"};
   const size=r=>r<20?"Small":r<45?"Medium":"Large";
-  const rows=[["Spellbook",s.book==="prestige"?`Prestige ${s.pres}`:`${BK[s.book].name} · Level ${s.tier}`]];
+  const rows=[["Spellbook",s.book==="minion"?"Minion ability":s.book==="prestige"?`Prestige ${s.pres}`:`${BK[s.book].name} · Level ${s.tier}`]];
+  if(s.kind==="melee") rows.push(["Reach","Next to the minion"]);
   if(s.tier===2&&s.pair) rows.push(["Needs",`${SP[s.pair].name} in your book`]);
   if(s.tier===3) rows.push(["Needs",`5 other ${BK[s.book].name} spells`]);
   rows.push(["How to cast",T[s.type]||""]);
@@ -1268,7 +1324,7 @@ const PANELS={
 function fixBook(u,fill){const L=effLevel(u),P=effPres(u);const unl=new Set(unlockedFor(L,P));const slots=slotsFor(L);
   u.spellbook=validBook(u.spellbook.filter(id=>unl.has(id))).slice(0,slots);
   if(!fill&&u.spellbook.length) return;
-  const order=[...BASIC,...SPELLS.filter(s=>s.book!=="prestige").sort((a,b)=>a.lvl-b.lvl||a.tier-b.tier).map(s=>s.id)];
+  const order=[...BASIC,...SPELLS.filter(s=>s.book!=="prestige"&&s.book!=="minion").sort((a,b)=>a.lvl-b.lvl||a.tier-b.tier).map(s=>s.id)];
   for(const id of order){ if(u.spellbook.length>=slots) break; if(!unl.has(id)||u.spellbook.includes(id)||reqProblem(new Set(u.spellbook),id)) continue; u.spellbook.push(id) } }
 
 /* ================= GAME ENGINE ================= */
@@ -1313,8 +1369,7 @@ function physBody(u,isImp){
   if(u.y>M.water||u.x<-40||u.x>W+40){ if(isImp){u.dead=true;return} return knockOut(u,u.y>M.water?"fell into the sea":"fell off the island") }
   if(u.grounded){ if(!feetSolid(u.x,u.y+1)&&!(ww&&u.y>=M.water-1)){u.grounded=false;u.vy=0} else return }
   const flying=!isImp&&u.flyT>0;
-  u.vy=Math.min(u.vy+(flying?.08:G),flying?3:13);
-  if(flying) u.vx*=.97;
+  if(flying){ u.vy=Math.min(u.vy*.9+.05,3); u.vx*=.9 } else u.vy=Math.min(u.vy+G,13);
   const nx=u.x+u.vx;
   if(!bodyHits(nx,u.y)) u.x=nx; else {u.vx*=-.25}
   let r=u.vy;
@@ -1328,7 +1383,7 @@ function land(u,isImp){
 function walk(u,dir){
   u.face=dir;
   if(!u.imp&&u.tower&&!u.tower.moves) return;
-  if(!u.imp&&u.flyT>0&&!u.grounded){ u.vx=dir*2.2; return }
+  if(!u.imp&&u.flyT>0&&!u.grounded){ u.vx=dir*2.6; return }
   if(!u.grounded) return;
   if(walksWater(u)&&u.y>=M.water-1&&!feetSolid(u.x+dir*2,u.y+1)){ u.x=clamp(u.x+dir*1.4,10,W-10); if(bodyHits(u.x,u.y)) unstick(u); return }
   const nx=u.x+dir*1.6;
@@ -1348,11 +1403,11 @@ function jump(u,high){
 const BOT_NAMES=["Ashby","Nimue","Corvin","Elowen","Garrick","Isolde","Talon","Wren","Bram","Liora","Fennick","Sable","Orla","Dax","Mabyn","Rook"];
 function makeBook(level,random,pres=0){
   const slots=slotsFor(level);
-  if(random) return SPELLS.filter(s=>s.book!=="prestige"||pres>=s.pres).map(s=>s.id).sort(()=>Math.random()-.5).slice(0,Math.max(slots,8));
+  if(random) return SPELLS.filter(s=>s.book!=="minion"&&(s.book!=="prestige"||pres>=s.pres)).map(s=>s.id).sort(()=>Math.random()-.5).slice(0,Math.max(slots,8));
   const unl=new Set(unlockedFor(level,pres));
   const books=BOOKS.filter(b=>b.id!=="arcane"&&bookSpells(b.id).filter(id=>unl.has(id)).length>=2);
   const main=books.length?pick(books).id:"arcane";
-  const order=[...BASIC,...bookSpells(main).sort((a,b)=>SP[a].tier-SP[b].tier),...SPELLS.filter(s=>s.book==="prestige").map(s=>s.id),...bookSpells("arcane"),...SPELLS.map(s=>s.id).sort(()=>Math.random()-.5)];
+  const order=[...BASIC,...bookSpells(main).sort((a,b)=>SP[a].tier-SP[b].tier),...SPELLS.filter(s=>s.book==="prestige").map(s=>s.id),...bookSpells("arcane"),...SPELLS.filter(s=>s.book!=="minion").map(s=>s.id).sort(()=>Math.random()-.5)];
   const book=[]; for(const id of order){ if(book.length>=slots) break; if(!unl.has(id)||book.includes(id)) continue; if(reqProblem(new Set(book),id)) continue; book.push(id) }
   return book;
 }
@@ -1391,7 +1446,7 @@ function startMatch(cfg){
         spells,elems,fams,famLvl:0,cool,used:{},shield:false,frozen:0,absorb:0,absorbT:0,rooted:0,maskT:0,mult:1,reflect:0,freezeHit:0,dmg:0,kills:0,lastHitBy:null,tower:null});
     }
   }
-  M={cfg,units,imps:[],zones:[],rewindDone:false,proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
+  M={cfg,units,imps:[],zones:[],ctrl:null,ctrlQueue:[],rewindDone:false,proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
      water:H-6,wind:0,phase:"start",active:null,timer:u.opts.turn,selSpell:0,charge:0,charging:false,
      armaAt:40,warned:false,ff:false,over:false,botPlan:null,startedAt:Date.now(),dmgNums:u.opts.dmgNums};
   for(const un of units) unstick(un);
@@ -1422,18 +1477,34 @@ function nextTurn(first){
   if(u.aegisT>0) u.aegisT--;
   if(u.maskT>0&&--u.maskT===0){u.mult=1;M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Mask fades",life:60,max:60})}
   CAM.manual=0;
-  M.selSpell=Math.min(M.selSpell,u.spells.length-1);
-  if(u.isPlayer) M.selSpell=M.selSpell||0;
   if(u.skipT>0){ u.skipT=0; banner(u.name+" is frozen in time",1200); M.phase="between"; renderHud(); setTimeout(()=>{ if(M&&!M.over) nextTurn() },1300); return }
   turnStart(u);
   M.timer=me().opts.turn+((u.fams&&u.fams.includes("cogs"))?6*u.famLvl:0);
   if(M.turnNo===30){banner("Armageddon in 10 turns!",2000);M.warned=true}
   if(M.turnNo>=M.armaAt){ armageddonTick(); }
   const mine=M.imps.filter(i=>!i.dead&&(i.owner===u||(!i.owner.alive&&i.team===u.team)));
-  M.phase=mine.length?"imps":"impsWait"; M.impTimer=120;
+  u.sel=Math.min(u.sel||0,u.spells.length-1);
+  if(u.isPlayer&&mine.length){ M.ctrlQueue=mine.slice(); M.wizTimer=M.timer; startMinionTurn(); }
+  else { M.phase=mine.length?"imps":"impsWait"; M.impTimer=120; }
   if(!u.isPlayer&&u.fams&&u.fams.length&&u.famLvl<3&&u.hp>170&&Math.random()<.5) powerFamiliar(u);
   renderHud(); renderSpellbar();
   if(u.isPlayer) banner("Your turn!",900); else banner(u.name+"'s turn",800);
+}
+function startMinionTurn(){
+  closeWheel(); keys.up=keys.down=false;
+  while(M.ctrlQueue&&M.ctrlQueue.length&&M.ctrlQueue[0].dead) M.ctrlQueue.shift();
+  const m=M.ctrlQueue&&M.ctrlQueue.shift();
+  M.cast=false; M.charge=0; M.charging=false; M.aiming=false;
+  if(!m){ M.ctrl=null; M.phase="impsWait"; M.timer=M.wizTimer||M.timer; renderSpellbar(); renderHud(); banner("Your wizard's turn",900); return }
+  M.ctrl=m; m.sel=Math.min(m.sel||0,Math.max(0,m.spells.length-1)); for(const k in m.cool) if(m.cool[k]>0) m.cool[k]--;
+  M.phase="mctrl"; M.mTimer=12; CAM.manual=0;
+  banner(`${m.spec.name}'s turn`,900); renderSpellbar(); renderHud();
+}
+function moveCtrlMinion(m){
+  if(m.rooted) return;
+  const dir=keys.left?-1:keys.right?1:0;
+  if(m.spec.fly){ m.x=clamp(m.x+dir*2.4,12,W-12); if(dir) m.face=dir; if(keys.up) m.y=Math.max(m.spec.size*3.6+10,m.y-2.4); if(keys.down){ const ny=m.y+2.4; if(!isSolid(m.x,ny+2)) m.y=Math.min(M.water-4,ny) } return }
+  if(dir){ const steps=m.spec.speed>=1.5?2:1; for(let k=0;k<steps;k++) walk(m,dir) }
 }
 function turnStart(u){
   u.deflectReady=true; if(u.deflectT>0) u.deflectT--;
@@ -1599,7 +1670,7 @@ const later=(d,fn)=>M.fx.push({t:"later",life:Math.max(1,d),max:Math.max(1,d),bl
 const waitFx=n=>M.fx.push({t:"wait",life:n,max:n,block:true});
 function castSpell(u,id,tx,ty,power){
   const s=SP[id]; if(!s||!canCast(u,id)||M.cast) return false;
-  const ox=u.x, oy=u.y-24, ang=Math.atan2(ty-oy,tx-ox);
+  const ox=u.x, oy=u.y-(u.imp?u.spec.size:24), ang=Math.atan2(ty-oy,tx-ox), cred=u.imp?u.owner:u;
   if(s.type==="target"){
     if(s.range&&Math.hypot(tx-u.x,ty-u.y)>s.range){toast("Out of range");return false}
     if(s.kind==="tele"){ if(bodyHits(tx,ty+18)||isSolid(tx,ty)){toast("Pick an open spot");return false} }
@@ -1610,7 +1681,7 @@ function castSpell(u,id,tx,ty,power){
   u.cool[id]=cd; if(chargesOf(s)) u.used[id]=(u.used[id]||0)+1;
   if(u.invulnT>0&&s.kind!=="invuln"){u.invulnT=0;M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Barrier broken",life:60,max:60})}
   u.face=tx>=u.x?1:-1; sfx(["chain","strike","cloud","zapaura"].includes(s.kind)?"zap":"cast");
-  const base={spell:s,owner:u,ownerUnit:u,team:u.team};
+  const base={spell:s,owner:cred,ownerUnit:u,team:u.team};
   switch(s.kind){
     case "shot": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,grav:s.grav||0,life:160})); break;
     case "spray": { let n=s.count||1; if(s.id==="thunderbolt"&&u.fams&&u.fams.includes("storm")) n+=u.famLvl;
@@ -1623,14 +1694,27 @@ function castSpell(u,id,tx,ty,power){
     case "ball": case "hole": { const v=4+power*11; M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:s.grav??1,wind:1,start:[ox,oy]})); break }
     case "bomb": case "boulder": { const v=4+power*10, fuse=s.fuseR?Math.round(rand(s.fuseR[0],s.fuseR[1])):(s.fuse||150);
       M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,bounce:true,timer:fuse,boulder:s.kind==="boulder",hits:0})); break }
-    case "tele": M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); u.x=tx;u.y=ty+18;u.grounded=false;u.vx=0;u.vy=0;u.tower=null;unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); break;
+    case "tele": M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); u.x=tx;u.y=ty+18;u.grounded=!!(u.imp&&u.spec.fly);u.vx=0;u.vy=0;u.tower=null;if(!(u.imp&&u.spec.fly))unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); break;
     case "vine": { const sx=ox+Math.cos(ang)*22, sy=u.y+2+Math.sin(ang)*22, ex=sx+Math.cos(ang)*175, ey=sy+Math.sin(ang)*175;
       addRock(c=>{c.lineCap="round";c.lineWidth=13;c.strokeStyle="#2f5a20";c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.stroke();c.lineWidth=8;c.strokeStyle="#5fa83f";c.stroke()},Math.min(sx,ex)-10,Math.min(sy,ey)-10,Math.abs(ex-sx)+20,Math.abs(ey-sy)+20); waitFx(20); break }
     case "slab": addRock(c=>{c.beginPath();c.roundRect(tx-40,ty-8,80,16,5);c.fill();c.stroke()},tx-40,ty-8,80,16); waitFx(20); break;
     case "seed": { const sy=surfaceY(tx|0,Math.max(0,ty-40)); const by=sy==null?ty:Math.min(sy,ty+200);
       addRock(c=>{c.fillStyle="#6b4a2a";c.strokeStyle="#2c1a0c";c.beginPath();c.roundRect(tx-7,by-70,14,74,4);c.fill();c.stroke();c.fillStyle="#3f8f3a";c.beginPath();c.arc(tx,by-82,30,0,7);c.arc(tx-22,by-66,18,0,7);c.arc(tx+22,by-66,18,0,7);c.fill();c.stroke()},tx-44,by-114,88,118); waitFx(20); break }
     case "icewall": for(const d of [-1,1]) addRock(c=>{c.fillStyle="#d8f3ff";c.strokeStyle="#7cc0dc";c.beginPath();c.roundRect(u.x+d*22-5,u.y-58,10,62,4);c.fill();c.stroke()},u.x+d*22-5,u.y-58,10,62); sfx("hit"); break;
-    case "flash": explode(u.x,u.y-20,s,u,{exclude:u}); break;
+    case "flash": explode(u.x,oy,s,cred,{exclude:u}); break;
+    case "melee": { const dir=tx>=u.x?1:-1, reach=s.range||44, bonus=u.bonus||0; let hit=0;
+      for(const e of [...M.units.filter(x=>x.alive&&x.team!==u.team),...M.imps.filter(x=>!x.dead&&x.team!==u.team)]){ const ey=e.imp?e.y-e.spec.size:e.y-18, dx=e.x-u.x;
+        if(Math.hypot(dx,ey-oy)<reach+(e.imp?e.spec.size:8)&&(Math.sign(dx)===dir||Math.abs(dx)<12)){ dmgAny(e,s.dmg+bonus,cred,s.elem||""); hit++;
+          if(!e.tower&&!e.rooted&&!(e.imp&&e.spec.fly)){ e.vx+=dir*(s.push||4)*.7; e.vy-=2+(s.push||4)*.3; e.grounded=false; e.y-=2 } if(s.root) e.rooted=Math.max(e.rooted||0,2); if(s.freeze&&!e.imp) e.frozen=1 } }
+      M.fx.push({t:"slash",x:u.x+dir*reach*.6,y:oy,dir,life:14,max:14,col:"#fff"}); sfx("hit"); if(!hit&&u.owner&&u.owner.isPlayer) toast("Missed: get right next to an enemy"); waitFx(16); break }
+    case "selfboom": { const d=s.dmg||u.hp; u.dead=true; explode(u.x,oy,{...s,dmg:d,rad:s.rad||30},cred); if(s.salt) splitAt(u.x,oy,{n:8,dmg:5,rad:8,salt:1},{spell:s,owner:cred,team:u.team}); break }
+    case "portal": { const w=u.owner; if(w&&w.alive){ M.fx.push({t:"poof",x:w.x,y:w.y-20,life:30,max:30,col:"#ffd6f4"}); w.x=u.x; w.y=u.y+4; w.vx=w.vy=0; w.grounded=false; w.tower=null; unstick(w); M.fx.push({t:"poof",x:w.x,y:w.y-20,life:30,max:30,col:"#ffd6f4"}) } u.dead=true; waitFx(20); break }
+    case "mheal": { const w=(u.owner&&u.owner.alive)?u.owner:M.units.filter(x=>x.alive&&x.team===u.team).sort((a,b)=>Math.hypot(a.x-u.x,a.y-u.y)-Math.hypot(b.x-u.x,b.y-u.y))[0]; if(w){ heal(w,s.heal); M.fx.push({t:"zap",x1:u.x,y1:oy,x2:w.x,y2:w.y-24,life:20,max:20,block:true,col:"#fff2a8"}) } sfx("heal"); break }
+    case "dig": for(let k=0;k<6;k++) carve(ox+Math.cos(ang)*k*14,oy+Math.sin(ang)*k*14,15); sfx("hit"); waitFx(15); break;
+    case "pounce": { const e=enemiesNear(u.team,tx,ty,60).sort((a,b)=>Math.hypot(a.x-tx,a.y-ty)-Math.hypot(b.x-tx,b.y-ty))[0];
+      if(!e||Math.hypot(e.x-u.x,e.y-u.y)>(s.range||150)+30){ if(u.owner&&u.owner.isPlayer) toast("Pick an enemy within reach"); M.cast=false; u.cool[id]=0; return false }
+      const dir=e.x>=u.x?1:-1; M.fx.push({t:"poof",x:u.x,y:oy,life:20,max:20,col:u.spec.col}); u.x=e.x-dir*(e.imp?e.spec.size+12:18); u.y=u.spec.fly?e.y-30:e.y; u.vx=u.vy=0; if(!u.spec.fly){u.grounded=false;unstick(u)}
+      dmgAny(e,s.dmg+(u.bonus||0),cred,s.elem||""); M.fx.push({t:"slash",x:e.x,y:e.imp?e.y-e.spec.size:e.y-20,dir,life:14,max:14,col:"#fff"}); sfx("hit"); waitFx(18); break }
     case "glyph": for(let k=0;k<s.count;k++){const a=k/s.count*Math.PI*2;M.zones.push({type:"glyph",owner:u,team:u.team,x:u.x+Math.cos(a)*50,y:u.y-22+Math.sin(a)*40,r:12,dmg:s.dmg,col:s.col,turns:12})} waitFx(20); break;
     case "sigil": for(let k=0;k<s.count;k++){const a=-Math.PI/2+k/s.count*Math.PI*2;M.zones.push({type:"glyph",owner:u,team:u.team,x:tx+Math.cos(a)*24,y:ty+Math.sin(a)*24,r:12,dmg:s.dmg,col:s.col,turns:12})} waitFx(20); break;
     case "beacon": M.zones.push({type:"beacon",owner:u,team:u.team,x:tx,y:ty,turns:99}); waitFx(15); break;
@@ -1639,7 +1723,7 @@ function castSpell(u,id,tx,ty,power){
     case "pull": { const vic=allNear(tx,ty,s.rad); for(const e of vic){ if(e.tower||e.rooted||(e.imp&&e.spec.fly)) continue; const d=Math.hypot(e.x-tx,e.y-ty)||1; e.vx=(tx-e.x)/d*4; e.vy=-6; e.grounded=false; e.y-=2 }
       M.fx.push({t:"hole",x:tx,y:ty,life:50,max:50,col:s.col});
       later(45,()=>{for(const e of vic){ if(e.dead||e.alive===false||e.tower||(e.imp&&e.spec.fly)) continue; e.vx=(e.x>=tx?1:-1)*rand(6,9); e.vy=-rand(7,9); e.grounded=false; e.y-=2 }}); break }
-    case "strike": strike(tx,s,u); break;
+    case "strike": strike(tx,s,cred); break;
     case "barrage": barrage(s,tx,ty,u,base); break;
     case "meteor": case "ult": { const sx=tx-260, sy=-60, d=Math.hypot(tx-sx,ty-sy);
       M.proj.push(mkProj({...base,ownerUnit:null,x:sx,y:sy,vx:(tx-sx)/d*15,vy:(ty-sy)/d*15,big:!s.cog,bounce:!!s.cog,boulder:!!s.cog,hits:0,timer:s.cog?240:null,grav:s.cog?1:0})); break }
@@ -1765,7 +1849,8 @@ function chainHit(p,res){
     M.fx.push({t:"zap",x1:from.x,y1:from.y-20,x2:n.x,y2:n.y-20,life:20,max:20,block:true,col:s.col}); hurt(n,Math.round((s.jdmg||18)*((p.owner&&p.owner.mult)||1)),p.owner,"",s.elem); hit.push(n); from=n }
 }
 function spawnMinion(owner,key,x,y){ const s=MINIONS[key];
-  const m={imp:true,mk:key,spec:s,owner,team:owner.team,x:clamp(x,20,W-20),y:s.fly?y-50:y-4,vx:0,vy:0,grounded:!!s.fly,face:owner.face,hp:s.hp,maxHp:s.hp,dead:false,rooted:0,bonus:0};
+  if(s.fly) y=Math.max(110,y);
+  const m={imp:true,mk:key,name:s.name,spells:(MINION_ABIL[key]||[]).slice(),cool:{},used:{},sel:0,spec:s,owner,team:owner.team,x:clamp(x,20,W-20),y:s.fly?y-50:y-4,vx:0,vy:0,grounded:!!s.fly,face:owner.face,hp:s.hp,maxHp:s.hp,dead:false,rooted:0,bonus:0};
   if(!s.fly) unstick(m); M.imps.push(m); M.fx.push({t:"poof",x:m.x,y:m.y-s.size,life:30,max:30,col:s.col}); return m }
 function powerFamiliar(u){ if(!u.fams||!u.fams.length) return;
   if(u.famLvl>=5){ if(u.isPlayer) toast("Your familiar is at full power"); return }
@@ -1782,7 +1867,7 @@ function estDmg(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];return m.dmg
   if(s.waves) d=s.dmg*s.waves.reduce((a,b)=>a+b,0)*.25; if(s.kind==="cloud") d=s.dmg*(s.count||2)*s.turns*.35; if(s.kind==="aura") d=s.dmg*s.turns*.5;
   if(s.kind==="chain") d=s.dmg+(s.jdmg||0); if(s.kind==="barrage") d=s.dmg*s.count*(s.mode==="focus"||s.mode==="drops"?.7:.35); if(s.hits) d=s.dmg*2; if(s.rod) d=60; return d }
 function simShot(u,s,ang,power){
-  const ox=u.x,oy=u.y-24; let p;
+  const ox=u.x,oy=u.y-(u.imp?u.spec.size:24); let p;
   if(s.type==="lob"){ const bomb=s.kind==="bomb"||s.kind==="boulder", v=4+power*(bomb?10:11); p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:bomb?1:(s.grav??1),wind:1,bounce:bomb,timer:bomb?(s.fuse||150):null}) }
   else p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*(s.speed||14),vy:Math.sin(ang)*(s.speed||14),grav:s.grav||0,life:160});
   p.ownerUnit=u; p.team=u.team; const units=M.units.filter(x=>x.alive);
@@ -1870,6 +1955,7 @@ function runMinions(){
   M.impTimer--;
   const u=M.active;
   const mine=M.imps.filter(i=>!i.dead&&(i.owner===u||(!i.owner.alive&&i.team===u.team)));
+  if(M.impTimer===119) for(const m of mine) for(const k in m.cool) if(m.cool[k]>0) m.cool[k]--;
   for(const m of mine){
     const s=m.spec, e=nearestEnemy(m.x,m.y,m.team); if(!e) continue;
     const dir=Math.sign(e.x-m.x)||1; m.face=dir;
@@ -1877,14 +1963,29 @@ function runMinions(){
     if(M.impTimer>30&&!m.rooted){
       const stopAt=s.style==="melee"?26:s.style==="aura"?40:(s.range||200)*.6;
       if(d>stopAt){
-        if(s.fly){ const ty=e.y-60, a=Math.atan2(ty-m.y,e.x-m.x); m.x+=Math.cos(a)*2.2; m.y=Math.max(30,m.y+Math.sin(a)*2.2) }
+        if(s.fly){ const ty=e.y-60, a=Math.atan2(ty-m.y,e.x-m.x); m.x+=Math.cos(a)*2.2; m.y=Math.max(s.size*3.6+10,m.y+Math.sin(a)*2.2) }
         else if(m.grounded){ const steps=s.speed>=1.5?2:1, every=s.speed<1?Math.max(1,Math.round(1/s.speed)):1;
           if(M.impTimer%every===0) for(let k=0;k<steps;k++){ const bx=m.x; walk(m,dir); if(Math.abs(m.x-bx)<.1&&M.impTimer%25===0) jump(m) } }
       }
     }
-    if(M.impTimer===25) minionAttack(m,e);
+    if(M.impTimer===25) minionAct(m,e);
   }
   if(M.impTimer<=0) M.phase="impsWait";
+}
+function minionAct(m,e){
+  const my=m.y-m.spec.size, d=Math.hypot(e.x-m.x,(e.y-18)-my), owner=m.owner;
+  const ok=(m.spells||[]).filter(id=>canCast(m,id)); let pickId=null,tx=e.x,ty=e.y-18,pw=1;
+  const by=k=>ok.find(id=>SP[id].kind===k);
+  if(owner&&owner.alive&&owner.hp<140&&by("mheal")) pickId=by("mheal");
+  else if(d<(m.spec.size+48)&&by("melee")) pickId=by("melee");
+  else if(d<160&&by("pounce")) pickId=by("pounce");
+  else { const ranged=ok.filter(id=>["shot","spray","chain","strike","ball","bomb","aura"].includes(SP[id].kind)&&(SP[id].kind!=="shot"&&SP[id].kind!=="spray"&&SP[id].kind!=="chain"||d<380));
+    if(ranged.length){ pickId=ranged.sort((a,b)=>estDmg(SP[b])-estDmg(SP[a]))[0]; const s=SP[pickId];
+      if(s.type==="lob"){ let best=null; for(let a=-160;a<=-20;a+=14){const ang=a*Math.PI/180; if((e.x-m.x)*Math.cos(ang)<-20&&Math.abs(e.x-m.x)>60) continue; for(let p=.3;p<=1.001;p+=.14){const r=simShot(m,s,ang,p),sc=scoreImpact(m,estDmg(s),s.rad||20,r); if(!best||sc>best.sc) best={sc,ang,p}}}
+        if(best&&best.sc>0){ tx=m.x+Math.cos(best.ang)*100; ty=my+Math.sin(best.ang)*100; pw=best.p } else pickId=null } } }
+  if(m.mk==="imp"&&d<36&&by("selfboom")) pickId=by("selfboom");
+  if(!pickId) return minionAttack(m,e);
+  const was=M.cast; M.cast=false; castSpell(m,pickId,tx,ty,pw); M.cast=was;
 }
 function minionAttack(m,e){ const s=m.spec, dmg=s.dmg+(m.bonus||0), my=m.y-s.size, d=Math.hypot(e.x-m.x,(e.y-18)-my);
   if(s.style==="melee"&&d<42){ dmgAny(e,dmg,m.owner,s.elem||""); M.fx.push({t:"ring",x:e.x,y:e.y-20,r:16,life:14,max:14,col:"#fff"}); sfx("hit"); if(!e.tower&&!e.rooted){e.vx+=Math.sign(e.x-m.x)*2;e.vy-=2;e.grounded=false;e.y-=1} }
@@ -1922,6 +2023,14 @@ function tick(){
   for(const n of M.nums){n.y-=.6;n.life--} M.nums=M.nums.filter(n=>n.life>0);
   if(!u) return;
   if(M.phase==="imps"){ runMinions(); return }
+  if(M.phase==="mctrl"){
+    const m=M.ctrl;
+    if(!m||m.dead){ if(settled()) startMinionTurn(); return }
+    if(!M.cast){ M.mTimer-=1/60; if(M.mTimer<=0){ M.cast=true; toast(m.spec.name+" ran out of time") } else { moveCtrlMinion(m); if(M.charging) M.charge=Math.min(1,M.charge+1/70) } }
+    else if(settled()&&!M.imps.some(i=>!i.dead&&!i.grounded&&!i.spec.fly)) startMinionTurn();
+    secAcc++; if(secAcc%15===0) renderHudTimer();
+    return;
+  }
   if(M.phase==="impsWait"){ if(settled()){ if(checkEnd()) return; if(!u.alive){M.phase="resolve";return} M.phase="turn" } return }
   if(M.phase==="turn"){
     if(!u.alive){ M.phase="resolve"; return }
@@ -1929,7 +2038,8 @@ function tick(){
       M.timer-=1/60;
       if(M.timer<=0){ M.cast=true; M.timer=0; toast(u.isPlayer?"Time's up!":u.name+" ran out of time"); }
       if(u.isPlayer){
-        if(!u.frozen&&!u.rooted){ if(keys.left) walk(u,-1); if(keys.right) walk(u,1) }
+        if(!u.frozen&&!u.rooted){ if(keys.left) walk(u,-1); if(keys.right) walk(u,1)
+          if(u.flyT>0){ if(keys.up){ u.grounded=false; if(u.y>40) u.vy=-2.6; else u.vy=0; } else if(keys.down&&!u.grounded) u.vy=2.6 } }
         if(M.charging){ M.charge=Math.min(1,M.charge+1/70) }
       } else runBot(u);
     }
@@ -1951,7 +2061,8 @@ function updateCamera(){
   const cw=cv.width,ch=cv.height,s0=Math.min(cw/W,ch/H);CAM.scale=s0*CAM.zoom;
   let fx=W/2,fy=H/2;
   const p=M.proj[0];
-  if(p){fx=p.x;fy=p.y}else if(M.active&&M.active.alive){fx=M.active.x;fy=M.active.y-30}
+  const cb=ctl();
+  if(p){fx=p.x;fy=p.y}else if(cb&&(cb.alive||cb.imp&&!cb.dead)){fx=cb.x;fy=cb.y-30}
   if(CAM.manual>0){CAM.manual--}else{CAM.x+=(fx-CAM.x)*.08;CAM.y+=(fy-CAM.y)*.08}
   const vw=cw/CAM.scale,vh=ch/CAM.scale;
   CAM.x=vw>=W?W/2:clamp(CAM.x,vw/2,W-vw/2); CAM.y=vh>=H?H/2:clamp(CAM.y,vh/2,H-vh/2);
@@ -1970,16 +2081,18 @@ function draw(){
   if(M.water<H-6){cx.fillStyle="rgba(40,110,170,.35)";cx.fillRect(0,M.water,W,H-M.water)}
   const u=M.active;
   // range ring for targeted spells
-  if(u&&u.isPlayer&&M.phase==="turn"&&!M.cast){ const s=SP[u.spells[M.selSpell]]; if(s&&s.range){cx.strokeStyle="rgba(255,255,255,.35)";cx.setLineDash([6,6]);cx.beginPath();cx.arc(u.x,u.y-18,s.range,0,7);cx.stroke();cx.setLineDash([])} }
+  const cb=ctl(), aimPhase=(M.phase==="turn"||M.phase==="mctrl");
+  if(u&&u.isPlayer&&aimPhase&&!M.cast&&cb){ const s=SP[cb.spells[cb.sel||0]]; if(s&&s.range&&s.kind!=="melee"){cx.strokeStyle="rgba(255,255,255,.35)";cx.setLineDash([6,6]);cx.beginPath();cx.arc(cb.x,cb.y-18,s.range,0,7);cx.stroke();cx.setLineDash([])} }
   drawZones(); for(const i of M.imps) if(!i.dead) drawMinion(i);
-  for(const un of M.units) if(un.alive) drawUnit(un,un===u&&M.phase==="turn");
+  for(const un of M.units) if(un.alive) drawUnit(un,un===u&&(M.phase==="turn"||M.phase==="impsWait"&&false));
   // aim
-  if(u&&M.phase==="turn"&&!M.cast&&u.alive){
-    let ang=null,pw=M.charge; const s=SP[u.spells[M.selSpell]];
-    if(u.isPlayer&&s&&s.type==="shot"||u.isPlayer&&s&&s.type==="lob"){ ang=Math.atan2(mouse.y-(u.y-24),mouse.x-u.x) }
+  if(u&&aimPhase&&!M.cast&&u.alive&&cb){
+    const ay=cb.imp?cb.y-cb.spec.size:cb.y-24;
+    let ang=null,pw=M.charge; const s=SP[cb.spells[cb.sel||0]];
+    if(u.isPlayer&&s&&(s.type==="shot"||s.type==="lob")){ ang=Math.atan2(mouse.y-ay,mouse.x-cb.x) }
     if(!u.isPlayer&&M.botAim){ ang=M.botAim.ang; pw=M.botAim.power }
-    if(ang!=null){ const L=34+(s&&s.type==="lob"||M.botAim?pw*70:30); cx.strokeStyle="rgba(255,240,200,.9)";cx.lineWidth=3;cx.setLineDash([4,5]);cx.beginPath();cx.moveTo(u.x,u.y-24);cx.lineTo(u.x+Math.cos(ang)*L,u.y-24+Math.sin(ang)*L);cx.stroke();cx.setLineDash([]);
-      if(M.charging||(!u.isPlayer&&M.botAim)){cx.lineWidth=6;cx.strokeStyle=`hsl(${120-pw*120},90%,55%)`;cx.beginPath();cx.arc(u.x,u.y-24,26,-Math.PI/2,-Math.PI/2+pw*Math.PI*2);cx.stroke()} cx.lineWidth=1 }
+    if(ang!=null){ const L=34+(s&&s.type==="lob"||M.botAim?pw*70:30); cx.strokeStyle="rgba(255,240,200,.9)";cx.lineWidth=3;cx.setLineDash([4,5]);cx.beginPath();cx.moveTo(cb.x,ay);cx.lineTo(cb.x+Math.cos(ang)*L,ay+Math.sin(ang)*L);cx.stroke();cx.setLineDash([]);
+      if(M.charging||(!u.isPlayer&&M.botAim)){cx.lineWidth=6;cx.strokeStyle=`hsl(${120-pw*120},90%,55%)`;cx.beginPath();cx.arc(cb.x,ay,26,-Math.PI/2,-Math.PI/2+pw*Math.PI*2);cx.stroke()} cx.lineWidth=1 }
     if(u.isPlayer&&s&&s.type==="target"){cx.strokeStyle=s.col;cx.lineWidth=2;cx.beginPath();cx.arc(mouse.x,mouse.y,Math.max(10,(s.rad||12)),0,7);cx.moveTo(mouse.x-16,mouse.y);cx.lineTo(mouse.x+16,mouse.y);cx.moveTo(mouse.x,mouse.y-16);cx.lineTo(mouse.x,mouse.y+16);cx.stroke();cx.lineWidth=1}
   }
   for(const p of M.proj){ const c=p.spell.col; cx.strokeStyle=c;cx.globalAlpha=.5;cx.lineWidth=p.big?10:p.small?2:4;cx.beginPath();p.trail.forEach((t,i)=>i?cx.lineTo(t[0],t[1]):cx.moveTo(t[0],t[1]));cx.stroke();cx.globalAlpha=1;
@@ -1988,6 +2101,7 @@ function draw(){
   for(const q of M.parts){cx.globalAlpha=Math.min(1,q.life/30);cx.fillStyle=q.col;cx.fillRect(q.x,q.y,q.sz,q.sz)} cx.globalAlpha=1;
   for(const f of M.fx){ const k=f.life/f.max;
     if(f.t==="ring"){cx.strokeStyle=f.col;cx.globalAlpha=k;cx.lineWidth=4;cx.beginPath();cx.arc(f.x,f.y,f.r*(1.2-k*.4),0,7);cx.stroke();cx.globalAlpha=1;cx.lineWidth=1}
+    if(f.t==="slash"){cx.strokeStyle=f.col;cx.globalAlpha=k;cx.lineWidth=3;cx.beginPath();cx.arc(f.x-f.dir*10,f.y,22,f.dir>0?-1.1:Math.PI-1.1+2.2-2.2,f.dir>0?1.1:Math.PI+1.1);cx.stroke();cx.globalAlpha=1;cx.lineWidth=1}
     if(f.t==="poof"){cx.fillStyle=f.col;cx.globalAlpha=k*.7;cx.beginPath();cx.arc(f.x,f.y,30*(1-k)+6,0,7);cx.fill();cx.globalAlpha=1}
     if(f.t==="hole"){cx.fillStyle="#120018";cx.globalAlpha=k;cx.beginPath();cx.arc(f.x,f.y,22*k+4,0,7);cx.fill();cx.strokeStyle=f.col;cx.beginPath();cx.arc(f.x,f.y,60*k,0,7);cx.stroke();cx.globalAlpha=1}
     if(f.t==="bolt"||f.t==="zap"){cx.strokeStyle=f.col;cx.lineWidth=3;cx.shadowColor="#fff";cx.shadowBlur=12;cx.globalAlpha=k;cx.beginPath();const x1=f.t==="bolt"?f.x:f.x1,y1=f.t==="bolt"?0:f.y1,x2=f.t==="bolt"?f.x:f.x2,y2=f.t==="bolt"?f.y:f.y2;cx.moveTo(x1,y1);for(let i=1;i<10;i++){cx.lineTo(x1+(x2-x1)*i/10+rand(-9,9),y1+(y2-y1)*i/10+rand(-4,4))}cx.lineTo(x2,y2);cx.stroke();cx.globalAlpha=1;cx.shadowBlur=0;cx.lineWidth=1}
@@ -2049,6 +2163,11 @@ function drawZones(){ const t=performance.now()/1000;
   }
 }
 function drawMinion(m){ const s=m.spec, r=s.size, t=performance.now()/1000, by=m.y-(s.fly?Math.sin(t*3+m.x)*3:0);
+  const active=M.phase==="mctrl"&&M.ctrl===m;
+  if(active){ cx.fillStyle="#f2cf7c"; const b=Math.sin(t*6)*3, top=by-(s.img?r*3.6:r*2.6)-22; cx.beginPath(); cx.moveTo(m.x-7,top+b); cx.lineTo(m.x+7,top+b); cx.lineTo(m.x,top+9+b); cx.fill() }
+  if(s.img&&IMG[s.img]&&IMG[s.img].complete&&IMG[s.img].naturalWidth){ const im=IMG[s.img], hgt=r*3.6, wid=hgt*im.width/im.height;
+    cx.save(); cx.translate(m.x,by); if(m.face>0) cx.scale(-1,1); if(m.undead&&!s.undead) cx.filter="hue-rotate(80deg)"; cx.drawImage(im,-wid/2,-hgt+4,wid,hgt); cx.restore();
+    const top=by-hgt-2; cx.fillStyle="#111"; cx.fillRect(m.x-r,top,r*2,4); cx.fillStyle=m.team?"#ff7a5c":"#5fb4ff"; cx.fillRect(m.x-r,top,r*2*clamp(m.hp/m.maxHp,0,1),4); return }
   const col=(m.undead&&!s.undead)?"#86b07f":s.col;
   cx.save(); cx.translate(m.x,by); if(m.face<0) cx.scale(-1,1);
   cx.fillStyle=col; cx.strokeStyle="rgba(0,0,0,.75)"; cx.lineWidth=2;
@@ -2079,50 +2198,58 @@ function renderHud(){
   if(!M) return;
   for(const t of [0,1]){ $("#hRoster"+t).innerHTML=`<span class="long" style="color:var(--team${t});font-weight:700">${t===0?"YOUR TEAM":"ENEMIES"}</span><div class="roster">`+
     M.units.filter(u=>u.team===t).map(u=>`<span class="rchip ${u.alive?"":"dead"} ${M.active===u?"turn":""}">${esc(u.name)}<i><b style="width:${u.hp/u.maxHp*100}%;background:var(--team${t})"></b></i></span>`).join("")+"</div>" }
-  const u=M.active; $("#hWho").innerHTML=u?`<span style="color:var(--team${u.team})">${esc(u.name)}</span>${u.frozen?' <span class="tag">FROZEN</span>':""}`:"";
+  const u=M.active, cb=ctl(); $("#hWho").innerHTML=u?`<span style="color:var(--team${u.team})">${esc(cb&&cb.imp?cb.spec.name:u.name)}</span>${u.frozen?' <span class="tag">FROZEN</span>':""}${!cb.imp&&u.flyT>0?` <span class="tag">FLYING ${u.wings?"":u.flyT}</span>`:""}`:"";
   const w=$("#hWind"); w.style.left=(M.wind<0?50+M.wind*50:50)+"%"; w.style.width=Math.abs(M.wind)*50+"%";
   $("#hTurn").textContent=`Round ${M.round}`+(M.turnNo>=30&&M.turnNo<M.armaAt?` · Armageddon in ${M.armaAt-M.turnNo}`:M.turnNo>=M.armaAt?" · ARMAGEDDON":"");
   renderHudTimer();
 }
-function renderHudTimer(){const t=$("#hTimer");const v=Math.ceil(M.timer);t.textContent=v;t.classList.toggle("low",v<=5);if(M.active&&M.active.isPlayer&&v<=5&&v>0&&!M.cast&&Math.abs(M.timer-v)<.05)sfx("tick")}
+function renderHudTimer(){const t=$("#hTimer");const v=Math.ceil(M.phase==="mctrl"?M.mTimer:M.timer);t.textContent=v;t.classList.toggle("low",v<=5);if(M.active&&M.active.isPlayer&&v<=5&&v>0&&!M.cast&&Math.abs(M.timer-v)<.05)sfx("tick")}
 function renderSpellbar(){
-  if(!M) return; const me_=M.units.find(u=>u.isPlayer); const s=SP[me_.spells[M.selSpell]]; if(!s) return;
+  if(!M) return; const wiz=M.units.find(u=>u.isPlayer), me_=pbody(); const s=SP[me_.spells[me_.sel||0]];
+  const fly=(me_.imp&&me_.spec.fly)||me_.flyT>0; const jb=document.querySelector('.pad [data-t="jump"] span'), hb=document.querySelector('.pad [data-t="high"] span'); if(jb){jb.textContent=fly?"UP":"JUMP"; hb.textContent=fly?"DOWN":"HIGH"}
+  if(!s) return;
   $("#spellBtnIco").innerHTML=sico(s); $("#spellBtnName").textContent=s.name;
   const st=spellState(me_,s.id);
   $("#spellTip").innerHTML=`<b>${esc(s.name)}</b> · ${esc(spellMeta(s))} · ${esc(s.desc)}${st.why?` <span class="tag">${esc(st.why)}</span>`:""}`;
-  const fb=$("#famBtn"); const showF=me_.fams&&me_.fams.length&&M.active===me_; fb.hidden=!showF; if(showF){ fb.textContent=`${famName(me_)} ${me_.famLvl}/5`; fb.title=`Costs 20 HP per level. ${me_.fams.map(b=>BK[b].fam.desc).join(" ")}`; fb.disabled=me_.famLvl>=5 }
+  const fb=$("#famBtn"); const showF=wiz&&wiz.fams&&wiz.fams.length&&M.active===wiz&&me_===wiz; fb.hidden=!showF; if(showF){ fb.textContent=`${famName(wiz)} ${wiz.famLvl}/5`; fb.title=`Costs 20 HP per level. ${wiz.fams.map(b=>BK[b].fam.desc).join(" ")}`; fb.disabled=wiz.famLvl>=5 }
+  $("#skipBtn").firstChild.textContent=M.phase==="mctrl"?"Done":"Skip";
   if(!$("#wheel").hidden) renderWheel();
 }
 let wheelPick=null;
-function openWheel(){ if(!M) return; wheelPick=M.selSpell; $("#wheel").hidden=false; renderWheel(); sfx("click") }
+function openWheel(){ if(!M) return; wheelPick=pbody().sel||0; $("#wheel").hidden=false; renderWheel(); sfx("click") }
 function closeWheel(){ $("#wheel").hidden=true }
 function renderWheel(){
-  const me_=M.units.find(u=>u.isPlayer); const n=me_.spells.length; const ring=$("#wheelRing");
+  const me_=pbody(); const n=me_.spells.length; const ring=$("#wheelRing"); if(!n){ closeWheel(); return }
   const outer=Math.min(n,16), inner=n-outer;
   ring.innerHTML=me_.spells.map((id,i)=>{const s=SP[id],st=spellState(me_,id),inn=i>=outer,a=-Math.PI/2+(inn?(i-outer)/inner:i/outer)*Math.PI*2,r=inn?25:42;
     return `<button class="wsp ${i===wheelPick?"sel":""} ${st.ok?"":"off"}" data-i="${i}" style="left:${50+Math.cos(a)*r}%;top:${50+Math.sin(a)*r}%;background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" aria-label="${esc(s.name)}">${icon(s.kind)}${i<10?`<span class="k">${(i+1)%10}</span>`:""}${st.cd?`<span class="cd">${st.cd}</span>`:st.out?'<span class="cd">✕</span>':""}</button>`}).join("")+`${inner?"":'<div class="hub">Pick a<br>spell</div>'}`;
-  ring.querySelectorAll(".wsp").forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.i; if(wheelPick===i&&spellState(me_,me_.spells[i]).ok){selectSpell(i);closeWheel();return} wheelPick=i; renderWheel()});
+  ring.querySelectorAll(".wsp").forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.i; if(wheelPick===i&&spellState(me_,me_.spells[i]).ok){useFromWheel(i);return} wheelPick=i; renderWheel()});
   const s=SP[me_.spells[wheelPick]], st=spellState(me_,s.id);
   $("#wheelInfo").innerHTML=`<div class="row" style="gap:10px;flex-wrap:nowrap">${sico(s)}<h3>${esc(s.name)}</h3></div><p>${esc(s.desc)}</p>${spellStats(s,me_)}
     ${st.why?`<div class="why">${esc(st.why)}</div>`:""}
-    <div class="row"><button class="wood" id="wUse" ${st.ok?"":"disabled"}>Use this spell</button><button class="wood sm" id="wClose">Close</button></div>`;
-  $("#wUse").onclick=()=>{selectSpell(wheelPick);closeWheel()}; $("#wClose").onclick=closeWheel;
+    <div class="row"><button class="wood" id="wUse" ${st.ok?"":"disabled"}>${s.type==="self"?"Cast now":"Use this spell"}</button><button class="wood sm" id="wClose">Close</button></div>`;
+  $("#wUse").onclick=()=>useFromWheel(wheelPick); $("#wClose").onclick=closeWheel;
 }
-function selectSpell(i){const me_=M.units.find(u=>u.isPlayer);if(i<0||i>=me_.spells.length)return;M.selSpell=i;M.charging=false;M.charge=0;sfx("click");renderSpellbar()}
+function selectSpell(i){const me_=pbody();if(!me_||i<0||i>=me_.spells.length)return;me_.sel=i;M.charging=false;M.charge=0;sfx("click");renderSpellbar()}
+function useFromWheel(i){ selectSpell(i); closeWheel(); const b=pbody(), s=SP[b.spells[i]];
+  if(s&&s.type==="self"&&playerTurn()&&b===ctl()) castSpell(b,s.id,b.x,b.y,1);
+  else if(s&&s.type!=="self") toast(s.type==="lob"?"Hold on the map to charge, let go to throw":s.type==="target"?"Tap where you want it":"Aim and tap to fire") }
 $("#spellBtn").onclick=openWheel;
 $("#famBtn").onclick=()=>{ if(playerTurn()) powerFamiliar(M.active); else toast("Power your familiar on your turn") };
 $("#wheel").addEventListener("click",e=>{if(e.target.id==="wheel")closeWheel()});
 
 /* ----- input ----- */
 function toWorld(e){const r=cv.getBoundingClientRect();const px=(e.clientX-r.left)*cv.width/r.width,py=(e.clientY-r.top)*cv.height/r.height;return{x:(px-CAM.ox)/CAM.scale,y:(py-CAM.oy)/CAM.scale}}
-function playerTurn(){return M&&M.phase==="turn"&&!M.cast&&M.active&&M.active.isPlayer&&M.active.alive}
+function playerTurn(){return !!(M&&(M.phase==="turn"||M.phase==="mctrl")&&!M.cast&&M.active&&M.active.isPlayer&&M.active.alive&&(M.phase!=="mctrl"||(M.ctrl&&!M.ctrl.dead)))}
+function ctl(){return M&&M.phase==="mctrl"&&M.ctrl?M.ctrl:M&&M.active}
+function pbody(){if(!M)return null;const p=M.units.find(u=>u.isPlayer);return (M.phase==="mctrl"&&M.active===p&&M.ctrl)?M.ctrl:p}
 let gest=null;
-function curSpell(){const u=M.active;return u&&SP[u.spells[M.selSpell]]}
-function beginAim(){ if(!playerTurn()) return false; const u=M.active,s=curSpell(); if(!s) return false;
+function curSpell(){const u=ctl();return u&&SP[u.spells[u.sel||0]]}
+function beginAim(){ if(!playerTurn()) return false; const u=ctl(),s=curSpell(); if(!s) return false;
   if(!canCast(u,s.id)){toast("That spell is recharging. Pick another from the spell wheel.");return false}
   M.aiming=true; if(s.type==="lob"){M.charging=true;M.charge=0} return true }
 function endAim(cancel){ if(!M) return; const was=M.aiming; M.aiming=false; const charging=M.charging; M.charging=false;
-  if(cancel||!was||!playerTurn()) return; const u=M.active,s=curSpell(); if(!s) return;
+  if(cancel||!was||!playerTurn()) return; const u=ctl(),s=curSpell(); if(!s) return;
   if(s.type==="lob") return castSpell(u,s.id,mouse.x,mouse.y,Math.max(.08,M.charge));
   if(s.type==="self") return castSpell(u,s.id,u.x,u.y,1);
   castSpell(u,s.id,mouse.x,mouse.y,1) }
@@ -2155,21 +2282,28 @@ addEventListener("keydown",e=>{
   if(L) keys.left=true;
   if(Rr) keys.right=true;
   if((L||Rr||J||HJ)&&!e.repeat&&M&&!playerTurn()&&!M.over) toast(M.active&&M.active.isPlayer?"Wait for your spell to land":"Wait for your turn");
-  if(playerTurn()&&!M.active.frozen&&!M.active.rooted&&!e.repeat){ if(J) jump(M.active,false); if(HJ) jump(M.active,true) }
+  if(J) keys.up=true; if(c==="KeyS"||k==="s"||k==="arrowdown"){ keys.down=true; e.preventDefault() }
+  if(playerTurn()&&!ctl().frozen&&!ctl().rooted&&!e.repeat){ const b=ctl(); if(!(b.imp&&b.spec.fly)&&!(b.flyT>0)){ if(J) jump(b,false); if(HJ) jump(b,true) } }
   if(k==="+"||k==="=") setZoom(CAM.zoom+.25); if(k==="-") setZoom(CAM.zoom-.25);
   if(/^[0-9]$/.test(k)) selectSpell(k==="0"?9:+k-1);
   if((c==="KeyE"||k==="tab")&&!e.repeat){ e.preventDefault(); $("#wheel").hidden?openWheel():closeWheel() }
   if(k==="escape") closeWheel();
   if(k==="q"&&playerTurn()) skipTurn();
 });
-addEventListener("keyup",e=>{const k=e.key.toLowerCase(),c=e.code;if(c==="KeyA"||k==="a"||k==="arrowleft")keys.left=false;if(c==="KeyD"||k==="d"||k==="arrowright")keys.right=false});
-addEventListener("blur",()=>{keys.left=keys.right=false});
+addEventListener("keyup",e=>{const k=e.key.toLowerCase(),c=e.code;if(c==="KeyA"||k==="a"||k==="arrowleft")keys.left=false;if(c==="KeyD"||k==="d"||k==="arrowright")keys.right=false;
+  if(c==="KeyW"||k==="w"||k==="arrowup")keys.up=false;if(c==="KeyS"||k==="s"||k==="arrowdown")keys.down=false});
+addEventListener("blur",()=>{keys.left=keys.right=keys.up=keys.down=false});
 $$(".pad [data-t]").forEach(b=>{const t=b.dataset.t;b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("pointerdown",e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){} b.classList.add("on");
     if(!playerTurn()){toast(M&&M.active&&M.active.isPlayer?"Wait for your spell to land":"Wait for your turn");return}
-    if(t==="left")keys.left=true;if(t==="right")keys.right=true;if(M.active.rooted){keys.left=keys.right=false;toast(M.active.aegisT?"You can't move while your Aegis Tower stands":"You can't move this turn")}else if(!M.active.frozen){if(t==="jump")jump(M.active,false);if(t==="high")jump(M.active,true)}else toast("You're frozen this turn")});
-  for(const ev of ["pointerup","pointercancel","lostpointercapture"]) b.addEventListener(ev,()=>{b.classList.remove("on");if(t==="left")keys.left=false;if(t==="right")keys.right=false})});
-function skipTurn(){if(!playerTurn())return;M.cast=true;M.fx.push({t:"wait",life:10,max:10,block:true});toast("Turn skipped")}
+    const c=ctl(), flying=(c.imp&&c.spec.fly)||c.flyT>0;
+    if(t==="left")keys.left=true;if(t==="right")keys.right=true;
+    if(c.rooted){keys.left=keys.right=false;toast(c.aegisT?"You can't move while your Aegis Tower stands":"You can't move this turn");return}
+    if(c.frozen){toast("Frozen: can't move this turn");return}
+    if(flying){ if(t==="jump")keys.up=true; if(t==="high")keys.down=true; return }
+    if(t==="jump")jump(c,false);if(t==="high")jump(c,true)});
+  for(const ev of ["pointerup","pointercancel","lostpointercapture"]) b.addEventListener(ev,()=>{b.classList.remove("on");if(t==="left")keys.left=false;if(t==="right")keys.right=false;if(t==="jump")keys.up=false;if(t==="high")keys.down=false})});
+function skipTurn(){if(!playerTurn())return; if(M.phase==="mctrl"){ M.cast=true; toast(M.ctrl.name+" is done"); return } M.cast=true;M.fx.push({t:"wait",life:10,max:10,block:true});toast("Turn skipped")}
 $("#skipBtn").onclick=skipTurn;
 $("#zoomIn").onclick=()=>setZoom(CAM.zoom+.4);
 $("#zoomOut").onclick=()=>setZoom(CAM.zoom-.4);
@@ -2191,7 +2325,7 @@ function endMatch(winner,reason){
   u.games++;u.kills+=p.kills;u.orbs+=orbs;u.gems=(u.gems||0)+gems; if(won)u.wins++;else if(!draw)u.losses++;
   const before=u.level; const levelUps=[];
   if(u.level<MAX_LEVEL){ u.xp+=xp; while(u.level<MAX_LEVEL&&u.xp>=xpNeed(u.level)){u.xp-=xpNeed(u.level);u.level++;levelUps.push(u.level)} if(u.level>=MAX_LEVEL) u.xp=0 }
-  const newSpells=SPELLS.filter(s=>s.book!=="prestige"&&s.lvl>before&&s.lvl<=u.level);
+  const newSpells=SPELLS.filter(s=>s.book!=="prestige"&&s.book!=="minion"&&s.lvl>before&&s.lvl<=u.level);
   const oldSlots=slotsFor(before); fixBook(u,slotsFor(u.level)>oldSlots); save();
   if(levelUps.length) sfx("level");
   const title=draw?"Draw":won?"Victory!":"Defeat";
@@ -2250,7 +2384,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.25-1424";
+const APP_VERSION="2026.10.25-1457";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

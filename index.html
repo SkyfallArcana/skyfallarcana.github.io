@@ -208,6 +208,17 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 .wheel-info .why{color:var(--bad);font-family:var(--ui);font-size:1rem}
 @media (max-height:560px){.wheel-ring{width:min(92vh,360px)}.wheel-ring .wsp{width:44px;height:44px;margin:-22px 0 0 -22px}.wheel-ring .wsp svg{width:24px;height:24px}.wheel-info{width:min(270px,44vw);padding:10px;gap:6px}.wheel-info h3{font-size:1.15rem}.wheel-info p{font-size:.85rem}.wheel-info .statgrid{font-size:.85rem;gap:2px 12px}}
 .slot{position:relative}
+.btabs{display:flex;gap:6px;flex-wrap:wrap}
+.btab{border:none;border-radius:999px;padding:.35em .8em;font-family:var(--ui);font-weight:700;letter-spacing:.03em;font-size:.95rem;color:var(--cream);background:#121a23;box-shadow:inset 0 0 0 2px var(--bc)}
+.btab.on{background:var(--bc);color:#111}
+.btab b{font-size:.8rem;background:rgba(0,0,0,.35);color:#fff;border-radius:6px;padding:0 5px}
+.faminfo{background:#121a23;border-radius:8px;padding:8px 10px;box-shadow:inset 0 0 0 1px var(--slate-line);font-size:.92rem;line-height:1.4}
+.faminfo.on{box-shadow:inset 0 0 0 2px var(--gold)}
+.faminfo span{color:var(--muted)}
+.tier{font-style:normal;font-size:.72rem;padding:0 5px;border-radius:5px;background:#2a333d;color:#fff;vertical-align:middle}
+.tier.t2{background:#3b5b8a}.tier.t3{background:#8a3b6a}.tier.t0{background:#8a6a1f}
+.spell .req{display:block;color:var(--bad);font-family:var(--ui);font-size:.82rem;margin-top:2px}
+.spell.needs{opacity:.75}
 .slot button.rm{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:var(--bad);color:#fff;font-weight:700;font-size:.8rem;line-height:1;padding:0;box-shadow:0 0 0 2px #0b1016}
 .slot.empty{border:1px dashed var(--slate-line);box-shadow:none}
 .spell .meta{display:block;color:var(--gold);font-family:var(--ui);font-size:.85rem;letter-spacing:.02em;margin-top:2px}
@@ -450,6 +461,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
     </div>
     <div class="hud-box" style="gap:8px;padding:0">
       <button class="wood sm fsBtn" type="button" title="Full screen">⛶</button>
+      <button class="wood sm" id="famBtn" type="button" hidden></button>
       <button class="wood sm" id="ffBtn" title="Speed up bot turns">2×<span class="long"> speed</span></button>
       <button class="wood sm" id="skipBtn">Skip<span class="long"> turn (Q)</span></button>
       <button class="wood sm" id="resignBtn">Resign</button>
@@ -510,48 +522,207 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 
 /* ================= DATA: spells ================= */
 // type: shot (straight), lob (gravity arc, charge power), target (click spot), self (instant), build, minion, arena
+/* ================= SPELLBOOKS (Arcanists-style: 10 elemental books, level 1/2/3 spells, familiars) ================= */
+const BOOKS=[
+ {id:"arcane",name:"Arcane",col:"#9b7bff",unlock:[1,8,0],fam:null},
+ {id:"flame",name:"Flame",col:"#ff7a2e",unlock:[5,12,30],fam:{name:"Fire Sprite",desc:"+10% damage on your Flame spells per level."}},
+ {id:"stone",name:"Stone",col:"#b08a5a",unlock:[5,14,32],fam:{name:"Pebble Pet",desc:"Every hit you take is 1 lower per level."}},
+ {id:"storm",name:"Storm",col:"#9ad1ff",unlock:[10,18,34],fam:{name:"Thundercloud",desc:"+1 Thunderbolt hit per level. Storm spells recharge 1 turn faster every 2 levels."}},
+ {id:"frost",name:"Frost",col:"#aee9ff",unlock:[10,20,36],fam:{name:"Frost Fox",desc:"You jump 8% higher per level."}},
+ {id:"seas",name:"Seas",col:"#3fa9e6",unlock:[15,24,38],fam:{name:"Seahorse",desc:"Water magic hurts you 20% less per level. At level 5 you can walk on water."}},
+ {id:"overlight",name:"Overlight",col:"#ffe58a",unlock:[15,26,40],fam:{name:"Little Angel",desc:"+1 shield per level at the start of each of your turns (up to 50 total)."}},
+ {id:"nature",name:"Nature",col:"#6fc26b",unlock:[20,28,42],fam:{name:"Sprout",desc:"Heal 2 HP per level at the start of each of your turns."}},
+ {id:"underdark",name:"Underdark",col:"#8d63d6",unlock:[20,30,44],fam:{name:"Soul Lantern",desc:"Leaves a lantern where you power it. If you're knocked out, you come back at the lantern with 20 HP per level (once)."}},
+ {id:"cogs",name:"Cogs",col:"#d9a441",unlock:[25,32,46],fam:{name:"Pocket Watch",desc:"+6 seconds on your turn timer per level."}}
+];
+const BK=Object.fromEntries(BOOKS.map(b=>[b.id,b]));
+BK.prestige={id:"prestige",name:"Prestige",col:"#ffd36a",unlock:[1,1,1],fam:null};
+const MINIONS={
+ imp:{name:"Imp",hp:25,dmg:10,style:"shot",range:240,col:"#ff5d7a",shape:"imp",size:9,speed:1,elem:"arcane"},
+ dwarf:{name:"Dwarf",hp:60,dmg:20,style:"melee",col:"#b9855a",shape:"dwarf",size:10,speed:1},
+ golem:{name:"Rock Golem",hp:150,dmg:35,style:"melee",col:"#8a7a68",shape:"golem",size:14,speed:.5,resist:.5},
+ cyclops:{name:"Cyclops",hp:120,dmg:30,style:"melee",col:"#7fa0c8",shape:"cyclops",size:13,speed:.8},
+ storm_spirit:{name:"Storm Spirit",hp:50,dmg:15,style:"shot",range:280,col:"#bfe3ff",shape:"spirit",size:9,fly:1,elem:"storm"},
+ snow_sprite:{name:"Snow Sprite",hp:40,dmg:15,style:"shot",range:260,col:"#e6f8ff",shape:"spirit",size:8,fly:1,elem:"frost"},
+ frost_giant:{name:"Frost Giant",hp:160,dmg:35,style:"melee",col:"#9fd6f0",shape:"golem",size:16,speed:.5},
+ swarm:{name:"Swarm",hp:25,dmg:15,style:"aura",range:60,col:"#5b3a6e",shape:"swarm",size:10,fly:1,undead:1,elem:"underdark"},
+ dark_knight:{name:"Dark Knight",hp:180,dmg:40,style:"melee",col:"#3b3350",shape:"knight",size:13,speed:.7},
+ wraith:{name:"Wraith",hp:80,dmg:25,style:"melee",col:"#8e7bb0",shape:"spirit",size:11,fly:1,undead:1,elem:"underdark"},
+ pegasus:{name:"Pegasus",hp:70,dmg:15,style:"melee",col:"#f4f0ff",shape:"beast",size:12,fly:1},
+ paladin:{name:"Paladin",hp:160,dmg:35,style:"melee",col:"#f2d27a",shape:"knight",size:13,speed:.7,elem:"overlight"},
+ pixie:{name:"Pixie",hp:20,dmg:8,style:"shot",range:240,col:"#ffd6f4",shape:"spirit",size:6,fly:1,elem:"overlight"},
+ troll:{name:"Water Troll",hp:60,dmg:8,style:"melee",col:"#4f9c8f",shape:"troll",size:12,speed:.9,swim:1},
+ goblin:{name:"Salt Goblin",hp:40,dmg:10,style:"melee",col:"#c9c3b5",shape:"goblin",size:9,speed:1.2,deathBoom:{dmg:40,rad:40,col:"#e8e4da"}},
+ sea_lord:{name:"Sea Lord",hp:300,dmg:45,style:"melee",col:"#2f7fb8",shape:"troll",size:17,speed:.6,swim:1,weak:1.5},
+ wolf:{name:"Wolf",hp:45,dmg:18,style:"melee",col:"#8b8f96",shape:"beast",size:10,speed:1.8},
+ treant:{name:"Treant",hp:200,dmg:40,style:"melee",col:"#5d7a3a",shape:"treant",size:17,speed:.4},
+ fire_dragon:{name:"Fire Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#ff7a2e",shape:"dragon",size:16,fly:1,elem:"flame"},
+ storm_dragon:{name:"Storm Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#9ad1ff",shape:"dragon",size:16,fly:1,elem:"storm"},
+ frost_dragon:{name:"Frost Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#bfefff",shape:"dragon",size:16,fly:1,elem:"frost"}
+};
+// [book, tier, id, name, props, description]
+const SPELL_ROWS=[
+ // ---- Arcane (no familiar) ----
+ ["arcane",1,"arcane_shot","Arcane Shot",{type:"shot",kind:"shot",dmg:28,rad:18,speed:17,grav:0,cd:1,lvl:1},"Long-range straight bolt. Hits the first thing in its path."],
+ ["arcane",1,"arcane_arrow","Arcane Arrow",{type:"shot",kind:"arrow",dmg:10,rad:12,count:4,speed:8,cd:1,lvl:1},"Four homing arrows that curve toward the nearest enemy."],
+ ["arcane",1,"arcane_gate","Arcane Gate",{type:"target",kind:"tele",range:300,cd:5,lvl:1},"Teleport to a clear spot within range."],
+ ["arcane",1,"arcane_tower","Arcane Tower",{type:"self",kind:"tower",thp:50,cd:5,lvl:3},"A tower of arcane stone rises around you and soaks up 50 damage. Jump to leave it."],
+ ["arcane",1,"summon_imps","Summon Imps",{type:"self",kind:"minion",minion:"imp",count:3,cd:5,lvl:4},"Summon 3 imps. Each turn they walk toward enemies and fire small arcane bolts."],
+ ["arcane",1,"arcane_flash","Arcane Flash",{type:"self",kind:"flash",dmg:15,rad:70,push:14,cd:1,lvl:5},"Energy bursts out from you, throwing nearby enemies far away."],
+ ["arcane",1,"arcane_glyph","Arcane Glyph",{type:"self",kind:"glyph",dmg:10,count:10,charges:4,cd:1,lvl:6},"A ring of 10 rune mines around you. Each explodes for 10 when an enemy touches it."],
+ ["arcane",2,"arcane_bomb","Arcane Bomb",{type:"lob",kind:"bomb",dmg:10,rad:30,fuse:150,split:{n:3,dmg:10,rad:12,homing:1},cd:1,lvl:8,pair:"arcane_arrow"},"Bouncing bomb that bursts into 3 homing arcane arrows."],
+ ["arcane",2,"arcane_rift","Arcane Rift",{type:"lob",kind:"ball",dmg:5,rad:14,bell:1,cd:3,lvl:9,pair:"arcane_gate"},"Whoever this orb hits is teleported to a random spot on the island."],
+ ["arcane",2,"arcane_energiser","Arcane Energiser",{type:"self",kind:"energise",turns:5,cd:5,lvl:10,pair:"arcane_tower"},"For 5 turns every hit from your Arcane spells deals 5 extra damage."],
+ ["arcane",2,"imp_detonation","Imp Detonation",{type:"self",kind:"impboom",cd:1,lvl:11,pair:"summon_imps"},"All your imps explode. Each blast deals damage equal to that imp's health."],
+ ["arcane",2,"arcane_sigil","Arcane Sigil",{type:"target",kind:"sigil",dmg:10,count:3,charges:4,cd:1,lvl:12,pair:"arcane_glyph"},"Place 3 rune mines anywhere on the map."],
+ // ---- Flame ----
+ ["flame",1,"fireball","Fireball",{type:"lob",kind:"ball",dmg:50,rad:30,cd:1,lvl:1},"Lobbed fireball. Hold to charge. Wind pushes it."],
+ ["flame",1,"lava_bomb","Lava Bomb",{type:"lob",kind:"bomb",dmg:50,rad:34,fuse:150,cd:1},"Bouncing bomb that explodes after 2.5 seconds."],
+ ["flame",1,"flame_shield","Flame Shield",{type:"self",kind:"deflect",turns:5,once:1,cd:5},"For 5 turns, the first enemy spell to reach you each round bounces back."],
+ ["flame",1,"napalm","Napalm",{type:"shot",kind:"spray",count:12,dmg:5,rad:8,speed:11,spread:.12,grav:.5,napalm:1,cd:1},"Sprays 12 burning blobs that stay on the ground for 5 turns and burn anyone touching them for 5."],
+ ["flame",1,"rain_of_fire","Rain of Fire",{type:"target",kind:"barrage",mode:"line",count:5,dmg:25,rad:26,init:3,cd:5},"Five fireballs fall in a line across the target."],
+ ["flame",2,"fire_arrow","Fire Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:26,speed:9,charges:4,cd:1,pair:"fireball"},"A homing arrow of fire."],
+ ["flame",2,"magma_bomb","Magma Bomb",{type:"lob",kind:"bomb",dmg:25,rad:28,fuse:150,split:{n:5,dmg:25,rad:18},charges:4,cd:1,pair:"lava_bomb"},"Bouncing bomb that bursts into 5 fireballs."],
+ ["flame",2,"flame_wall","Flame Wall",{type:"self",kind:"firewall",dmg:50,turns:5,cd:5,pair:"flame_shield"},"A wall of fire in front of you. Burns the first enemy to touch it for 50 and blocks one spell each round."],
+ ["flame",2,"napalm_bomb","Napalm Bomb",{type:"lob",kind:"bomb",dmg:25,rad:24,fuse:150,split:{n:15,dmg:5,rad:8,napalm:1},charges:4,cd:1,pair:"napalm"},"Bomb that scatters 15 blobs of napalm."],
+ ["flame",2,"rain_of_arrows","Rain of Arrows",{type:"target",kind:"barrage",mode:"focus",count:5,dmg:15,rad:18,init:5,cd:5,pair:"rain_of_fire"},"Five fire arrows rain down on exactly the spot you pick."],
+ ["flame",3,"volcano","Volcano",{type:"target",kind:"geyser",waves:[1,2,3,4,5],dmg:25,rad:26,charges:1,init:5},"A volcano erupts under the target for 5 turns, firing more lava each turn."],
+ ["flame",3,"fire_dragon","Summon Fire Dragon",{type:"self",kind:"minion",minion:"fire_dragon",charges:1,init:5},"Summon a flying fire dragon that breathes flames on enemies."],
+ // ---- Stone ----
+ ["stone",1,"pebble_shot","Pebble Shot",{type:"shot",kind:"spray",count:10,dmg:5,rad:12,speed:13,spread:.08,grav:.25,cd:1},"Fires 10 pebbles. Digs through the ground fast."],
+ ["stone",1,"quake","Quake",{type:"self",kind:"quake",init:3,cd:5},"Shake the whole island. Everyone is thrown into the air and towers crack for 68."],
+ ["stone",1,"mud_ball","Mud Ball",{type:"lob",kind:"ball",dmg:25,rad:26,root:1,charges:4,cd:1},"A ball of mud. Anyone caught in it can't move next turn."],
+ ["stone",1,"rock_slab","Rock Slab",{type:"target",kind:"slab",cd:1},"Create a slab of rock anywhere. Great for cover or a bridge."],
+ ["stone",1,"summon_dwarf","Summon Dwarf",{type:"self",kind:"minion",minion:"dwarf",cd:5},"Summon a dwarf that walks to enemies and hits them with his pick."],
+ ["stone",2,"scatter_rock","Scatter Rock",{type:"lob",kind:"ball",dmg:25,rad:22,split:{n:10,dmg:5,rad:10},charges:4,cd:1,pair:"pebble_shot"},"A rock that shatters into 10 pebbles."],
+ ["stone",2,"mud_burst","Mud Burst",{type:"lob",kind:"ball",dmg:25,rad:24,root:1,split:{n:4,dmg:25,rad:20,root:1},charges:2,cd:1,pair:"quake"},"Bursts into 4 more mud balls that trap whoever they hit."],
+ ["stone",2,"great_boulder","Great Boulder",{type:"lob",kind:"boulder",dmg:50,rad:22,hits:4,fuse:300,charges:2,init:3,cd:1,pair:"mud_ball"},"A heavy bouncing boulder. Hits up to 4 times for 50 each."],
+ ["stone",2,"fortress","Fortress",{type:"self",kind:"tower",thp:100,charges:1,pair:"rock_slab"},"The strongest tower. Soaks up 100 damage. Jump to leave it."],
+ ["stone",2,"rock_golem","Summon Rock Golem",{type:"self",kind:"minion",minion:"golem",init:3,cd:5,pair:"summon_dwarf"},"Summon a rock golem. Slow, tough, and takes half damage."],
+ ["stone",3,"meteor","Meteor",{type:"target",kind:"meteor",dmg:60,rad:60,split:{n:12,dmg:8,rad:12},charges:1,init:5},"A huge rock crashes from the sky and shatters into pebbles."],
+ ["stone",3,"fissure","Fissure",{type:"target",kind:"geyser",waves:[3,10],dmg:25,rad:24,charges:1,init:5},"The ground splits: rocks blast up from below the target over 2 turns."],
+ // ---- Storm ----
+ ["storm",1,"thunderbolt","Thunderbolt",{type:"shot",kind:"spray",count:10,dmg:5,rad:10,speed:20,spread:.02,grav:0,cd:1},"Ten fast, accurate lightning hits in a straight line."],
+ ["storm",1,"wind_shield","Wind Shield",{type:"self",kind:"deflect",turns:3,charges:1},"For 3 turns, every enemy projectile that reaches you is blown back."],
+ ["storm",1,"shock_bomb","Shock Bomb",{type:"lob",kind:"bomb",dmg:80,rad:40,nodig:1,push:12,fuse:150,charges:4,cd:1},"Bomb that blasts people far but leaves the ground alone."],
+ ["storm",1,"summon_cyclops","Summon Cyclops",{type:"self",kind:"minion",minion:"cyclops",init:3,cd:5},"Summon a cyclops that marches up and punches enemies."],
+ ["storm",1,"storm_spirit","Summon Storm Spirit",{type:"self",kind:"minion",minion:"storm_spirit",cd:5},"Summon a flying storm spirit that zaps enemies from the air."],
+ ["storm",2,"chain_lightning","Chain Lightning",{type:"shot",kind:"chain",dmg:50,rad:14,speed:22,jumps:3,jdmg:30,init:3,cd:1,pair:"thunderbolt"},"Lightning that jumps to 3 more enemies nearby."],
+ ["storm",2,"hurricane","Hurricane",{type:"target",kind:"pull",rad:170,init:3,cd:5,pair:"wind_shield"},"A whirlwind pulls everyone near the target together, then blows them away."],
+ ["storm",2,"storm_shield","Storm Shield",{type:"self",kind:"zapaura",dmg:25,rad:75,turns:5,cd:5,pair:"shock_bomb"},"For 5 turns, lightning zaps every enemy near you for 25 each turn."],
+ ["storm",2,"lightning_rod","Lightning Rod",{type:"lob",kind:"ball",dmg:10,rad:14,rod:1,charges:4,init:5,cd:1,pair:"summon_cyclops"},"Lodges in the ground and calls 1 to 5 lightning strikes of 25. Farther throws call more."],
+ ["storm",2,"flight","Flight",{type:"self",kind:"flight",turns:3,free:1,cd:5,pair:"storm_spirit"},"Fly for 3 turns: jump to flap upward. Taking damage ends it. Doesn't end your turn."],
+ ["storm",3,"storm","Storm",{type:"target",kind:"cloud",mode:"lightning",turns:3,count:3,dmg:25,rad:22,init:3,cd:5},"A storm cloud hangs over the target for 3 turns, striking lightning each turn."],
+ ["storm",3,"storm_dragon","Summon Storm Dragon",{type:"self",kind:"minion",minion:"storm_dragon",charges:1,init:5},"Summon a flying storm dragon that breathes lightning."],
+ // ---- Frost ----
+ ["frost",1,"ice_ball","Ice Ball",{type:"lob",kind:"ball",dmg:50,rad:24,split:{n:4,dmg:6,rad:8},cd:1},"Explodes and shatters into ice."],
+ ["frost",1,"frost_shards","Frost Shards",{type:"shot",kind:"spray",count:15,dmg:5,rad:8,speed:14,spread:.1,grav:.2,charges:4,cd:1},"Fires 15 sharp ice shards."],
+ ["frost",1,"snowball","Snowball",{type:"lob",kind:"ball",dmg:20,rad:18,snow:1,cd:1},"Drops a heap of snow where it lands. Build cover or bury enemies."],
+ ["frost",1,"ice_shield","Ice Shield",{type:"self",kind:"icewall",free:1,cd:5},"Ice walls rise on both sides of you. Doesn't end your turn."],
+ ["frost",1,"snow_sprite","Summon Snow Sprite",{type:"self",kind:"minion",minion:"snow_sprite",cd:5},"Summon a flying snow sprite that throws ice at enemies."],
+ ["frost",2,"ice_bomb","Ice Bomb",{type:"lob",kind:"bomb",dmg:50,rad:30,fuse:150,split:{n:8,dmg:25,rad:16},charges:2,cd:1,pair:"ice_ball"},"Bomb that bursts into 8 ice balls."],
+ ["frost",2,"frost_arrow","Frost Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:24,speed:9,push:12,split:{n:6,dmg:8,rad:8},charges:2,cd:1,pair:"frost_shards"},"Homing arrow with big knockback that bursts into shards."],
+ ["frost",2,"blizzard","Blizzard",{type:"target",kind:"cloud",mode:"snow",turns:4,count:6,dmg:10,rad:14,init:3,cd:5,pair:"snowball"},"A snow cloud drops heaps of snow on the target for 4 turns."],
+ ["frost",2,"ice_castle","Ice Castle",{type:"self",kind:"tower",thp:75,cd:5,pair:"ice_shield"},"An ice castle that soaks up 75 damage. Jump to leave it."],
+ ["frost",2,"frost_giant","Summon Frost Giant",{type:"self",kind:"minion",minion:"frost_giant",init:3,cd:5,pair:"snow_sprite"},"Summon a frost giant: slow, huge, and hits hard."],
+ ["frost",3,"comet","Comet",{type:"target",kind:"meteor",dmg:50,rad:40,split:{n:10,dmg:15,rad:14},init:5,cd:5},"A comet smashes down and shatters into ice balls."],
+ ["frost",3,"frost_dragon","Summon Frost Dragon",{type:"self",kind:"minion",minion:"frost_dragon",charges:1,init:5},"Summon a flying frost dragon that breathes ice."],
+ // ---- Seas ----
+ ["seas",1,"water_ball","Water Ball",{type:"lob",kind:"ball",dmg:20,rad:22,split:{n:8,dmg:5,rad:8,nodig:1},cd:1},"Bursts into bouncing water drops."],
+ ["seas",1,"water_trolls","Summon Water Trolls",{type:"self",kind:"minion",minion:"troll",count:2,cd:5},"Summon 2 water trolls. They can walk on water."],
+ ["seas",1,"downpour","Downpour",{type:"target",kind:"barrage",mode:"drops",count:30,dmg:3,rad:8,init:3,cd:5},"Thirty water drops pour onto the target."],
+ ["seas",1,"salt_spray","Salt Spray",{type:"shot",kind:"spray",count:8,dmg:7,rad:8,speed:13,spread:.07,grav:.3,salt:1,cd:1},"Sprays salt. Misses pile up into new ground."],
+ ["seas",1,"salt_goblin","Summon Salt Goblin",{type:"self",kind:"minion",minion:"goblin",cd:1},"Summon a salt goblin. It explodes into salt when it dies."],
+ ["seas",2,"whirlpool","Whirlpool",{type:"target",kind:"geyser",waves:[5,5,5],dmg:20,rad:22,init:3,cd:5,pair:"water_ball"},"Salt water blasts up under the target for 3 turns."],
+ ["seas",2,"hydration","Hydration",{type:"self",kind:"hydrate",charges:2,init:5,pair:"water_trolls"},"All your minions gain 100 health and hit 15 harder."],
+ ["seas",2,"rain_cloud","Rain Cloud",{type:"target",kind:"cloud",mode:"rain",turns:5,count:12,dmg:4,rad:8,charges:1,init:5,pair:"downpour"},"A rain cloud soaks the target for 5 turns."],
+ ["seas",2,"salt_bomb","Salt Bomb",{type:"lob",kind:"bomb",dmg:40,rad:26,fuse:150,split:{n:10,dmg:6,rad:8,salt:1},charges:4,cd:1,pair:"salt_spray"},"Bomb that blasts salt in every direction."],
+ ["seas",2,"clam_barrage","Clam Barrage",{type:"target",kind:"barrage",mode:"bounce",count:5,dmg:50,rad:22,charges:1,init:3,pair:"salt_goblin"},"Five clams fall, bounce around, and explode."],
+ ["seas",3,"tidal_fury","Tidal Fury",{type:"self",kind:"tidal",dmg:40,rad:44,charges:1,init:5},"Huge waves crash in from both sides of the map and the sea rises."],
+ ["seas",3,"sea_lord","Summon Sea Lord",{type:"self",kind:"minion",minion:"sea_lord",charges:1,init:5},"Summon the Sea Lord: 300 health and walks on water."],
+ // ---- Overlight ----
+ ["overlight",1,"holy_ward","Holy Ward",{type:"self",kind:"ward",absorb:50,stack:1,cd:5},"A holy shield that soaks up 50 damage. Stacks, and lasts until it's used up."],
+ ["overlight",1,"light_bolt","Light Bolt",{type:"lob",kind:"ball",dmg:45,rad:20,grav:.4,cd:1},"A bright bolt that flies far and barely drops."],
+ ["overlight",1,"summon_pegasus","Summon Pegasus",{type:"self",kind:"minion",minion:"pegasus",init:3,cd:5},"Summon a flying pegasus that kicks enemies."],
+ ["overlight",1,"grove_seed","Grove Seed",{type:"target",kind:"seed",cd:5},"Grow a tree anywhere. It blocks spells and makes new ground."],
+ ["overlight",1,"healing_orb","Healing Orb",{type:"lob",kind:"ball",dmg:25,rad:22,healHit:1,nodig:1,cd:1},"Heals everyone it hits for 25. Hurts undead for 50."],
+ ["overlight",2,"sunbeam","Sunbeam",{type:"target",kind:"strike",dmg:50,rad:24,init:3,cd:5,pair:"holy_ward"},"A beam of light from the sky. Shields and clouds can't stop it."],
+ ["overlight",2,"falling_stars","Falling Stars",{type:"target",kind:"cloud",mode:"stars",turns:5,dmg:25,rad:18,charges:1,init:5,pair:"light_bolt"},"Stars fall on the target for 5 turns, more each turn, ending with one big star."],
+ ["overlight",2,"summon_paladin","Summon Paladin",{type:"self",kind:"minion",minion:"paladin",charges:1,init:5,pair:"summon_pegasus"},"Summon a holy paladin in golden armour."],
+ ["overlight",2,"summon_pixies","Summon Pixies",{type:"self",kind:"minion",minion:"pixie",count:3,cd:5,pair:"grove_seed"},"Summon 3 pixies that fly and shoot sparks."],
+ ["overlight",2,"light_castle","Light Castle",{type:"self",kind:"tower",thp:75,theal:10,charges:1,pair:"healing_orb"},"A castle of light. Soaks up 75 damage and heals you 10 a turn."],
+ ["overlight",3,"divine_barrier","Divine Barrier",{type:"self",kind:"invuln",turns:3,charges:1,init:5},"Nothing can hurt you for 3 turns. Casting any other spell breaks it."],
+ ["overlight",3,"angel_wings","Angel Wings",{type:"self",kind:"wings",charges:1,init:5},"Grow wings: fly for the rest of the match and heal 10 a turn. Only Arcane and Overlight spells after this, and no towers."],
+ // ---- Nature ----
+ ["nature",1,"thorn_volley","Thorn Volley",{type:"shot",kind:"spray",count:8,dmg:6,rad:10,speed:13,spread:.08,grav:.25,cd:1},"Fires 8 sharp thorns."],
+ ["nature",1,"vine_bridge","Vine Bridge",{type:"shot",kind:"vine",cd:2},"Grow a solid vine bridge in the aimed direction."],
+ ["nature",1,"summon_wolves","Summon Wolves",{type:"self",kind:"minion",minion:"wolf",count:2,cd:5},"Summon 2 fast wolves."],
+ ["nature",1,"regrowth","Regrowth",{type:"self",kind:"regen",heal:15,turns:5,cd:5},"Heal 15 at the start of each of your turns for 5 turns."],
+ ["nature",1,"spore_cloud","Spore Cloud",{type:"target",kind:"aura",dmg:10,rad:55,turns:4,cd:5},"A poison cloud. Enemies inside take 10 each turn for 4 turns."],
+ ["nature",2,"bramble_bomb","Bramble Bomb",{type:"lob",kind:"bomb",dmg:30,rad:24,fuse:150,split:{n:8,dmg:6,rad:8},charges:4,cd:1,pair:"thorn_volley"},"Bomb that bursts into 8 thorns."],
+ ["nature",2,"thorn_wall","Thorn Wall",{type:"self",kind:"firewall",dmg:30,turns:5,cd:5,pair:"vine_bridge"},"A wall of thorns in front of you. Stabs the first enemy to touch it for 30 and blocks one spell each round."],
+ ["nature",2,"summon_treant","Summon Treant",{type:"self",kind:"minion",minion:"treant",init:3,cd:5,pair:"summon_wolves"},"Summon a giant treant. Very slow, very strong."],
+ ["nature",2,"bloom","Bloom",{type:"self",kind:"heal",heal:40,allyHeal:25,cd:4,pair:"regrowth"},"Heal 40 and nearby allies 25."],
+ ["nature",2,"entangle","Entangle",{type:"target",kind:"root",dmg:15,rad:60,turns:2,init:3,cd:5,pair:"spore_cloud"},"Roots grab every enemy near the target. They can't move for 2 turns."],
+ ["nature",3,"world_tree","World Tree",{type:"self",kind:"tower",thp:150,theal:15,charges:1,init:5},"A giant tree grows around you: soaks up 150 damage and heals you 15 a turn."],
+ ["nature",3,"natures_wrath","Nature's Wrath",{type:"target",kind:"geyser",waves:[5,8],dmg:25,rad:22,charges:1,init:5},"Giant roots burst up under the target over 2 turns."],
+ // ---- Underdark ----
+ ["underdark",1,"dark_keep","Dark Keep",{type:"self",kind:"tower",thp:75,tself:30,taura:15,charges:1},"A dark keep: soaks up 75 damage, repairs 30 a turn, and hurts enemies next to it for 15."],
+ ["underdark",1,"drain_bolt","Drain Bolt",{type:"lob",kind:"ball",dmg:30,rad:18,drain:1,grav:.8,cd:1},"Steals health: you heal by the damage it deals."],
+ ["underdark",1,"summon_swarm","Summon Swarm",{type:"self",kind:"minion",minion:"swarm",cd:5},"Summon a flying swarm. Enemies near it take 15 each turn."],
+ ["underdark",1,"necro_orb","Necro Orb",{type:"lob",kind:"ball",dmg:25,rad:18,raise:1,cd:1},"Death magic. Minions it kills rise again on your side. Heals undead."],
+ ["underdark",1,"rot_aura","Rot Aura",{type:"target",kind:"aura",dmg:15,rad:50,turns:5,cd:5},"A cursed patch. Enemies inside take 15 each turn for 5 turns."],
+ ["underdark",2,"rain_of_skulls","Rain of Skulls",{type:"target",kind:"barrage",mode:"erratic",count:7,dmg:15,rad:16,push:8,init:3,cd:5,pair:"dark_keep"},"Seven wild skulls rain down around the target."],
+ ["underdark",2,"decay_bomb","Decay Bomb",{type:"lob",kind:"bomb",dmg:40,rad:26,fuse:150,decay:1,charges:4,cd:1,pair:"drain_bolt"},"Explodes and leaves a cursed patch that deals 15 a turn for 5 turns."],
+ ["underdark",2,"dark_knight","Summon Dark Knight",{type:"self",kind:"minion",minion:"dark_knight",charges:1,init:5,pair:"summon_swarm"},"Summon a dark knight in heavy armour."],
+ ["underdark",2,"summon_wraith","Summon Wraith",{type:"self",kind:"minion",minion:"wraith",init:3,cd:5,pair:"necro_orb"},"Summon a flying undead wraith. Death magic heals it."],
+ ["underdark",2,"blood_pact","Blood Pact",{type:"self",kind:"pact",charges:1,init:5,pair:"rot_aura"},"Heal to full by draining health from your own minions."],
+ ["underdark",3,"devouring_pit","Devouring Pit",{type:"self",kind:"pit",charges:1,init:3},"Every living minion on the map is swallowed and leaves a cursed patch. Undead are safe."],
+ ["underdark",3,"undeath","Undeath",{type:"self",kind:"lich",charges:1,init:5},"Become undead: death magic heals you, your hits heal you, enemies next to you rot. Light hurts double. Only Arcane and Underdark spells after this, and no towers."],
+ // ---- Cogs ----
+ ["cogs",1,"stasis_orb","Stasis Orb",{type:"lob",kind:"ball",dmg:0,rad:10,nodig:1,stasis:1,charges:4,cd:1},"Creates a time bubble for 2 turns. Enemy spells that enter it stop dead."],
+ ["cogs",1,"gear_arrow","Gear Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:20,speed:7,drops:1,cd:5},"A slow homing arrow that drops gears as it flies and bursts into 15 gears after 5 seconds."],
+ ["cogs",1,"clock_tower","Clock Tower",{type:"self",kind:"tower",thp:75,moves:1,cd:5},"A clock tower that walks with you. Soaks up 75 damage. Jump to leave it."],
+ ["cogs",1,"time_blast","Time Blast",{type:"shot",kind:"spray",count:1,dmg:5,rad:12,speed:20,push:14,free:1,charges:4,cd:1},"A fast blast with strong knockback. Doesn't end your turn."],
+ ["cogs",1,"recall_beacon","Recall Beacon",{type:"target",kind:"beacon",cd:1},"Place a beacon. Recall Bell sends enemies to your beacons."],
+ ["cogs",2,"stasis_shield","Stasis Shield",{type:"self",kind:"stasis",turns:3,charges:1,init:3,pair:"stasis_orb"},"A time bubble follows you for 3 turns. Enemy spells that enter it stop dead."],
+ ["cogs",2,"falling_cog","Falling Cog",{type:"target",kind:"meteor",dmg:50,rad:22,cog:1,init:3,cd:5,pair:"gear_arrow"},"A heavy cog drops from the sky and bounces into enemies."],
+ ["cogs",2,"gear_burst","Gear Burst",{type:"lob",kind:"ball",dmg:60,rad:22,split:{n:4,dmg:10,rad:10},charges:4,init:3,cd:1,pair:"clock_tower"},"A clockwork ball that shatters into gears."],
+ ["cogs",2,"clockwork_bomb","Clockwork Bomb",{type:"lob",kind:"bomb",dmg:50,rad:26,fuseR:[120,300],split:{n:10,dmg:5,rad:8},towerX:2,cd:1,pair:"time_blast"},"A bomb with a random timer that bursts into gears. Double damage to towers."],
+ ["cogs",2,"recall_bell","Recall Bell",{type:"lob",kind:"ball",dmg:5,rad:12,bell:1,beacon:1,cd:1,pair:"recall_beacon"},"Whoever it hits is sent to one of your beacons (or a random spot if you have none)."],
+ ["cogs",3,"rewind","Rewind",{type:"self",kind:"rewind",charges:1,init:5},"Every wizard's spells reset: all recharges and charges go back to the start. Only one Rewind per match."],
+ ["cogs",3,"time_freeze","Time Freeze",{type:"self",kind:"freeze",charges:1,init:5},"Freeze time: every enemy skips their next turn."]
+];
+const PRESTIGE_SPELLS=[
+ {id:"comet_lance",name:"Comet Lance",pres:1,type:"shot",kind:"lance",col:"#7af0ff",dmg:70,rad:20,speed:24,grav:0,pierce:1,charges:1,desc:"Piercing beam that hits every wizard in its line. Once per match."},
+ {id:"stone_skin",name:"Stone Skin",pres:1,type:"self",kind:"ward",col:"#a49a8a",absorb:100,turns:3,cd:4,desc:"Rock armour that soaks up 100 damage. Lasts 3 turns."},
+ {id:"inferno_rain",name:"Inferno Rain",pres:2,type:"target",kind:"rain",col:"#ff7a2e",dmg:28,rad:28,count:6,charges:1,desc:"Six fireballs rain down around the target. Once per match."},
+ {id:"mirror_ward",name:"Mirror Ward",pres:2,type:"self",kind:"ward",col:"#e3e8ff",absorb:60,reflect:.5,turns:3,cd:4,desc:"Soaks up 60 damage and sends half of every hit back at the attacker."},
+ {id:"storm_wrath",name:"Storm Wrath",pres:3,type:"target",kind:"storm",col:"#b9d4ff",dmg:45,rad:26,count:3,charges:1,desc:"Three lightning bolts strike across the target area. Once per match."},
+ {id:"sanctuary",name:"Sanctuary",pres:3,type:"self",kind:"heal",col:"#9cffc0",heal:100,allyHeal:40,cd:5,desc:"Heal yourself 100 HP and nearby allies 40 HP."},
+ {id:"void_rift",name:"Void Rift",pres:4,type:"lob",kind:"hole",col:"#7a2cff",dmg:70,rad:60,pull:230,grav:1,charges:1,desc:"Tears open a rift that drags everyone in and blows up. Once per match."},
+ {id:"frost_armor",name:"Frost Armor",pres:4,type:"self",kind:"ward",col:"#aee9ff",absorb:120,freezeHit:1,turns:3,cd:4,desc:"Soaks up 120 damage. Anyone who hits you is frozen next turn."},
+ {id:"aegis_tower",name:"Aegis Tower",pres:5,type:"self",kind:"aegis",col:"#ffd36a",absorb:300,turns:3,cd:6,desc:"A golden tower shield surrounds you and soaks up 300 damage. You can't move while it stands (3 turns)."},
+ {id:"dread_mask",name:"Dread Mask",pres:5,type:"self",kind:"mask",col:"#3a1a4a",mult:2,turns:5,charges:1,desc:"A white mask and creepy aura cover you for 5 turns. All your spell damage is doubled."},
+ {id:"skyfall",name:"Skyfall",pres:5,type:"target",kind:"skyfall",col:"#ff4d2e",dmg:40,rad:42,count:8,charges:1,desc:"Eight meteors rain across the target area. Once per match."}
+];
 const SPELLS=[
- {id:"arcane_shot",name:"Arcane Shot",lvl:1,type:"shot",kind:"shot",col:"#9b7bff",dmg:28,rad:18,speed:17,grav:0,cd:0,desc:"Long-range straight bolt. Hits the first thing in its path."},
- {id:"ember_ball",name:"Ember Ball",lvl:1,type:"lob",kind:"lob",col:"#ff8a3d",dmg:38,rad:34,grav:1,wind:1,cd:0,desc:"Lobbed fireball. Hold to charge. Wind pushes it."},
- {id:"blink",name:"Blink",lvl:1,type:"target",kind:"tele",col:"#56d6ff",range:260,cd:3,desc:"Teleport to a clear spot within range. Recharges in 3 turns."},
- {id:"frost_shard",name:"Frost Shard",lvl:5,type:"shot",kind:"shot",col:"#9fe6ff",dmg:24,rad:14,speed:17,grav:.15,freeze:1,cd:1,desc:"Icy shard. Frozen targets can't walk or jump next turn."},
- {id:"stone_pillar",name:"Stone Pillar",lvl:5,type:"target",kind:"build",col:"#b39a7c",range:240,cd:2,desc:"Raise a rock pillar for cover or a perch."},
- {id:"healing_mist",name:"Healing Mist",lvl:5,type:"self",kind:"heal",col:"#7fe39a",heal:45,cd:4,desc:"Heal yourself 45 HP and nearby allies 20 HP."},
- {id:"spark_arrow",name:"Spark Arrow",lvl:5,type:"shot",kind:"arrow",col:"#ffe066",dmg:26,rad:16,speed:8,grav:0,homing:1,cd:1,desc:"Slow arrow that curves toward the nearest enemy."},
- {id:"thunder",name:"Thunder Strike",lvl:10,type:"target",kind:"bolt",col:"#c9d8ff",dmg:45,rad:24,cd:2,desc:"Call lightning straight down on any spot."},
- {id:"quake_bomb",name:"Quake Bomb",lvl:10,type:"lob",kind:"bomb",col:"#d0a060",dmg:50,rad:56,grav:1,bounce:1,fuse:150,cd:3,desc:"Bouncing bomb. Explodes after 2.5 seconds and digs deep."},
- {id:"imp",name:"Summon Imp",lvl:10,type:"self",kind:"minion",col:"#ff5d7a",dmg:40,rad:30,cd:5,desc:"An imp walks toward enemies each turn and explodes on contact."},
- {id:"vine_bridge",name:"Vine Bridge",lvl:15,type:"shot",kind:"build",col:"#6fc26b",cd:2,desc:"Grow a solid bridge in the aimed direction."},
- {id:"arcane_shield",name:"Arcane Shield",lvl:15,type:"self",kind:"shield",col:"#8fb8ff",cd:4,desc:"Take half damage until your next turn."},
- {id:"gust",name:"Gust",lvl:15,type:"shot",kind:"wind",col:"#e0f4ff",dmg:12,rad:20,speed:15,grav:0,push:11,nodig:1,cd:2,desc:"Blast of wind that throws targets far. Great near edges."},
- {id:"meteor",name:"Meteor",lvl:20,type:"target",kind:"meteor",col:"#ff6a3d",dmg:60,rad:62,cd:4,desc:"A meteor crashes in from the sky at the target."},
- {id:"chain",name:"Chain Lightning",lvl:20,type:"shot",kind:"chain",col:"#9ad1ff",dmg:30,rad:12,speed:22,grav:0,cd:3,desc:"Jumps from the target to two more enemies nearby."},
- {id:"tower",name:"Earth Tower",lvl:20,type:"self",kind:"tower",col:"#a8845c",cd:4,desc:"Raise a tower under your feet to gain height."},
- {id:"black_hole",name:"Black Hole",lvl:30,type:"lob",kind:"hole",col:"#a05cff",dmg:25,rad:22,pull:170,grav:1,wind:1,cd:4,desc:"Pulls everyone nearby into the impact point."},
- {id:"dragon_breath",name:"Dragon Breath",lvl:30,type:"shot",kind:"cone",col:"#ff9c3a",dmg:12,rad:14,cd:3,desc:"Short-range spray of seven flames."},
- {id:"starfall",name:"Starfall",lvl:40,type:"self",kind:"arena",col:"#ffd6ff",dmg:30,rad:26,uses:1,desc:"Stars rain on every enemy. Once per match."},
- {id:"cataclysm",name:"Cataclysm",lvl:50,type:"target",kind:"ult",col:"#ff3d6e",dmg:90,rad:110,uses:1,desc:"Huge blast anywhere on the map. Once per match."},
- {id:"ward",name:"Ward",lvl:5,type:"self",kind:"ward",col:"#7fd0ff",absorb:80,turns:3,cd:3,desc:"A bubble that soaks up the next 80 damage. Lasts 3 turns."},
- {id:"tower_shield",name:"Tower Shield",lvl:25,type:"self",kind:"ward",col:"#c9b27a",absorb:150,turns:3,cd:4,desc:"A heavy shield that soaks up the next 150 damage. Lasts 3 turns."},
- {id:"hailstorm",name:"Hailstorm",lvl:35,type:"lob",kind:"hail",col:"#cfefff",dmg:25,rad:22,grav:1,wind:1,shards:4,cd:3,desc:"Lobbed ice ball that bursts into 4 more ice shards."},
- {id:"tremor",name:"Tremor",lvl:45,type:"self",kind:"tremor",col:"#b08a5a",dmg:25,rad:18,cd:5,desc:"Shake the island. Every enemy standing on the ground takes damage and is thrown up."},
- // prestige spells: one strong attack and one defence per prestige
- {id:"comet_lance",name:"Comet Lance",pres:1,lvl:1,type:"shot",kind:"lance",col:"#7af0ff",dmg:70,rad:20,speed:24,grav:0,pierce:1,uses:1,desc:"Piercing beam that hits every wizard in its line. Once per match."},
- {id:"stone_skin",name:"Stone Skin",pres:1,lvl:1,type:"self",kind:"ward",col:"#a49a8a",absorb:100,turns:3,cd:4,desc:"Rock armour that soaks up 100 damage. Lasts 3 turns."},
- {id:"inferno_rain",name:"Inferno Rain",pres:2,lvl:1,type:"target",kind:"rain",col:"#ff7a2e",dmg:28,rad:28,count:6,uses:1,desc:"Six fireballs rain down around the target. Once per match."},
- {id:"mirror_ward",name:"Mirror Ward",pres:2,lvl:1,type:"self",kind:"ward",col:"#e3e8ff",absorb:60,reflect:.5,turns:3,cd:4,desc:"Soaks up 60 damage and sends half of every hit back at the attacker."},
- {id:"storm_wrath",name:"Storm Wrath",pres:3,lvl:1,type:"target",kind:"storm",col:"#b9d4ff",dmg:45,rad:26,count:3,uses:1,desc:"Three lightning bolts strike across the target area. Once per match."},
- {id:"sanctuary",name:"Sanctuary",pres:3,lvl:1,type:"self",kind:"heal",col:"#9cffc0",heal:100,allyHeal:40,cd:5,desc:"Heal yourself 100 HP and nearby allies 40 HP."},
- {id:"void_rift",name:"Void Rift",pres:4,lvl:1,type:"lob",kind:"hole",col:"#7a2cff",dmg:70,rad:60,pull:230,grav:1,wind:1,uses:1,desc:"Tears open a rift that drags everyone in and blows up. Once per match."},
- {id:"frost_armor",name:"Frost Armor",pres:4,lvl:1,type:"self",kind:"ward",col:"#aee9ff",absorb:120,freezeHit:1,turns:3,cd:4,desc:"Soaks up 120 damage. Anyone who hits you is frozen next turn."},
- {id:"aegis_tower",name:"Aegis Tower",pres:5,lvl:1,type:"self",kind:"aegis",col:"#ffd36a",absorb:300,turns:3,cd:6,desc:"A golden tower shield surrounds you and soaks up 300 damage. You can't move while it stands (3 turns)."},
- {id:"dread_mask",name:"Dread Mask",pres:5,lvl:1,type:"self",kind:"mask",col:"#3a1a4a",mult:2,turns:5,uses:1,desc:"A white mask and creepy aura cover you for 5 turns. All your spell damage is doubled."},
- {id:"skyfall",name:"Skyfall",pres:5,lvl:1,type:"target",kind:"skyfall",col:"#ff4d2e",dmg:40,rad:42,count:8,uses:1,desc:"Eight meteors rain across the target area. Once per match."}
+ ...SPELL_ROWS.map(([book,tier,id,name,p,desc])=>{const b=BK[book];return Object.assign({id,name,book,tier,elem:book,col:b.col,lvl:p.lvl||(tier===3?b.unlock[2]:tier===2?b.unlock[1]:b.unlock[0]),desc},p)}),
+ ...PRESTIGE_SPELLS.map(s=>Object.assign({book:"prestige",tier:0,lvl:1,elem:"prestige"},s))
 ];
 const SP=Object.fromEntries(SPELLS.map(s=>[s.id,s]));
-const BASIC=["arcane_shot","ember_ball","blink"];
+const BASIC=["arcane_shot","fireball","arcane_gate"];
+const bookSpells=b=>SPELLS.filter(s=>s.book===b).map(s=>s.id);
+function chargesOf(s){return s.charges||s.uses||0}
+// Arcanists rules: a level 2 spell needs its level 1 partner; a level 3 spell needs 5 other spells from the same book
+function reqProblem(set,id){const s=SP[id];if(!s)return "Unknown spell";
+  if(s.tier===2&&s.pair&&!set.has(s.pair)) return `Needs ${SP[s.pair].name} in your spellbook`;
+  if(s.tier===3){const n=[...set].filter(x=>x!==id&&SP[x]&&SP[x].book===s.book&&SP[x].tier<3).length; if(n<5) return `Needs 5 other ${BK[s.book].name} spells in your spellbook (${n}/5)`}
+  return null}
+function validBook(list){let book=list.filter(id=>SP[id]);for(let pass=0;pass<4;pass++){const set=new Set(book);const next=book.filter(id=>!reqProblem(set,id));if(next.length===book.length)break;book=next}return book}
+function famBooks(list){const set=new Set(list);return BOOKS.filter(b=>b.fam&&bookSpells(b.id).every(id=>set.has(id))).map(b=>b.id)}
 function slotsFor(l){return l>=50?16:l>=40?14:l>=30?12:l>=20?10:l>=15?8:l>=10?7:l>=5?5:3}
-function unlockedFor(l,p=0){return SPELLS.filter(s=>s.pres?p>=s.pres:s.lvl<=l).map(s=>s.id)}
+function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book==="prestige"?p>=s.pres:s.lvl<=l).map(s=>s.id)}
 function effLevel(u){return u.allSpells?50:u.level}
 function effPres(u){return u.allSpells?5:(u.prestige||0)}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
@@ -601,25 +772,50 @@ function icon(kind){
    skyfall:'<circle cx="10" cy="21" r="5" fill="#fff"/><circle cx="23" cy="12" r="4" fill="#fff"/><path d="M2 8l6 8M14 2l6 6M24 22l4 6" stroke="#fff" stroke-width="2"/>',
    ult:'<circle cx="16" cy="16" r="5" fill="#fff"/><path d="M16 1v7M16 24v7M1 16h7M24 16h7M5 5l5 5M22 22l5 5M27 5l-5 5M10 22l-5 5" stroke="#fff" stroke-width="2.4"/>'
   };
-  return '<svg viewBox="0 0 32 32" aria-hidden="true">'+(P[kind]||P.shot)+'</svg>';
+  P.geyser='<path d="M6 28h20M10 28c0-8 2-12 6-20 4 8 6 12 6 20" stroke="#fff" stroke-width="2.6" fill="none"/><circle cx="16" cy="6" r="3" fill="#fff"/>';
+  P.cloud='<path d="M8 18a5 5 0 0 1 2-9 7 7 0 0 1 13 2 4 4 0 0 1 1 7z" fill="#fff"/><path d="M12 22l-2 5M18 22l-2 5M24 22l-2 5" stroke="#fff" stroke-width="2"/>';
+  P.aura='<circle cx="16" cy="16" r="11" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 3"/><circle cx="13" cy="14" r="2" fill="#fff"/><circle cx="19" cy="14" r="2" fill="#fff"/><path d="M12 20h8" stroke="#fff" stroke-width="2"/>';
+  P.wings='<path d="M16 12c-4-8-12-8-14-2 4 0 6 2 8 6-3 0-5 2-6 4 5 1 9-2 12-8zM16 12c4-8 12-8 14-2-4 0-6 2-8 6 3 0 5 2 6 4-5 1-9-2-12-8z" fill="#fff"/>';
+  P.firewall='<path d="M6 28c0-8 4-8 4-14 3 4 3 8 3 8 1-6 3-10 3-16 4 6 6 10 6 16 1-2 2-4 2-6 2 4 2 8 2 12z" fill="#fff"/>';
+  P.flight='<path d="M4 22c6-2 10-8 12-16 2 8 6 14 12 16-6 0-9-2-12-6-3 4-6 6-12 6z" fill="#fff"/>';
+  P.rewind='<path d="M8 10a10 10 0 1 1-2 10" stroke="#fff" stroke-width="2.6" fill="none"/><path d="M4 6v7h7" stroke="#fff" stroke-width="2.6" fill="none"/><path d="M16 10v7l4 3" stroke="#fff" stroke-width="2.4" fill="none"/>';
+  P.beacon='<path d="M10 22c0-8 2-14 6-14s6 6 6 14z" fill="#fff"/><path d="M8 22h16M16 4v4" stroke="#fff" stroke-width="2.4"/><circle cx="16" cy="25" r="2.4" fill="#fff"/>';
+  const A={spray:"cone",ball:"lob",barrage:"rain",strike:"bolt",glyph:"ult",sigil:"ult",flash:"ult",stasis:"ward",pull:"wind",slab:"build",seed:"build",vine:"build",icewall:"build",deflect:"shield",zapaura:"bolt",invuln:"ward",energise:"arena",lich:"mask",pact:"heal",regen:"heal",hydrate:"heal",impboom:"bomb",quake:"tremor",tidal:"wind",pit:"hole",freeze:"ward",boulder:"bomb",root:"chain"};
+  return '<svg viewBox="0 0 32 32" aria-hidden="true">'+(P[kind]||P[A[kind]]||P.shot)+'</svg>';
 }
-function spellStats(s,u){
-  const T={shot:"Straight shot: aim and tap/click to fire",lob:"Lobbed: hold to charge, release to throw",target:"Targeted: tap/click any spot",self:"Cast on yourself"};
+function dmgText(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];return `${m.name}: ${m.hp} HP, hits for ${m.dmg}${(s.count||1)>1?` (×${s.count})`:""}`}
+  if(!s.dmg) return ""; if(s.waves) return `${s.dmg} × ${s.waves.reduce((a,b)=>a+b,0)} blasts`; if(s.mode==="stars") return `${s.dmg} per star, 50 final`;
+  if(s.kind==="cloud") return `${s.dmg} × ${s.count} per turn`; if(s.kind==="aura") return `${s.dmg} per turn`; if(s.kind==="chain") return `${s.dmg} + ${s.jumps} jumps of ${s.jdmg}`;
+  if(s.hits) return `${s.dmg} × up to ${s.hits} hits`; if(s.rod) return "25 × 1–5 strikes";
+  let t=(s.count||1)>1?`${s.dmg} × ${s.count}`:String(s.dmg); if(s.split) t+=` + ${s.split.n} × ${s.split.dmg}`; return t }
+function chargeText(s){const c=chargesOf(s);return c===1?"Once per match":c?`${c} per match`:"Unlimited"}
+function rechargeText(s){return chargesOf(s)===1?"—":(s.cd||0)<=1?"Every turn":`${s.cd} turns`}
+function spellStats(s){
+  const T={shot:"Straight: aim and tap/click to fire",lob:"Lobbed: hold to charge, release to throw",target:"Targeted: tap/click any spot",self:"Cast on yourself"};
   const size=r=>r<20?"Small":r<45?"Medium":"Large";
-  const rows=[["How to cast",s.kind==="build"&&s.type==="shot"?"Aim, then tap/click to grow":T[s.type]||""]];
-  if(s.dmg) rows.push(["Damage",s.count?`${s.dmg} × ${s.count} hits`:s.shards?`${s.dmg} + ${s.shards} shards of 18`:String(s.dmg)]);
-  if(s.rad&&s.dmg) rows.push(["Blast size",size(s.rad)]);
-  if(s.absorb) rows.push(["Blocks",s.absorb+" damage"]);
-  if(s.heal) rows.push(["Heals",s.heal+(s.allyHeal||s.kind==="heal"?` (allies ${s.allyHeal||20})`:"")]);
-  if(s.mult) rows.push(["Damage boost","×"+s.mult+" for "+s.turns+" turns"]);
-  if(s.turns&&!s.mult) rows.push(["Lasts",s.turns+" turns"]);
+  const rows=[["Spellbook",s.book==="prestige"?`Prestige ${s.pres}`:`${BK[s.book].name} · Level ${s.tier}`]];
+  if(s.tier===2&&s.pair) rows.push(["Needs",`${SP[s.pair].name} in your book`]);
+  if(s.tier===3) rows.push(["Needs",`5 other ${BK[s.book].name} spells`]);
+  rows.push(["How to cast",T[s.type]||""]);
+  const d=dmgText(s); if(d) rows.push([s.kind==="minion"?"Summons":"Damage",d]);
+  if(s.rad&&s.dmg&&s.kind!=="minion") rows.push(["Blast size",size(s.rad)]);
+  if(s.absorb) rows.push(["Blocks",s.absorb+" damage"+(s.stack?" (stacks)":"")]);
+  if(s.thp) rows.push(["Tower health",s.thp+(s.theal?` · heals you ${s.theal}/turn`:"")+(s.moves?" · moves with you":"")]);
+  if(s.heal) rows.push(["Heals",s.heal+(s.kind==="regen"?" per turn":"")+(s.allyHeal?` (allies ${s.allyHeal})`:"")]);
+  if(s.mult) rows.push(["Damage boost","×"+s.mult]);
+  if(s.turns) rows.push(["Lasts",s.turns+" turns"]);
   if(s.range) rows.push(["Range",s.range>=250?"Long":"Medium"]);
-  if(s.wind) rows.push(["Wind","Pushes it"]);
-  rows.push(["Recharge",s.uses?"Once per match":s.cd?s.cd+" turn"+(s.cd>1?"s":""):"Every turn"]);
+  rows.push(["Charges",chargeText(s)]);
+  if(s.init) rows.push(["First use",`From your turn ${s.init+1}`]);
+  rows.push(["Recharge",rechargeText(s)]);
+  if(s.free) rows.push(["Turn","Doesn't end your turn"]);
   return `<div class="statgrid">${rows.map(r=>`<span>${r[0]}</span><span>${esc(r[1])}</span>`).join("")}</div>`;
 }
-function spellMeta(s){const b=[];if(s.dmg)b.push(s.count?`${s.dmg}×${s.count} dmg`:`${s.dmg} dmg`);if(s.absorb)b.push(`blocks ${s.absorb}`);if(s.heal)b.push(`heals ${s.heal}`);if(s.mult)b.push(`×${s.mult} dmg`);
-  b.push(s.uses?"once per match":s.cd?`recharge ${s.cd}`:"every turn");return b.join(" · ")}
+function spellMeta(s){const b=[]; const d=dmgText(s); if(d&&s.kind!=="minion") b.push(d+" dmg"); if(s.kind==="minion") b.push(d);
+  if(s.absorb)b.push(`blocks ${s.absorb}`); if(s.thp)b.push(`tower ${s.thp} HP`); if(s.heal)b.push(`heals ${s.heal}`); if(s.mult)b.push(`×${s.mult} dmg`); if(s.turns)b.push(`${s.turns} turns`);
+  const c=chargesOf(s); b.push(c===1?"once per match":c?`${c} charges`:""); if(s.init) b.push(`ready turn ${s.init+1}`);
+  if(c!==1) b.push((s.cd||0)<=1?"every turn":`recharge ${s.cd}`); if(s.free) b.push("free action");
+  return b.filter(Boolean).join(" · ")}
 function sico(s){return `<span class="sico" style="background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})">${icon(s.kind)}</span>`}
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>clamp(Math.round(v+(p/100)*255),0,255);return `rgb(${f(r)},${f(g)},${f(b)})`}
 
@@ -635,7 +831,7 @@ function save(){const u=me(); if(u) u._ts=Date.now(); saveLocal(); if(sb&&u&&u.c
 const CLOUD={url:"https://hroooqbiywljchtyipnp.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyb29vcWJpeXdsamNodHlpcG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4ODgwNjcsImV4cCI6MjEwODQ2NDA2N30.OyNnR5eTht8kICGVu63rCKe3Sr-otZ4nGWVcbVATjow",google:false};
 let sb=null, pushT=null, onlineBoard=null;
 function initCloud(){ try{ if(window.supabase&&!/\{\{/.test(CLOUD.url)) sb=window.supabase.createClient(CLOUD.url,CLOUD.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:"skyfall-auth"}}) }catch(e){sb=null} }
-const DATA_KEYS=["gems","rWins","rLosses","level","xp","prestige","rating","orbs","wins","losses","kills","games","spellbook","owned","outfit","friends","clan","opts","quizDay","champion","allSpells"];
+const DATA_KEYS=["element","element2","gems","rWins","rLosses","level","xp","prestige","rating","orbs","wins","losses","kills","games","spellbook","owned","outfit","friends","clan","opts","quizDay","champion","allSpells"];
 function packData(u){const d={};for(const k of DATA_KEYS)d[k]=u[k];return d}
 async function pushProfile(){const u=me();if(!sb||!u||!u.cloudId)return;
   const {error}=await sb.from("profiles").update({level:u.level,rating:u.rating,prestige:u.prestige,data:packData(u),updated_at:new Date(u._ts||Date.now()).toISOString()}).eq("id",u.cloudId);
@@ -874,6 +1070,7 @@ function initMenu(){
 }
 
 /* ================= PANELS ================= */
+let custTab="arcane";
 const PANELS={
  modes(){
   const u=me();
@@ -892,6 +1089,8 @@ const PANELS={
     <li>From turn 30 a 10-turn Armageddon countdown starts. After it, meteors fall every turn and the sea rises.</li>
     <li>If 60 rounds pass, the match ends in a draw.</li>
     <li>Wind changes every turn and pushes lobbed spells.</li>
+    <li><b>Elementalist</b> (Prestige 3+): bring a full elemental book on top of your own spellbook. Set it in Customize.</li>
+    <li>Some spells need a few turns to charge before their first use, some have a few charges, and the strongest can be used once per match.</li>
    </ul></div>`);
   b.querySelector("#optMode").value=u.opts.mode; b.querySelector("#optDiff").value=u.opts.difficulty;
   b.querySelector("#optMode").onchange=e=>{u.opts.mode=e.target.value;save()};
@@ -915,26 +1114,44 @@ const PANELS={
     u.orbs-=o.price;u.owned.push(o.id);u.outfit=o.id;save();sfx("level");toast(o.name+" unlocked and equipped!");PANELS.store()});
  },
  customize(){
-  const u=me(); const slots=slotsFor(effLevel(u)); const unl=new Set(unlockedFor(effLevel(u),effPres(u)));
+  const u=me(), L=effLevel(u), P=effPres(u), slots=slotsFor(L), unl=new Set(unlockedFor(L,P));
   fixBook(u);
+  const set=new Set(u.spellbook), fams=famBooks(u.spellbook);
+  const tab=BK[custTab]?custTab:"arcane", bk=BK[tab];
+  const tabs=[...BOOKS.map(b=>b.id),"prestige"].map(id=>{const b=BK[id],n=u.spellbook.filter(x=>SP[x]&&SP[x].book===id).length;return `<button class="btab ${tab===id?"on":""}" data-tab="${id}" type="button" style="--bc:${b.col}">${b.name}${n?` <b>${n}</b>`:""}${fams.includes(id)?" ★":""}</button>`}).join("");
+  const list=SPELLS.filter(s=>s.book===tab).sort((a,b)=>a.tier-b.tier||a.lvl-b.lvl), have=list.filter(s=>set.has(s.id)).length;
+  const famHtml=bk.fam?`<div class="faminfo ${fams.includes(tab)?"on":""}"><b>Familiar: ${esc(bk.fam.name)}</b> · ${esc(bk.fam.desc)}<br><span>${fams.includes(tab)?"Active! In battle, tap the Familiar button to power it up (20 HP per level, up to 5).":`Bring all ${list.length} ${bk.name} spells to unlock it (${have}/${list.length}).`}</span></div>`:tab==="arcane"?'<div class="faminfo">The Arcane book has no familiar. Its spells mix well with every other book.</div>':'<div class="faminfo">Prestige spells: one strong attack and one defence for each prestige.</div>';
+  const cards=list.map(s=>{const inB=set.has(s.id), lk=!unl.has(s.id), prob=!inB&&!lk?reqProblem(set,s.id):null;
+    return `<button class="spell ${inB?"in":""} ${lk?"locked":""} ${prob?"needs":""}" data-sp="${s.id}" type="button" ${lk?"disabled":""}>${sico(s)}<span><b>${esc(s.name)} <i class="tier t${s.tier}">${s.tier?"L"+s.tier:"P"+s.pres}</i>${inB?" ✓":""}</b><small>${esc(s.desc)}</small><span class="meta">${esc(spellMeta(s))}</span>${lk?`<span class="req">Unlocks at ${s.book==="prestige"?"Prestige "+s.pres:"level "+s.lvl}</span>`:prob?`<span class="req">${esc(prob)}</span>`:""}</span></button>`}).join("");
+  const elemOpts=sel=>`<option value="">None</option>`+BOOKS.filter(b=>b.fam).map(b=>`<option value="${b.id}" ${sel===b.id?"selected":""}>${b.name}</option>`).join("");
   const b=openModal("Customize",`
    <h3 class="gold">Spellbook <span class="muted" style="font-size:1rem">${u.spellbook.length} / ${slots} slots · level ${u.level}</span></h3>
    <div class="slots">${Array.from({length:slots},(_,i)=>{const s=SP[u.spellbook[i]];return s?`<div class="slot" title="${esc(s.name)}">${sico(s)}<button class="rm" type="button" data-rm="${i}" aria-label="Remove ${esc(s.name)}">×</button></div>`:`<div class="slot empty" title="Empty slot"></div>`}).join("")}</div>
-   <div class="row"><p class="note" style="margin:0;flex:1;min-width:200px">Tap × on a slot to take a spell out, then tap any spell below to put it in. New slots open at levels 5, 10, 15, 20, 30, 40 and 50.</p><button class="wood sm" id="clearBook" type="button">Empty spellbook</button></div>
-   <div class="spellgrid">${SPELLS.map(s=>{const inB=u.spellbook.includes(s.id),lk=!unl.has(s.id);return `<button class="spell ${inB?"in":""} ${lk?"locked":""}" data-sp="${s.id}" ${lk?"disabled":""}>${sico(s)}<span><b>${esc(s.name)}${lk?(s.pres?` · Prestige ${s.pres}`:` · Lv ${s.lvl}`):inB?" ✓":""}</b><small>${esc(s.desc)}</small><span class="meta">${esc(spellMeta(s))}</span></span></button>`}).join("")}</div>
+   <div class="row"><p class="note" style="margin:0;flex:1;min-width:200px">Tap × to take a spell out. <b>Level 1</b> spells can go in any time. A <b>Level 2</b> spell needs its Level 1 partner. A <b>Level 3</b> spell needs 5 other spells from the same book. Bring a whole book to get its <b>Familiar</b>. Slots open at levels 5, 10, 15, 20, 30, 40 and 50.</p><button class="wood sm" id="clearBook" type="button">Empty spellbook</button></div>
+   <div class="btabs">${tabs}</div>
+   ${famHtml}
+   <div class="spellgrid">${cards}</div>
+   <h3 class="gold">Elementalist <span class="muted" style="font-size:1rem">${P>=3?"unlocked":"unlocks at Prestige 3"}</span></h3>
+   <p class="note" style="margin:0">Bring one full elemental book <b>on top of</b> your own spellbook, with its familiar. At Prestige 5 you can bring two.</p>
+   <div class="grid2"><label>First element<select id="elem1" ${P>=3?"":"disabled"}>${elemOpts(u.element)}</select></label><label>Second element${P>=5?"":" (Prestige 5)"}<select id="elem2" ${P>=5?"":"disabled"}>${elemOpts(u.element2)}</select></label></div>
    <h3 class="gold">Character</h3>
-   <div class="cards">${OUTFITS.filter(o=>u.owned.includes(o.id)).map(o=>`<button class="card ${u.outfit===o.id?"sel":""}" data-out="${o.id}" style="border:none;color:inherit"><img alt="" src="${IMG_SRC[o.img]}"><h4>${esc(o.name)}</h4></button>`).join("")}</div>
+   <div class="cards">${OUTFITS.filter(o=>u.owned.includes(o.id)).map(o=>`<button class="card ${u.outfit===o.id?"sel":""}" data-out="${o.id}" type="button" style="border:none;color:inherit"><img alt="" src="${IMG_SRC[o.img]}"><h4>${esc(o.name)}</h4></button>`).join("")}</div>
    <h3 class="gold">Prestige <span class="muted" style="font-size:1rem">${u.prestige} / ${MAX_PRESTIGE}</span></h3>
    <div class="auras">${AURAS.slice(1).map((a,i)=>`<div class="${u.prestige>i?"got":"muted"}"><i style="background:${auraCss(i+1)}"></i>${i+1}: ${a.n}</div>`).join("")}</div>
-   <p class="note" style="margin:0">Reach level 50 to prestige. You go back to level 1 and relearn your spells, but keep your rating, orbs and outfits, earn 500 orbs, and your wizard glows with the next aura.</p>
+   <p class="note" style="margin:0">Reach level 50 to prestige. You go back to level 1 and relearn your spells, but keep your rating, orbs and outfits, earn 500 orbs, unlock 2 prestige spells, and your wizard glows with the next aura.</p>
    <button class="wood" id="prestigeBtn" ${u.level>=MAX_LEVEL&&u.prestige<MAX_PRESTIGE?"":"disabled"}>${u.prestige>=MAX_PRESTIGE?"Max prestige reached":u.level>=MAX_LEVEL?"Prestige now":"Prestige unlocks at level 50"}</button>
    <h3 class="gold">Stats</h3>
    <div class="statgrid"><span>Matches</span><span>${u.games}</span><span>Ranked wins / losses</span><span>${u.rWins||0} / ${u.rLosses||0}</span><span>K/D (all matches)</span><span>${kd(u.wins,u.losses)}</span><span>Knockouts</span><span>${u.kills}</span><span>Signed in with</span><span>${u.provider==="google"?"Google":"Email"}</span></div>`);
+  b.querySelectorAll("[data-tab]").forEach(x=>x.onclick=()=>{custTab=x.dataset.tab;PANELS.customize()});
   b.querySelectorAll("[data-sp]").forEach(x=>x.onclick=()=>{const id=x.dataset.sp;const i=u.spellbook.indexOf(id);
-    if(i>=0){ u.spellbook.splice(i,1);} else { if(u.spellbook.length>=slots) return toast(`All ${slots} slots are full. Remove a spell first.`); u.spellbook.push(id);} save();PANELS.customize()});
+    if(i>=0){ const before=u.spellbook.length; u.spellbook.splice(i,1); u.spellbook=validBook(u.spellbook); if(before-1>u.spellbook.length) toast("Spells that needed it were taken out too"); }
+    else { if(u.spellbook.length>=slots) return toast(`All ${slots} slots are full. Remove a spell first.`); const pr=reqProblem(new Set(u.spellbook),id); if(pr) return toast(pr); u.spellbook.push(id) }
+    save(); const sc=b.scrollTop; PANELS.customize(); const nb=$("#modalRoot .modal-body"); if(nb) nb.scrollTop=sc });
   b.querySelectorAll("[data-out]").forEach(x=>x.onclick=()=>{u.outfit=x.dataset.out;save();PANELS.customize()});
-  b.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>{u.spellbook.splice(+x.dataset.rm,1);save();PANELS.customize()});
+  b.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>{u.spellbook.splice(+x.dataset.rm,1);u.spellbook=validBook(u.spellbook);save();PANELS.customize()});
   b.querySelector("#clearBook").onclick=()=>{u.spellbook=[];save();PANELS.customize()};
+  b.querySelector("#elem1").onchange=e=>{u.element=e.target.value||null;save();toast(u.element?`${BK[u.element].name} Elementalist: you'll bring the whole ${BK[u.element].name} book into battle`:"Elementalist off")};
+  b.querySelector("#elem2").onchange=e=>{u.element2=e.target.value||null;save()};
   let armed=false; const pb=b.querySelector("#prestigeBtn");
   pb.onclick=()=>{if(!armed){armed=true;pb.textContent="Tap again: reset to level 1 and prestige";return}
     u.prestige++;u.level=1;u.xp=0;u.orbs+=500;u.spellbook=BASIC.slice();save();sfx("level");
@@ -992,7 +1209,7 @@ const PANELS={
  quiz(){
   const u=me(); const today=new Date().toDateString();
   const QS=[["How much health does every wizard start with?",["100","250","500"],1],["How many spells can you equip at level 1?",["3","5","16"],0],
-   ["What does Frost Shard do besides damage?",["Heals you","Stops the target walking next turn","Pushes them far"],1],["At what level can you prestige?",["25","40","50"],2],
+   ["What do you get for bringing all 12 spells of one book?",["Double health","Its Familiar","A free outfit"],1],["At what level can you prestige?",["25","40","50"],2],
    ["Which aura comes with your 3rd prestige?",["Red","Purple","Green"],1],["What happens after round 60?",["Sudden death","The match is a draw","The sea drains"],1]];
   const qs=QS.sort(()=>Math.random()-.5).slice(0,4); let score=0,answered=0;
   const done=u.quizDay===today;
@@ -1046,8 +1263,11 @@ const PANELS={
   b.querySelector("#fbSend").onclick=()=>{const t=b.querySelector("#fbText").value.trim();if(!t) return toast("Write something first.");DB.feedback.push({u:u.username,t,at:Date.now()});save();toast("Feedback saved. Thank you!");closeModal()};
  }
 };
-function fixBook(u,fill){const L=effLevel(u),P=effPres(u);const unl=new Set(unlockedFor(L,P));u.spellbook=u.spellbook.filter(id=>unl.has(id));const slots=slotsFor(L);if(!fill&&u.spellbook.length){u.spellbook=u.spellbook.slice(0,slots);return}
-  for(const id of unlockedFor(L,P)){ if(u.spellbook.length>=slots) break; if(!u.spellbook.includes(id)) u.spellbook.push(id);} u.spellbook=u.spellbook.slice(0,slots)}
+function fixBook(u,fill){const L=effLevel(u),P=effPres(u);const unl=new Set(unlockedFor(L,P));const slots=slotsFor(L);
+  u.spellbook=validBook(u.spellbook.filter(id=>unl.has(id))).slice(0,slots);
+  if(!fill&&u.spellbook.length) return;
+  const order=[...BASIC,...SPELLS.filter(s=>s.book!=="prestige").sort((a,b)=>a.lvl-b.lvl||a.tier-b.tier).map(s=>s.id)];
+  for(const id of order){ if(u.spellbook.length>=slots) break; if(!unl.has(id)||u.spellbook.includes(id)||reqProblem(new Set(u.spellbook),id)) continue; u.spellbook.push(id) } }
 
 /* ================= GAME ENGINE ================= */
 const W=1408,H=768,G=.25,SUB=4;
@@ -1083,10 +1303,16 @@ const feetSolid=(x,y)=>isSolid(x-5,y)||isSolid(x,y)||isSolid(x+5,y);
 const bodyHits=(x,y)=>isSolid(x,y-6)||isSolid(x,y-18)||isSolid(x,y-32)||isSolid(x-6,y-14)||isSolid(x+6,y-14);
 function unstick(u){let n=0;while(n<140&&(bodyHits(u.x,u.y)||isSolid(u.x,u.y-1))){u.y--;n++}}
 function allBodies(){return M?[...M.units.filter(u=>u.alive),...M.imps]:[]}
+function walksWater(u){return u.imp?!!u.spec.swim:!!(u.fams&&u.fams.includes("seas")&&u.famLvl>=5)}
 function physBody(u,isImp){
+  if(isImp&&u.spec.fly) return;
+  const ww=walksWater(u);
+  if(ww&&u.y>=M.water&&u.vy>=0){u.y=M.water;u.vy=0;u.vx=0;u.grounded=true;return}
   if(u.y>M.water||u.x<-40||u.x>W+40){ if(isImp){u.dead=true;return} return knockOut(u,u.y>M.water?"fell into the sea":"fell off the island") }
-  if(u.grounded){ if(!feetSolid(u.x,u.y+1)){u.grounded=false;u.vy=0} else return }
-  u.vy=Math.min(u.vy+G,13);
+  if(u.grounded){ if(!feetSolid(u.x,u.y+1)&&!(ww&&u.y>=M.water-1)){u.grounded=false;u.vy=0} else return }
+  const flying=!isImp&&u.flyT>0;
+  u.vy=Math.min(u.vy+(flying?.08:G),flying?3:13);
+  if(flying) u.vx*=.97;
   const nx=u.x+u.vx;
   if(!bodyHits(nx,u.y)) u.x=nx; else {u.vx*=-.25}
   let r=u.vy;
@@ -1098,21 +1324,35 @@ function land(u,isImp){
   u.vy=0;u.vx=0;u.grounded=true;
 }
 function walk(u,dir){
-  u.face=dir; if(!u.grounded) return;
+  u.face=dir;
+  if(!u.imp&&u.tower&&!u.tower.moves) return;
+  if(!u.imp&&u.flyT>0&&!u.grounded){ u.vx=dir*2.2; return }
+  if(!u.grounded) return;
+  if(walksWater(u)&&u.y>=M.water-1&&!feetSolid(u.x+dir*2,u.y+1)){ u.x=clamp(u.x+dir*1.4,10,W-10); if(bodyHits(u.x,u.y)) unstick(u); return }
   const nx=u.x+dir*1.6;
   for(let up=0;up<=8;up++){ if(!bodyHits(nx,u.y-up)&&!feetSolid(nx,u.y-up)){ u.x=nx;u.y-=up;
       let down=0; while(down<8&&!feetSolid(u.x,u.y+1)){u.y++;down++}
       if(!feetSolid(u.x,u.y+1)){u.grounded=false;u.vy=0} return } }
 }
-function jump(u,high){ if(!u.grounded) return; u.grounded=false; u.y-=2; if(high){u.vy=-7.2;u.vx=u.face*.9}else{u.vy=-5;u.vx=u.face*2.4} }
+function jump(u,high){
+  if(!u.imp&&u.tower){ M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Left "+u.tower.name,life:50,max:50}); u.tower=null }
+  if(!u.imp&&u.flyT>0){ u.grounded=false; u.y-=2; u.vy=-3.4; u.vx=u.face*2.2; return }
+  if(!u.grounded) return; u.grounded=false; u.y-=2;
+  const f=(!u.imp&&u.fams&&u.fams.includes("frost"))?1+.08*u.famLvl:1;
+  if(high){u.vy=-7.2*f;u.vx=u.face*.9}else{u.vy=-5*f;u.vx=u.face*2.4}
+}
 
 /* ----- match setup ----- */
 const BOT_NAMES=["Ashby","Nimue","Corvin","Elowen","Garrick","Isolde","Talon","Wren","Bram","Liora","Fennick","Sable","Orla","Dax","Mabyn","Rook"];
 function makeBook(level,random,pres=0){
-  const unl=random?SPELLS.map(s=>s.id):unlockedFor(level,pres); const n=Math.min(slotsFor(level),unl.length);
-  if(!random&&n>=unl.length) return unl.slice();
-  const book=random?[]:BASIC.filter(b=>unl.includes(b)).slice(0,Math.min(2,n)); const pool=unl.filter(x=>!book.includes(x)).sort(()=>Math.random()-.5);
-  while(book.length<n&&pool.length) book.push(pool.pop()); return book;
+  const slots=slotsFor(level);
+  if(random) return SPELLS.filter(s=>s.book!=="prestige"||pres>=s.pres).map(s=>s.id).sort(()=>Math.random()-.5).slice(0,Math.max(slots,8));
+  const unl=new Set(unlockedFor(level,pres));
+  const books=BOOKS.filter(b=>b.id!=="arcane"&&bookSpells(b.id).filter(id=>unl.has(id)).length>=2);
+  const main=books.length?pick(books).id:"arcane";
+  const order=[...BASIC,...bookSpells(main).sort((a,b)=>SP[a].tier-SP[b].tier),...SPELLS.filter(s=>s.book==="prestige").map(s=>s.id),...bookSpells("arcane"),...SPELLS.map(s=>s.id).sort(()=>Math.random()-.5)];
+  const book=[]; for(const id of order){ if(book.length>=slots) break; if(!unl.has(id)||book.includes(id)) continue; if(reqProblem(new Set(book),id)) continue; book.push(id) }
+  return book;
 }
 function spawnPoints(team,count){
   const out=[]; const lo=team===0?60:W*0.56, hi=team===0?W*0.44:W-60;
@@ -1135,14 +1375,21 @@ function startMatch(cfg){
     for(let i=0;i<cfg.size;i++){
       const isPlayer=team===0&&i===0;
       const lvl=isPlayer?u.level:clamp(u.level+Math.round(rand(-3,3)),1,50);
-      const pres=isPlayer?u.prestige:(Math.random()<.15?Math.ceil(Math.random()*3):0);
+      const pres=isPlayer?effPres(u):(Math.random()<.2?Math.ceil(Math.random()*4):0);
       const gender=isPlayer?outfitImg(u):(Math.random()<.5?"male":"female");
+      let book, elems=[];
+      if(isPlayer){ book=random?makeBook(lvl,true,pres):validBook(u.spellbook).slice(0,slotsFor(effLevel(u)));
+        if(!random&&effPres(u)>=3){ if(u.element&&BK[u.element]) elems.push(u.element); if(effPres(u)>=5&&u.element2&&BK[u.element2]&&u.element2!==u.element) elems.push(u.element2) } }
+      else { book=makeBook(lvl,random,pres); if(pres>=3&&Math.random()<.5) elems.push(pick(BOOKS.filter(b=>b.fam)).id) }
+      const spells=[...book]; for(const b of elems) for(const id of bookSpells(b)) if(!spells.includes(id)) spells.push(id);
+      const fams=[...new Set([...famBooks(book),...elems])];
+      const cool={}; for(const id of spells) if(SP[id].init) cool[id]=SP[id].init;
       units.push({id:units.length,name:isPlayer?u.username:names.pop(),team,isPlayer,bot:!isPlayer,diff,gender,prestige:pres,level:lvl,
         x:pts[i][0],y:pts[i][1],vx:0,vy:0,grounded:false,face:team===0?1:-1,hp:250,maxHp:250,alive:true,
-        spells:isPlayer?(random?makeBook(lvl,true):u.spellbook.slice()):makeBook(lvl,random,pres),cool:{},used:{},shield:false,frozen:0,absorb:0,absorbT:0,rooted:0,maskT:0,mult:1,reflect:0,freezeHit:0,dmg:0,kills:0,lastHitBy:null});
+        spells,elems,fams,famLvl:0,cool,used:{},shield:false,frozen:0,absorb:0,absorbT:0,rooted:0,maskT:0,mult:1,reflect:0,freezeHit:0,dmg:0,kills:0,lastHitBy:null,tower:null});
     }
   }
-  M={cfg,units,imps:[],proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
+  M={cfg,units,imps:[],zones:[],rewindDone:false,proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
      water:H-6,wind:0,phase:"start",active:null,timer:u.opts.turn,selSpell:0,charge:0,charging:false,
      armaAt:40,warned:false,ff:false,over:false,botPlan:null,startedAt:Date.now(),dmgNums:u.opts.dmgNums};
   for(const un of units) unstick(un);
@@ -1162,26 +1409,45 @@ function nextTurn(first){
   const team=M.units.filter(u=>u.team===M.teamTurn);
   let idx=M.nextIdx[M.teamTurn],guard=0; while(!team[idx%team.length].alive&&guard++<8) idx++;
   const u=team[idx%team.length]; M.nextIdx[M.teamTurn]=(idx+1)%team.length;
-  M.turnNo++; if(M.teamTurn===0||first) {} M.round=Math.ceil(M.turnNo/2);
+  M.turnNo++; M.round=Math.ceil(M.turnNo/2);
   if(M.round>60){return endMatch(null,"Turn limit reached")}
-  M.active=u; M.phase="turn"; M.timer=me().opts.turn; M.charge=0; M.charging=false; M.botPlan=null; M.cast=false;
+  M.active=u; M.charge=0; M.charging=false; M.aiming=false; M.botPlan=null; M.cast=false;
   M.wind=Math.round(rand(-10,10))/10;
   for(const k in u.cool) if(u.cool[k]>0) u.cool[k]--;
   u.shield=false;
-  if(u.absorbT>0&&--u.absorbT===0){u.absorb=0;u.reflect=0;u.freezeHit=0}
+  if(u.absorbT>0&&--u.absorbT===0){u.absorb=0;u.reflect=0;u.freezeHit=0;u.cherub=0}
   if(u.rooted>0) u.rooted--;
+  if(u.aegisT>0) u.aegisT--;
   if(u.maskT>0&&--u.maskT===0){u.mult=1;M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Mask fades",life:60,max:60})}
   CAM.manual=0;
   M.selSpell=Math.min(M.selSpell,u.spells.length-1);
   if(u.isPlayer) M.selSpell=M.selSpell||0;
-  // armageddon
+  if(u.skipT>0){ u.skipT=0; banner(u.name+" is frozen in time",1200); M.phase="between"; renderHud(); setTimeout(()=>{ if(M&&!M.over) nextTurn() },1300); return }
+  turnStart(u);
+  M.timer=me().opts.turn+((u.fams&&u.fams.includes("cogs"))?6*u.famLvl:0);
   if(M.turnNo===30){banner("Armageddon in 10 turns!",2000);M.warned=true}
   if(M.turnNo>=M.armaAt){ armageddonTick(); }
-  // imps of this team act first
-  const myImps=M.imps.filter(i=>i.team===u.team&&!i.dead);
-  if(myImps.length){M.phase="imps";M.impTimer=110;}
+  const mine=M.imps.filter(i=>!i.dead&&(i.owner===u||(!i.owner.alive&&i.team===u.team)));
+  M.phase=mine.length?"imps":"impsWait"; M.impTimer=120;
+  if(!u.isPlayer&&u.fams&&u.fams.length&&u.famLvl<3&&u.hp>170&&Math.random()<.5) powerFamiliar(u);
   renderHud(); renderSpellbar();
   if(u.isPlayer) banner("Your turn!",900); else banner(u.name+"'s turn",800);
+}
+function turnStart(u){
+  u.deflectReady=true; if(u.deflectT>0) u.deflectT--;
+  if(u.flyT>0&&!u.wings) u.flyT--;
+  if(u.invulnT>0) u.invulnT--;
+  if(u.energyT>0) u.energyT--;
+  if(u.regenT>0){u.regenT--;heal(u,u.regen)}
+  if(u.wings) heal(u,10);
+  if(u.fams&&u.famLvl){ if(u.fams.includes("nature")) heal(u,2*u.famLvl);
+    if(u.fams.includes("overlight")&&(u.cherub||0)<50){const a=Math.min(u.famLvl,50-(u.cherub||0));u.cherub=(u.cherub||0)+a;u.absorb+=a;u.absorbT=Math.max(u.absorbT||0,999)} }
+  if(u.tower){ if(u.tower.heal) heal(u,u.tower.heal); if(u.tower.selfHeal) u.tower.hp=Math.min(u.tower.max,u.tower.hp+u.tower.selfHeal);
+    if(u.tower.aura) for(const e of enemiesNear(u.team,u.x,u.y-24,70)) dmgAny(e,u.tower.aura,u,"underdark") }
+  if(u.lich){ for(const e of enemiesNear(u.team,u.x,u.y-24,60)) dmgAny(e,15,u,"underdark"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:60,life:24,max:24,col:"#5bd17a"}) }
+  if(u.zapT>0){ u.zapT--; if(u.zapT>0) zapAround(u) }
+  for(const m of M.imps) if(!m.dead&&m.owner===u){ if(m.rooted>0) m.rooted--; if(m.spec.undead||m.undead) mHurt(m,5,null,"") }
+  zonesTurnStart(u);
 }
 function armageddonTick(){
   if(M.turnNo===M.armaAt) banner("Armageddon!",1800);
@@ -1195,8 +1461,8 @@ function checkEnd(){
 }
 function settled(){
   if(M.proj.length||M.fx.some(f=>f.block)) return false;
-  for(const u of M.units) if(u.alive&&!u.grounded) return false;
-  for(const i of M.imps) if(!i.dead&&!i.grounded) return false;
+  for(const u of M.units) if(u.alive&&!u.grounded&&!(u.flyT>0)) return false;
+  for(const i of M.imps) if(!i.dead&&!i.grounded&&!i.spec.fly) return false;
   return true;
 }
 
@@ -1206,23 +1472,35 @@ function stepProj(p,sim){
   for(let s=0;s<SUB;s++){
     if(p.grav) p.vy+=G*p.grav/SUB;
     if(p.wind) p.vx+=M.wind*.045/SUB;
-    if(p.homing&&p.age>12&&!sim){const t=nearestEnemy(p.x,p.y,p.team);if(t){const want=Math.atan2(t.y-18-p.y,t.x-p.x),cur=Math.atan2(p.vy,p.vx);let d=want-cur;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const a=cur+clamp(d,-.012,.012),sp=Math.hypot(p.vx,p.vy);p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp}}
+    if(p.homing&&p.age>12&&!sim){const t=nearestEnemy(p.x,p.y,p.team);if(t){const want=Math.atan2(t.y-18-p.y,t.x-p.x),cur=Math.atan2(p.vy,p.vx);let d=want-cur;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const a=cur+clamp(d,-.012,.012),sp=Math.max(4,Math.hypot(p.vx,p.vy));p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp}}
     const ox=p.x,oy=p.y; p.x+=p.vx/SUB; p.y+=p.vy/SUB;
     if(p.x<-300||p.x>W+300||p.y>H+30) return {out:true};
-    if(isSolid(p.x,p.y)){
+    if(!(p.noclip&&p.age<p.noclip)&&isSolid(p.x,p.y)){
       if(p.bounce){ p.x=ox;p.y=oy; let nx=0,ny=0; for(let a=0;a<8;a++){const ang=a*Math.PI/4;if(isSolid(p.x+Math.cos(ang)*6,p.y+Math.sin(ang)*6)){nx-=Math.cos(ang);ny-=Math.sin(ang)}}
         const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;const dot=p.vx*nx+p.vy*ny;p.vx=(p.vx-2*dot*nx)*.55;p.vy=(p.vy-2*dot*ny)*.55; if(!sim&&Math.abs(dot)>1.5) sfx("tick"); continue }
       return {x:p.x,y:p.y};
     }
+    if(!sim){
+      for(const z of M.zones){
+        if(z.type==="stasis"&&p.team!==z.team&&Math.hypot(p.x-z.x,p.y-z.y)<z.r) return {absorbed:true};
+        if(z.type==="firewall"&&z.ready&&p.team!==z.team&&Math.abs(p.x-z.x)<10&&p.y>z.y-64&&p.y<z.y+6){ z.ready=false; return {absorbed:true} }
+      }
+      for(const u of M.units){ if(!u.alive||!(u.deflectT>0)||!u.deflectReady||p.team===u.team||p.deflected) continue;
+        if(Math.hypot(p.x-u.x,p.y-(u.y-24))<34){ p.vx=-p.vx*.9; p.vy=-Math.abs(p.vy)*.6-1; p.team=u.team; p.owner=u; p.ownerUnit=u; p.age=0; p.deflected=true; if(u.deflectOnce) u.deflectReady=false; sfx("tick"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:34,life:16,max:16,col:u.deflectCol||"#fff"}); break } }
+    }
     for(const u of (sim?sim.units:allBodies())){
       if(u===p.ownerUnit&&p.age<14) continue; if(u.dead||u.alive===false) continue;
-      if(Math.abs(p.x-u.x)<9&&p.y>u.y-38&&p.y<u.y+2){ if(p.bounce) {p.vx*=-.3;continue}
+      if(p.skipUnit===u&&p.age<p.skipUntil) continue;
+      const hh=u.imp?u.spec.size*2:38, hw=u.imp?Math.max(8,u.spec.size):9;
+      if(Math.abs(p.x-u.x)<hw&&p.y>u.y-hh&&p.y<u.y+2){
+        if(p.boulder) return {x:p.x,y:p.y,unit:u};
+        if(p.bounce){p.vx*=-.3;continue}
         if(p.pierce&&!sim){ p.hitSet=p.hitSet||new Set(); if(!p.hitSet.has(u)&&u.team!==p.team){ p.hitSet.add(u); explode(p.x,p.y,{...p.spell,nodig:true,rad:16},p.owner) } continue }
         return {x:p.x,y:p.y,unit:u} }
     }
   }
   p.age++; if(p.timer!=null&&--p.timer<=0) return {x:p.x,y:p.y};
-  if(p.life&&p.age>p.life) return {out:true};
+  if(p.life&&p.age>p.life) return p.burstEnd?{x:p.x,y:p.y}:{out:true};
   return null;
 }
 function nearestEnemy(x,y,team,exclude=[]){let best=null,bd=1e9;for(const u of M.units){if(!u.alive||u.team===team||exclude.includes(u))continue;const d=Math.hypot(u.x-x,u.y-18-y);if(d<bd){bd=d;best=u}}return best}
@@ -1230,195 +1508,387 @@ function explode(x,y,sp,owner,opts={}){
   const r=sp.rad||20;
   if(!sp.nodig) carve(x,y,r);
   sfx(r>40?"boom":"hit");
-  for(let i=0;i<Math.min(40,r);i++){const a=rand(0,6.28),v=rand(1,4+r/12);M.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,life:rand(25,50),col:Math.random()<.5?sp.col:"#5a3a1c",sz:rand(2,4)})}
+  for(let i=0;i<Math.min(30,r);i++){const a=rand(0,6.28),v=rand(1,4+r/12);M.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,life:rand(25,50),col:Math.random()<.5?sp.col:"#5a3a1c",sz:rand(2,4)})}
   M.fx.push({t:"ring",x,y,r,life:18,max:18,col:sp.col});
-  const reach=r+14;
+  const reach=r+14, elem=sp.elem||sp.book||""; let dealt=0;
   for(const u of [...M.units.filter(u=>u.alive),...M.imps.filter(i=>!i.dead)]){
-    const d=Math.hypot(u.x-x,u.y-18-y); if(d>reach) continue;
-    const f=1-d/reach*.55; const dmg=Math.round((sp.dmg||0)*f*((owner&&owner.mult&&u.team!==owner.team)?owner.mult:1));
-    const push=(sp.push||Math.max(2,r/9))*(1-d/reach*.6); const ang=Math.atan2(u.y-18-y,u.x-x);
-    if(!u.rooted){ u.vx+=Math.cos(ang)*push*.7; u.vy+=Math.min(-1.5,Math.sin(ang)*push)-1; u.grounded=false; u.y-=2; }
-    if(u.imp){ if(dmg>0) impBoom(u); continue }
-    if(dmg>0) hurt(u,dmg,owner);
+    if(opts.exclude===u) continue;
+    const cy=u.imp?u.y-u.spec.size:u.y-18, d=Math.hypot(u.x-x,cy-y); if(d>reach) continue;
+    const f=1-d/reach*.55; let base=sp.dmg||0;
+    if(owner&&owner.energyT>0&&sp.book==="arcane"&&base>0) base+=5;
+    if(owner&&owner.fams&&owner.fams.includes("flame")&&sp.book==="flame") base*=1+.1*owner.famLvl;
+    if(owner&&owner.mult&&owner.team!==u.team) base*=owner.mult;
+    const dmg=Math.round(base*f);
+    const push=(sp.push||Math.max(2,r/9))*(1-d/reach*.6), ang=Math.atan2(cy-y,u.x-x);
+    const pinned=u.rooted||u.tower||(u.imp&&u.spec.fly);
+    if(!pinned&&(dmg>0||sp.push)){ u.vx+=Math.cos(ang)*push*.7; u.vy+=Math.min(-1.5,Math.sin(ang)*push)-1; u.grounded=false; u.y-=2; }
+    if(sp.healHit){ if(u.imp){ if(u.spec.undead||u.undead) mHurt(u,50,owner,"overlight"); else u.hp=Math.min(u.maxHp,u.hp+25) } else if(u.lich) hurt(u,50,owner,"","overlight"); else heal(u,25); continue }
+    if(sp.root&&owner&&u.team!==owner.team) u.rooted=Math.max(u.rooted||0,2);
+    const foe=!owner||u.team!==owner.team;
+    if(u.imp){ if(dmg>0){const t=mHurt(u,dmg,owner,elem,sp); if(foe) dealt+=t} continue }
+    if(sp.towerX&&u.tower&&dmg>0) towerHit(u,dmg*(sp.towerX-1));
+    if(dmg>0){ const t=hurt(u,dmg,owner,"",elem); if(foe) dealt+=t }
     if(sp.freeze&&u!==owner) u.frozen=1;
   }
-  if(sp.pull){ for(const u of [...M.units.filter(u=>u.alive),...M.imps.filter(i=>!i.dead)]){const d=Math.hypot(u.x-x,u.y-y);if(d<sp.pull&&d>4){u.vx+=(x-u.x)/d*7*(1-d/sp.pull*.5);u.vy+=(y-u.y)/d*5-2;u.grounded=false;u.y-=2}} M.fx.push({t:"hole",x,y,life:40,max:40,col:sp.col}) }
+  if(sp.pull){ for(const u of [...M.units.filter(u=>u.alive),...M.imps.filter(i=>!i.dead&&!i.spec.fly)]){ if(u.tower) continue; const d=Math.hypot(u.x-x,u.y-y);if(d<sp.pull&&d>4){u.vx+=(x-u.x)/d*7*(1-d/sp.pull*.5);u.vy+=(y-u.y)/d*5-2;u.grounded=false;u.y-=2}} M.fx.push({t:"hole",x,y,life:40,max:40,col:sp.col}) }
+  return dealt;
 }
-function hurt(u,dmg,by,how){
-  if(!u.alive) return; if(u.shield) dmg=Math.round(dmg/2);
+function hurt(u,dmg,by,how,elem){
+  if(!u.alive||dmg<=0) return 0;
+  if(u.invulnT>0){ if(M.dmgNums) M.nums.push({x:u.x,y:u.y-46,t:"blocked",life:50,col:"#fff7c8"}); return 0 }
+  if(u.lich){ if(elem==="underdark"){ heal(u,dmg); return 0 } if(elem==="overlight") dmg*=2 }
+  if(u.fams&&u.famLvl){ if(u.fams.includes("stone")) dmg=Math.max(1,dmg-u.famLvl); if(u.fams.includes("seas")&&elem==="seas") dmg=Math.round(dmg*(1-.2*u.famLvl)) }
+  if(dmg<=0) return 0;
+  if(u.shield) dmg=Math.round(dmg/2);
+  if(u.tower&&how!=="fall"){ const t=Math.min(u.tower.hp,dmg); towerHit(u,t); dmg-=t; if(dmg<=0) return 0 }
   const raw=dmg;
-  if(u.absorb>0&&dmg>0){ const take=Math.min(u.absorb,dmg); u.absorb-=take; dmg-=take;
+  if(u.absorb>0){ const take=Math.min(u.absorb,dmg); u.absorb-=take; dmg-=take;
     if(M.dmgNums) M.nums.push({x:u.x,y:u.y-62,t:"blocked "+take,life:60,col:"#9fdcff"});
-    if(u.absorb<=0){u.absorbT=0;u.rooted=0;M.fx.push({t:"ring",x:u.x,y:u.y-24,r:34,life:20,max:20,col:"#ffffff"})} }
+    if(u.absorb<=0){u.absorbT=0;u.cherub=0; if(u.aegisT){u.aegisT=0;u.rooted=0} M.fx.push({t:"ring",x:u.x,y:u.y-24,r:34,life:20,max:20,col:"#ffffff"})} }
   if(how!=="reflect"&&by&&by!==u&&by.alive&&by.team!==u.team){
     if(u.reflect&&raw>0) hurt(by,Math.round(raw*u.reflect),u,"reflect");
     if(u.freezeHit) by.frozen=1; }
-  if(dmg<=0) return;
+  if(dmg<=0) return 0;
+  if(u.flyT>0&&!u.wings&&how!=="fall") u.flyT=0;
   u.hp=Math.max(0,u.hp-dmg); if(by&&by!==u){u.lastHitBy=by; if(by.team!==u.team) by.dmg+=dmg}
   if(M.dmgNums) M.nums.push({x:u.x,y:u.y-46,t:"-"+dmg,life:60,col:"#ffd0c8"});
-  if(u.hp<=0) knockOut(u);
+  if(by&&by.lich&&by!==u&&by.team!==u.team) heal(by,Math.round(dmg*.25));
+  if(u.hp<=0) knockOut(u,"",elem);
+  return dmg;
 }
-function heal(u,n){if(!u.alive)return;const h=Math.min(n,u.maxHp-u.hp);u.hp+=h;if(h>0&&M.dmgNums) M.nums.push({x:u.x,y:u.y-46,t:"+"+h,life:60,col:"#a6ffb8"})}
-function knockOut(u,why){
-  if(!u.alive) return; u.alive=false; u.hp=0;
+function heal(u,n){if(!u.alive)return;n=Math.round(n);const h=Math.min(n,u.maxHp-u.hp);u.hp+=h;if(h>0&&M.dmgNums) M.nums.push({x:u.x,y:u.y-46,t:"+"+h,life:60,col:"#a6ffb8"})}
+function knockOut(u,why,elem){
+  if(!u.alive) return;
+  if(u.fams&&u.fams.includes("underdark")&&u.famLvl>0&&u.lantern&&!/sea/.test(why||"")&&elem!=="overlight"){
+    const L=u.lantern; u.hp=20*u.famLvl; u.famLvl=0; u.lantern=null; u.x=L.x; u.y=L.y; u.vx=u.vy=0; u.grounded=false; u.tower=null; unstick(u);
+    M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Soul Lantern revives "+u.name,life:90,max:90}); renderHud(); return }
+  u.alive=false; u.hp=0; u.tower=null;
   const k=u.lastHitBy; if(k&&k.team!==u.team) k.kills++;
   M.fx.push({t:"text",x:u.x,y:u.y-60,txt:u.name+" is out!",life:90,max:90});
   for(let i=0;i<30;i++){const a=rand(0,6.28);M.parts.push({x:u.x,y:u.y-20,vx:Math.cos(a)*rand(1,4),vy:Math.sin(a)*rand(1,4),life:50,col:u.team?"#ff9a7c":"#8ccaff",sz:3})}
   renderHud();
 }
-function impBoom(i){ if(i.dead) return; i.dead=true; explode(i.x,i.y-10,{dmg:SP.imp.dmg,rad:SP.imp.rad,col:SP.imp.col},i.owner) }
+function mHurt(m,dmg,by,elem,sp){
+  if(m.dead||dmg<=0) return 0; const s=m.spec, und=s.undead||m.undead;
+  if(und&&elem==="underdark"){ m.hp=Math.min(m.maxHp,m.hp+dmg); return 0 }
+  if(und&&elem==="overlight") dmg*=2;
+  if(s.resist) dmg=Math.round(dmg*(1-s.resist)); if(s.weak) dmg=Math.round(dmg*s.weak);
+  m.hp-=dmg; if(M.dmgNums) M.nums.push({x:m.x,y:m.y-s.size*2-8,t:"-"+dmg,life:50,col:"#ffd0c8"});
+  if(m.hp<=0){
+    if(sp&&sp.raise&&!und&&by){ m.hp=Math.round(m.maxHp*.5); m.undead=true; m.team=by.team; m.owner=by; M.fx.push({t:"text",x:m.x,y:m.y-40,txt:"Risen!",life:60,max:60}); return dmg }
+    m.dead=true; M.fx.push({t:"poof",x:m.x,y:m.y-s.size,life:30,max:30,col:s.col});
+    if(s.deathBoom){ const p={spell:{col:s.deathBoom.col,book:"seas",elem:"seas"},owner:m.owner,team:m.team}; explode(m.x,m.y-8,{...s.deathBoom,book:"seas",elem:"seas"},m.owner); splitAt(m.x,m.y-8,{n:8,dmg:5,rad:8,salt:1},p) }
+  }
+  return dmg;
+}
 
 /* ----- casting ----- */
-function canCast(u,id){const s=SP[id];if(!s)return false;if(u.cool[id]>0)return false;if(s.uses&&(u.used[id]||0)>=s.uses)return false;return true}
+function spellState(u,id){const s=SP[id];if(!s)return{ok:false,why:"Unknown spell",cd:0,out:false};
+  const cd=u.cool[id]||0, ch=chargesOf(s), out=!!ch&&(u.used[id]||0)>=ch; let why=null;
+  if(out) why=ch===1?"Already used this match":`All ${ch} charges used`;
+  else if(cd) why=(u.used[id]?"Recharging":"Charging up")+`: ready in ${cd} turn${cd>1?"s":""}`;
+  else if(u.restrict&&!u.restrict.has(s.book)) why=u.lich?"Undead can only use Arcane and Underdark spells":"With wings you can only use Arcane and Overlight spells";
+  else if(s.kind==="tower"&&(u.lich||u.wings)) why="You can't use towers now";
+  else if(s.kind==="tower"&&u.tower) why="You're already in a tower";
+  else if(s.kind==="rewind"&&M&&M.rewindDone) why="Rewind was already used this match";
+  return {cd,out,ok:!why,why}}
+function canCast(u,id){return spellState(u,id).ok}
+const later=(d,fn)=>M.fx.push({t:"later",life:Math.max(1,d),max:Math.max(1,d),block:true,fn});
+const waitFx=n=>M.fx.push({t:"wait",life:n,max:n,block:true});
 function castSpell(u,id,tx,ty,power){
-  const s=SP[id]; if(!canCast(u,id)||M.cast) return false;
+  const s=SP[id]; if(!s||!canCast(u,id)||M.cast) return false;
   const ox=u.x, oy=u.y-24, ang=Math.atan2(ty-oy,tx-ox);
   if(s.type==="target"){
     if(s.range&&Math.hypot(tx-u.x,ty-u.y)>s.range){toast("Out of range");return false}
     if(s.kind==="tele"){ if(bodyHits(tx,ty+18)||isSolid(tx,ty)){toast("Pick an open spot");return false} }
   }
-  M.cast=true; u.cool[id]=s.cd||0; if(s.uses) u.used[id]=(u.used[id]||0)+1;
-  u.face=tx>=u.x?1:-1; sfx(s.kind==="bolt"||s.kind==="chain"?"zap":"cast");
+  if(s.kind==="pact"&&!M.imps.some(m=>!m.dead&&m.owner===u)){ if(u.isPlayer) toast("You need minions to drain"); return false }
+  if(!s.free) M.cast=true;
+  let cd=s.cd||0; if(u.fams&&u.fams.includes("storm")&&s.book==="storm") cd=Math.max(0,cd-Math.floor(u.famLvl/2));
+  u.cool[id]=cd; if(chargesOf(s)) u.used[id]=(u.used[id]||0)+1;
+  if(u.invulnT>0&&s.kind!=="invuln"){u.invulnT=0;M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Barrier broken",life:60,max:60})}
+  u.face=tx>=u.x?1:-1; sfx(["chain","strike","cloud","zapaura"].includes(s.kind)?"zap":"cast");
   const base={spell:s,owner:u,ownerUnit:u,team:u.team};
   switch(s.kind){
-    case "shot": case "arrow": case "wind":
-      M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,grav:s.grav,homing:s.homing,life:s.homing?260:160}));break;
-    case "chain":
-      M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,life:100,chain:true}));break;
-    case "lob": case "hole":{const v=4+power*11;M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,wind:s.wind?1:0}));break}
-    case "bomb":{const v=4+power*10;M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,bounce:true,timer:s.fuse}));break}
-    case "cone": for(let i=-3;i<=3;i++){const a=ang+i*.09;M.proj.push(mkProj({...base,spell:{...s},x:ox,y:oy,vx:Math.cos(a)*9,vy:Math.sin(a)*9,grav:.4,life:45}))} break;
-    case "tele": M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); u.x=tx;u.y=ty+18;u.grounded=false;u.vx=0;u.vy=0;unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col});break;
-    case "build":
-      if(s.type==="target"){ addRock(c=>{c.beginPath();c.roundRect(tx-15,ty-45,30,90,6);c.fill();c.stroke()},tx-15,ty-45,30,90); }
-      else { const sx=ox+Math.cos(ang)*22, sy=u.y+2+Math.sin(ang)*22, ex=sx+Math.cos(ang)*175, ey=sy+Math.sin(ang)*175;
-        addRock(c=>{c.lineCap="round";c.lineWidth=13;c.strokeStyle="#2f5a20";c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.stroke();c.lineWidth=8;c.strokeStyle="#5fa83f";c.stroke()},Math.min(sx,ex)-10,Math.min(sy,ey)-10,Math.abs(ex-sx)+20,Math.abs(ey-sy)+20) }
-      M.fx.push({t:"wait",life:20,max:20,block:true}); break;
-    case "tower": addRock(c=>{c.beginPath();c.roundRect(u.x-22,u.y-72,44,80,5);c.fill();c.stroke()},u.x-22,u.y-72,44,80); u.y-=74; unstick(u); u.grounded=false; M.fx.push({t:"wait",life:20,max:20,block:true}); break;
-    case "heal": heal(u,s.heal); for(const a of M.units) if(a!==u&&a.team===u.team&&Math.hypot(a.x-u.x,a.y-u.y)<160) heal(a,20); sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-20,r:60,life:30,max:30,col:s.col}); M.fx.push({t:"wait",life:40,max:40,block:true}); break;
-    case "ward": u.absorb=s.absorb; u.absorbT=s.turns+1; u.reflect=s.reflect||0; u.freezeHit=s.freezeHit||0; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:30,max:30,col:s.col}); M.fx.push({t:"wait",life:30,max:30,block:true}); break;
-    case "aegis": u.absorb=s.absorb; u.absorbT=s.turns+1; u.rooted=s.turns+1; u.vx=0; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:50,life:36,max:36,col:s.col}); M.fx.push({t:"wait",life:36,max:36,block:true}); break;
-    case "mask": u.mult=s.mult; u.maskT=s.turns+1; sfx("zap"); M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Damage ×2",life:80,max:80}); for(let i=0;i<40;i++){const a=rand(0,6.28);M.parts.push({x:u.x,y:u.y-24,vx:Math.cos(a)*rand(.5,3),vy:Math.sin(a)*rand(.5,3)-1,life:60,col:i%2?"#1a0a22":"#5b2a7a",sz:4})} M.fx.push({t:"wait",life:40,max:40,block:true}); break;
+    case "shot": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,grav:s.grav||0,life:160})); break;
+    case "spray": { let n=s.count||1; if(s.id==="thunderbolt"&&u.fams&&u.fams.includes("storm")) n+=u.famLvl;
+      for(let k=0;k<n;k++){ const a=ang+rand(-1,1)*(s.spread||0), v=s.speed*rand(.93,1.07);
+        later(1+k*2,()=>M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,grav:s.grav||0,life:120,small:n>1}))) } break }
+    case "arrow": { const n=s.count||1; for(let k=0;k<n;k++){ const a=ang+(k-(n-1)/2)*.14;
+        later(1+k*6,()=>M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(a)*s.speed,vy:Math.sin(a)*s.speed,homing:1,life:s.drops?300:260,drops:s.drops?55:0,burstEnd:!!s.drops,small:n>1}))) } break }
+    case "chain": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,life:100,chain:true})); break;
     case "lance": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,pierce:true,life:120,big:true})); break;
-    case "hail": {const v=4+power*11;M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,wind:1,hail:true}));break}
-    case "tremor": { sfx("boom"); for(const e of M.units.filter(e=>e.alive&&e.team!==u.team&&e.grounded)){ carve(e.x,e.y+6,s.rad); e.vy=-6; e.vx=rand(-2,2); e.grounded=false; hurt(e,Math.round(s.dmg*(u.mult||1)),u) } M.fx.push({t:"shake",life:40,max:40,block:true}); break }
-    case "rain": case "skyfall": case "storm": { let delay=0; const sp2={...s,col:s.col};
+    case "ball": case "hole": { const v=4+power*11; M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:s.grav??1,wind:1,start:[ox,oy]})); break }
+    case "bomb": case "boulder": { const v=4+power*10, fuse=s.fuseR?Math.round(rand(s.fuseR[0],s.fuseR[1])):(s.fuse||150);
+      M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,bounce:true,timer:fuse,boulder:s.kind==="boulder",hits:0})); break }
+    case "tele": M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); u.x=tx;u.y=ty+18;u.grounded=false;u.vx=0;u.vy=0;u.tower=null;unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); break;
+    case "vine": { const sx=ox+Math.cos(ang)*22, sy=u.y+2+Math.sin(ang)*22, ex=sx+Math.cos(ang)*175, ey=sy+Math.sin(ang)*175;
+      addRock(c=>{c.lineCap="round";c.lineWidth=13;c.strokeStyle="#2f5a20";c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.stroke();c.lineWidth=8;c.strokeStyle="#5fa83f";c.stroke()},Math.min(sx,ex)-10,Math.min(sy,ey)-10,Math.abs(ex-sx)+20,Math.abs(ey-sy)+20); waitFx(20); break }
+    case "slab": addRock(c=>{c.beginPath();c.roundRect(tx-40,ty-8,80,16,5);c.fill();c.stroke()},tx-40,ty-8,80,16); waitFx(20); break;
+    case "seed": { const sy=surfaceY(tx|0,Math.max(0,ty-40)); const by=sy==null?ty:Math.min(sy,ty+200);
+      addRock(c=>{c.fillStyle="#6b4a2a";c.strokeStyle="#2c1a0c";c.beginPath();c.roundRect(tx-7,by-70,14,74,4);c.fill();c.stroke();c.fillStyle="#3f8f3a";c.beginPath();c.arc(tx,by-82,30,0,7);c.arc(tx-22,by-66,18,0,7);c.arc(tx+22,by-66,18,0,7);c.fill();c.stroke()},tx-44,by-114,88,118); waitFx(20); break }
+    case "icewall": for(const d of [-1,1]) addRock(c=>{c.fillStyle="#d8f3ff";c.strokeStyle="#7cc0dc";c.beginPath();c.roundRect(u.x+d*22-5,u.y-58,10,62,4);c.fill();c.stroke()},u.x+d*22-5,u.y-58,10,62); sfx("hit"); break;
+    case "flash": explode(u.x,u.y-20,s,u,{exclude:u}); break;
+    case "glyph": for(let k=0;k<s.count;k++){const a=k/s.count*Math.PI*2;M.zones.push({type:"glyph",owner:u,team:u.team,x:u.x+Math.cos(a)*50,y:u.y-22+Math.sin(a)*40,r:12,dmg:s.dmg,col:s.col,turns:12})} waitFx(20); break;
+    case "sigil": for(let k=0;k<s.count;k++){const a=-Math.PI/2+k/s.count*Math.PI*2;M.zones.push({type:"glyph",owner:u,team:u.team,x:tx+Math.cos(a)*24,y:ty+Math.sin(a)*24,r:12,dmg:s.dmg,col:s.col,turns:12})} waitFx(20); break;
+    case "beacon": M.zones.push({type:"beacon",owner:u,team:u.team,x:tx,y:ty,turns:99}); waitFx(15); break;
+    case "aura": { const z={type:"aura",owner:u,team:u.team,x:tx,y:ty,r:s.rad,dmg:s.dmg,turns:s.turns,col:s.col,elem:s.elem}; M.zones.push(z); auraHit(z); waitFx(30); break }
+    case "root": for(const e of enemiesNear(u.team,tx,ty,s.rad)){ dmgAny(e,s.dmg,u,s.elem); e.rooted=Math.max(e.rooted||0,s.turns+1) } M.fx.push({t:"ring",x:tx,y:ty,r:s.rad,life:30,max:30,col:s.col}); waitFx(30); break;
+    case "pull": { const vic=allNear(tx,ty,s.rad); for(const e of vic){ if(e.tower||e.rooted||(e.imp&&e.spec.fly)) continue; const d=Math.hypot(e.x-tx,e.y-ty)||1; e.vx=(tx-e.x)/d*4; e.vy=-6; e.grounded=false; e.y-=2 }
+      M.fx.push({t:"hole",x:tx,y:ty,life:50,max:50,col:s.col});
+      later(45,()=>{for(const e of vic){ if(e.dead||e.alive===false||e.tower||(e.imp&&e.spec.fly)) continue; e.vx=(e.x>=tx?1:-1)*rand(6,9); e.vy=-rand(7,9); e.grounded=false; e.y-=2 }}); break }
+    case "strike": strike(tx,s,u); break;
+    case "barrage": barrage(s,tx,ty,u,base); break;
+    case "meteor": case "ult": { const sx=tx-260, sy=-60, d=Math.hypot(tx-sx,ty-sy);
+      M.proj.push(mkProj({...base,ownerUnit:null,x:sx,y:sy,vx:(tx-sx)/d*15,vy:(ty-sy)/d*15,big:!s.cog,bounce:!!s.cog,boulder:!!s.cog,hits:0,timer:s.cog?240:null,grav:s.cog?1:0})); break }
+    case "cloud": { const z={type:"cloud",owner:u,team:u.team,x:tx,y:ty,cy:clamp(ty-170,50,160),turns:s.turns,total:s.turns,mode:s.mode,count:s.count,dmg:s.dmg,rad:s.rad,col:s.col,step:0,spell:s}; M.zones.push(z); cloudTick(z); break }
+    case "geyser": { const z={type:"geyser",owner:u,team:u.team,x:tx,y:ty,turns:s.waves.length,waves:s.waves,step:0,col:s.col,spell:s}; M.zones.push(z); geyserTick(z); break }
+    case "firewall": M.zones.push({type:"firewall",owner:u,team:u.team,x:u.x+u.face*26,y:u.y,dmg:s.dmg,turns:s.turns,ready:true,col:s.col,elem:s.elem,thorn:s.book==="nature"}); waitFx(25); break;
+    case "deflect": u.deflectT=s.turns+1; u.deflectOnce=!!s.once; u.deflectReady=true; u.deflectCol=s.col; M.fx.push({t:"ring",x:u.x,y:u.y-24,r:36,life:30,max:30,col:s.col}); waitFx(30); break;
+    case "zapaura": u.zapT=s.turns+1; u.zapDmg=s.dmg; zapAround(u); waitFx(30); break;
+    case "invuln": u.invulnT=s.turns+1; M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:36,max:36,col:"#fff7c8"}); waitFx(36); break;
+    case "energise": u.energyT=s.turns+1; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Arcane +5",life:70,max:70}); waitFx(30); break;
+    case "flight": u.flyT=s.turns+1; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Flight! Jump to flap",life:70,max:70}); break;
+    case "wings": u.wings=true; u.flyT=999; u.restrict=new Set(["arcane","overlight","prestige"]); u.tower=null; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Angel Wings",life:80,max:80}); waitFx(40); break;
+    case "lich": u.lich=true; u.restrict=new Set(["arcane","underdark","prestige"]); u.tower=null; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Undeath",life:80,max:80}); waitFx(40); break;
+    case "pact": { let need=u.maxHp-u.hp; for(const m of M.imps.filter(m=>!m.dead&&m.owner===u)){ if(need<=0)break; const t=Math.min(m.hp-1,need); if(t>0){m.hp-=t;need-=t;heal(u,t);M.fx.push({t:"zap",x1:m.x,y1:m.y-m.spec.size,x2:u.x,y2:u.y-24,life:20,max:20,block:true,col:"#c0365a"})} } waitFx(30); break }
+    case "regen": u.regen=s.heal; u.regenT=s.turns-1; heal(u,s.heal); sfx("heal"); waitFx(25); break;
+    case "hydrate": for(const m of M.imps) if(!m.dead&&m.owner===u){m.hp+=100;m.maxHp+=100;m.bonus=(m.bonus||0)+15;M.fx.push({t:"ring",x:m.x,y:m.y-10,r:24,life:30,max:30,col:s.col})} waitFx(30); break;
+    case "tower": u.tower={name:s.name,hp:s.thp,max:s.thp,heal:s.theal||0,selfHeal:s.tself||0,aura:s.taura||0,moves:!!s.moves,col:s.col,id:s.id}; u.vx=0; sfx("hit"); M.fx.push({t:"ring",x:u.x,y:u.y-30,r:40,life:30,max:30,col:s.col}); waitFx(30); break;
+    case "minion": { const n=s.count||1; for(let k=0;k<n;k++) spawnMinion(u,s.minion,u.x+u.face*(22+k*16),u.y); waitFx(40); break }
+    case "impboom": { const imps=M.imps.filter(m=>!m.dead&&m.owner===u&&m.mk==="imp"); if(!imps.length&&u.isPlayer) toast("You have no imps");
+      imps.forEach((m,k)=>later(1+k*8,()=>{ if(m.dead) return; m.dead=true; explode(m.x,m.y-10,{dmg:m.hp,rad:18+m.hp*.5,col:s.col,book:"arcane",elem:"arcane"},u) })); waitFx(20); break }
+    case "quake": sfx("boom"); for(const e of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead&&!m.spec.fly)]){ if(e.tower){ if(!e.tower.moves) towerHit(e,68); continue } if(e.grounded){ e.vy=-rand(4,7); e.vx=rand(-3,3); e.grounded=false; e.y-=2 } } waitFx(40); break;
+    case "tidal": { sfx("boom"); M.water=Math.max(420,M.water-40);
+      for(let k=0;k<9;k++) for(const side of [0,1]){ const x=side?W-30-k*70:30+k*70; later(1+k*10,()=>{ const sy=surfaceY(x|0,100); explode(x,(sy==null?M.water:sy)-6,s,u) }) } break }
+    case "pit": for(const m of M.imps){ if(m.dead||m.spec.undead||m.undead) continue; m.dead=true; M.zones.push({type:"aura",owner:u,team:u.team,x:m.x,y:m.y-10,r:40,dmg:15,turns:5,col:"#7b4fb0",elem:"underdark"}); M.fx.push({t:"hole",x:m.x,y:m.y,life:40,max:40,col:"#3a1a4a"}) } waitFx(40); break;
+    case "rewind": M.rewindDone=true; for(const x of M.units){ x.used={}; x.cool={}; for(const i2 of x.spells){const s2=SP[i2]; if(s2&&s2.init) x.cool[i2]=s2.init} } M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Rewind!",life:80,max:80}); waitFx(40); break;
+    case "freeze": for(const e of M.units) if(e.alive&&e.team!==u.team){ e.skipT=1; M.fx.push({t:"ring",x:e.x,y:e.y-24,r:30,life:40,max:40,col:"#d9a441"}) } waitFx(40); break;
+    case "stasis": M.zones.push({type:"stasis",owner:u,team:u.team,x:u.x,y:u.y-24,r:56,turns:s.turns,follow:u}); waitFx(25); break;
+    // prestige spells
+    case "heal": heal(u,s.heal); for(const a of M.units) if(a!==u&&a.team===u.team&&Math.hypot(a.x-u.x,a.y-u.y)<160) heal(a,s.allyHeal||20); sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-20,r:60,life:30,max:30,col:s.col}); waitFx(40); break;
+    case "ward": if(s.stack){u.absorb+=s.absorb;u.absorbT=Math.max(u.absorbT||0,999)} else {u.absorb=Math.max(u.absorb,s.absorb);u.absorbT=Math.max(u.absorbT||0,s.turns+1)} if(s.reflect)u.reflect=s.reflect; if(s.freezeHit)u.freezeHit=1; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:30,max:30,col:s.col}); waitFx(30); break;
+    case "aegis": u.absorb=s.absorb; u.absorbT=s.turns+1; u.rooted=s.turns+1; u.aegisT=s.turns+1; u.vx=0; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:50,life:36,max:36,col:s.col}); waitFx(36); break;
+    case "mask": u.mult=s.mult; u.maskT=s.turns+1; sfx("zap"); M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Damage ×2",life:80,max:80}); for(let i=0;i<40;i++){const a=rand(0,6.28);M.parts.push({x:u.x,y:u.y-24,vx:Math.cos(a)*rand(.5,3),vy:Math.sin(a)*rand(.5,3)-1,life:60,col:i%2?"#1a0a22":"#5b2a7a",sz:4})} waitFx(40); break;
+    case "rain": case "skyfall": case "storm": { let delay=1;
       for(let k=0;k<s.count;k++){ const ex=tx+(s.count===1?0:(k/(s.count-1)-.5)*(s.kind==="skyfall"?260:s.kind==="storm"?120:180))+rand(-12,12);
-        if(s.kind==="storm") M.fx.push({t:"later",life:delay,max:Math.max(1,delay),block:true,fn:()=>strike(ex,sp2,u)});
-        else M.fx.push({t:"later",life:delay,max:Math.max(1,delay),block:true,fn:()=>M.proj.push(mkProj({...base,ownerUnit:null,spell:sp2,x:ex-(s.kind==="skyfall"?140:40),y:-40,vx:s.kind==="skyfall"?7:2,vy:13,big:s.kind==="skyfall"}))});
+        if(s.kind==="storm") later(delay,()=>strike(ex,s,u));
+        else later(delay,()=>M.proj.push(mkProj({...base,ownerUnit:null,x:ex-(s.kind==="skyfall"?140:40),y:-40,vx:s.kind==="skyfall"?7:2,vy:13,big:s.kind==="skyfall"})));
         delay+=s.kind==="storm"?18:10 } break }
-    case "shield": u.shield=true; M.fx.push({t:"ring",x:u.x,y:u.y-20,r:30,life:30,max:30,col:s.col}); M.fx.push({t:"wait",life:30,max:30,block:true}); break;
-    case "minion": M.imps.push({imp:true,owner:u,team:u.team,x:u.x+u.face*16,y:u.y-4,vx:u.face*1.5,vy:-2,grounded:false,face:u.face,life:3,dead:false}); M.fx.push({t:"wait",life:40,max:40,block:true}); break;
-    case "bolt": strike(tx,s,u); break;
-    case "meteor": case "ult": { const sx=tx-260, sy=-60; const d=Math.hypot(tx-sx,ty-sy); M.proj.push(mkProj({...base,ownerUnit:null,x:sx,y:sy,vx:(tx-sx)/d*15,vy:(ty-sy)/d*15,big:true})); break }
-    case "arena": { let delay=0; for(const e of M.units.filter(e=>e.alive&&e.team!==u.team)){ for(let k=0;k<2;k++){ const ex=e.x+rand(-20,20); M.fx.push({t:"later",life:delay,max:delay,block:true,fn:()=>M.proj.push(mkProj({...base,ownerUnit:null,x:ex+60,y:-30,vx:-2,vy:12}))}); delay+=12 } } break }
   }
   renderSpellbar(); return true;
+}
+function enemiesNear(team,x,y,r){return [...M.units.filter(e=>e.alive&&e.team!==team),...M.imps.filter(m=>!m.dead&&m.team!==team)].filter(e=>Math.hypot(e.x-x,(e.imp?e.y-e.spec.size:e.y-18)-y)<r)}
+function allNear(x,y,r){return [...M.units.filter(e=>e.alive),...M.imps.filter(m=>!m.dead)].filter(e=>Math.hypot(e.x-x,e.y-18-y)<r)}
+function dmgAny(e,d,by,elem){ return e.imp?mHurt(e,d,by,elem):hurt(e,d,by,"",elem) }
+function towerHit(u,d){ if(!u.tower||d<=0) return; u.tower.hp-=d; if(M.dmgNums) M.nums.push({x:u.x,y:u.y-78,t:"tower -"+Math.round(d),life:60,col:"#e8d9b0"});
+  if(u.tower.hp<=0){ for(let i=0;i<20;i++){const a=rand(0,6.28);M.parts.push({x:u.x,y:u.y-30,vx:Math.cos(a)*rand(1,4),vy:Math.sin(a)*rand(1,4)-1,life:40,col:u.tower.col,sz:4})} M.fx.push({t:"text",x:u.x,y:u.y-70,txt:u.tower.name+" crumbles",life:60,max:60}); u.tower=null } }
+function auraHit(z){ for(const e of enemiesNear(z.team,z.x,z.y,z.r)) dmgAny(e,z.dmg,z.owner,z.elem); M.fx.push({t:"ring",x:z.x,y:z.y,r:z.r,life:24,max:24,col:z.col}) }
+function zapAround(u){ for(const e of enemiesNear(u.team,u.x,u.y-24,75)){ M.fx.push({t:"zap",x1:u.x,y1:u.y-30,x2:e.x,y2:e.imp?e.y-e.spec.size:e.y-20,life:18,max:18,block:true,col:"#bfe3ff"}); dmgAny(e,u.zapDmg||25,u,"storm") } }
+function barrage(s,tx,ty,u,base){
+  const n=s.count, vy=13;
+  for(let k=0;k<n;k++){
+    let ex=tx, vx=7, extra={};
+    if(s.mode==="line") ex=tx+(n===1?0:(k/(n-1)-.5)*170);
+    else if(s.mode==="focus") ex=tx+rand(-8,8);
+    else if(s.mode==="drops"){ ex=tx+rand(-34,34); extra.small=true }
+    else if(s.mode==="erratic"){ ex=tx+rand(-70,70); vx=rand(-5,9) }
+    else if(s.mode==="bounce"){ ex=tx+rand(-40,40); vx=rand(-2,2); extra={bounce:true,grav:1,timer:150+k*12} }
+    const sx=ex-vx*(ty+40)/vy;
+    later(1+k*(s.mode==="drops"?2:9),()=>M.proj.push(mkProj({...base,ownerUnit:null,x:sx,y:-40,vx,vy,...extra})));
+  }
+}
+function cloudTick(z){ z.step++; const s=z.spell;
+  if(z.mode==="lightning"){ for(let k=0;k<z.count;k++){ const x=z.x+rand(-60,60); later(1+k*14,()=>strike(x,{...s,dmg:z.dmg,rad:z.rad},z.owner)) } }
+  else if(z.mode==="snow"||z.mode==="rain"){ for(let k=0;k<z.count;k++){ const x=z.x+rand(-60,60); later(1+k*5,()=>M.proj.push(mkProj({spell:{...s,dmg:z.dmg,rad:z.rad,snow:z.mode==="snow"?1:0,snowSmall:1,nodig:z.mode==="rain"},owner:z.owner,team:z.team,x,y:z.cy+12,vx:rand(-.5,.5),vy:3,grav:.4,small:true}))) } }
+  else if(z.mode==="stars"){ const final=z.step>=z.total, n=final?1:Math.min(4,z.step);
+    for(let k=0;k<n;k++){ const x=final?z.x:z.x+rand(-80,80); later(1+k*10,()=>M.proj.push(mkProj({spell:{...s,dmg:final?50:z.dmg,rad:final?34:z.rad},owner:z.owner,team:z.team,x:x-60,y:-30,vx:3,vy:11,big:final}))) } }
+}
+function geyserTick(z){ const n=z.waves[z.step]||0; z.step++; const s=z.spell;
+  for(let k=0;k<n;k++){ const x=z.x+rand(-60,60); later(1+k*7,()=>{ const sy=surfaceY(x|0,Math.max(0,z.y-120)); const y0=(sy==null?z.y:sy)+4;
+    M.proj.push(mkProj({spell:{...s},owner:z.owner,team:z.team,x,y:y0,vx:rand(-1.6,1.6),vy:-rand(8,12),grav:.5,noclip:10})); for(let i=0;i<6;i++)M.parts.push({x,y:y0,vx:rand(-2,2),vy:-rand(2,5),life:30,col:s.col,sz:3}) }) }
+}
+function zonesTurnStart(u){
+  for(const z of M.zones){
+    if(z.type==="napalm") for(const e of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead)]) if(Math.abs(e.x-z.x)<12&&Math.abs(e.y-z.y)<14) dmgAny(e,z.dmg,z.owner,"flame");
+    if(z.owner!==u) continue;
+    if(z.type==="firewall") z.ready=true;
+    z.turns--; if(z.turns<=0) continue;
+    if(z.type==="aura") auraHit(z);
+    else if(z.type==="cloud") cloudTick(z);
+    else if(z.type==="geyser") geyserTick(z);
+  }
+  M.zones=M.zones.filter(z=>z.turns>0);
+}
+function zonesTick(){
+  for(const z of M.zones){
+    if(z.follow){ if(z.follow.alive){z.x=z.follow.x;z.y=z.follow.y-24} else z.turns=0 }
+    if(z.type==="glyph"&&z.turns>0&&enemiesNear(z.team,z.x,z.y,z.r+10).length){ z.turns=0; explode(z.x,z.y,{dmg:z.dmg,rad:16,col:z.col,book:"arcane",elem:"arcane",nodig:true},z.owner) }
+    if(z.type==="firewall"&&z.ready){ for(const e of [...M.units.filter(x=>x.alive&&x.team!==z.team),...M.imps.filter(m=>!m.dead&&m.team!==z.team)]) if(Math.abs(e.x-z.x)<12&&e.y>z.y-60&&e.y<z.y+8){ z.ready=false; dmgAny(e,z.dmg,z.owner,z.elem); break } }
+  }
+  M.zones=M.zones.filter(z=>z.turns>0);
+}
+function addSalt(x,y){ addRock(c=>{c.fillStyle="#e6e2d6";c.strokeStyle="#b5ad99";c.lineWidth=1;c.beginPath();c.arc(x,y-2,5,0,7);c.fill();c.stroke()},x-6,y-8,12,12) }
+function addSnow(x,y,r){ addRock(c=>{c.fillStyle="#f4fbff";c.strokeStyle="#b9d9ea";c.lineWidth=2;c.beginPath();c.ellipse(x,y,r,r*.62,0,0,7);c.fill();c.stroke()},x-r-2,y-r,2*r+4,2*r) }
+function splitAt(x,y,sp,p){ for(let k=0;k<sp.n;k++){ const a=-Math.PI/2+(sp.n>1?(k/(sp.n-1)-.5)*2.4:0)+rand(-.15,.15), v=rand(3.5,6.5);
+  M.proj.push(mkProj({spell:{dmg:sp.dmg,rad:sp.rad,col:p.spell.col,book:p.spell.book,elem:p.spell.elem,nodig:sp.nodig,napalm:sp.napalm,salt:sp.salt,root:sp.root},owner:p.owner,team:p.team,ownerUnit:null,x,y:y-6,vx:Math.cos(a)*v,vy:Math.sin(a)*v,grav:sp.homing?0:1,homing:sp.homing,speed:6,small:true,noclip:4,life:sp.homing?200:0})) } }
+function teleportUnit(u,owner){ let spot=null; const bs=owner?M.zones.filter(z=>z.type==="beacon"&&z.owner===owner):[];
+  if(bs.length){const b=pick(bs);spot=[b.x,b.y+18]} else for(let k=0;k<40&&!spot;k++){const x=rand(60,W-60),sy=surfaceY(x|0,120);if(sy!=null&&sy<M.water-20&&!bodyHits(x,sy)) spot=[x,sy]}
+  if(!spot) return; M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:"#9b7bff"}); u.x=spot[0];u.y=spot[1];u.vx=u.vy=0;u.grounded=false;u.tower=null;unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:"#9b7bff"}) }
+function impact(p,r){
+  const s=p.spell;
+  if(r.absorbed){ M.fx.push({t:"poof",x:p.x,y:p.y,life:20,max:20,col:"#d9f0ff"}); return }
+  if(p.chain&&r.unit) return chainHit(p,r);
+  if(p.boulder&&r.unit&&p.hits<(s.hits||4)-1){ explode(r.x,r.y,{...s,rad:18,split:null},p.owner); p.hits++; p.vy=-5; p.vx*=.7; p.skipUnit=r.unit; p.skipUntil=p.age+25; M.proj.push(p); return }
+  const dealt=explode(r.x,r.y,s,p.owner);
+  if(s.drain&&p.owner&&p.owner.alive&&dealt>0) heal(p.owner,dealt);
+  if(s.split) splitAt(r.x,r.y,s.split,p);
+  if(p.burstEnd) splitAt(r.x,r.y,{n:15,dmg:10,rad:8},p);
+  if(s.napalm){ const sy=surfaceY(r.x|0,Math.max(0,r.y-30)); M.zones.push({type:"napalm",owner:p.owner,team:p.team,x:r.x,y:sy==null?r.y:sy,dmg:5,turns:5}) }
+  if(s.salt) addSalt(r.x,r.y);
+  if(s.snow) addSnow(r.x,r.y,s.snowSmall?9:20);
+  if(s.decay) M.zones.push({type:"aura",owner:p.owner,team:p.team,x:r.x,y:r.y,r:45,dmg:15,turns:5,col:"#8d63d6",elem:"underdark"});
+  if(s.stasis) M.zones.push({type:"stasis",owner:p.owner,team:p.team,x:r.x,y:r.y,r:60,turns:2});
+  if(s.bell&&r.unit&&!r.unit.imp) teleportUnit(r.unit,s.beacon?p.owner:null);
+  if(s.rod){ const d=p.start?Math.hypot(r.x-p.start[0],r.y-p.start[1]):0, n=clamp(Math.round(d/140),1,5); for(let k=0;k<n;k++) later(10+k*14,()=>strike(r.x+rand(-6,6),{dmg:25,rad:20,col:"#bfe3ff",book:"storm",elem:"storm"},p.owner)) }
 }
 function strike(x,s,u){
   let y=0; for(;y<H;y+=2){ if(isSolid(x,y)) break; if(M.units.some(t=>t.alive&&Math.abs(t.x-x)<10&&y>t.y-38&&y<t.y)) break }
   M.fx.push({t:"bolt",x,y,life:16,max:16,block:true,col:s.col}); explode(x,y,s,u);
 }
 function chainHit(p,res){
-  const s=p.spell; explode(res.x,res.y,{...s,nodig:false},p.owner);
+  const s=p.spell; explode(res.x,res.y,s,p.owner);
   let from=res.unit, hit=[from];
-  for(let j=0;j<2;j++){ const n=nearestEnemy(from.x,from.y-18,p.team,hit); if(!n||Math.hypot(n.x-from.x,n.y-from.y)>230) break;
-    M.fx.push({t:"zap",x1:from.x,y1:from.y-20,x2:n.x,y2:n.y-20,life:20,max:20,block:true,col:s.col}); hurt(n,Math.round(18*((p.owner&&p.owner.mult)||1)),p.owner); hit.push(n); from=n }
+  for(let j=0;j<(s.jumps||2);j++){ const n=nearestEnemy(from.x,from.y-18,p.team,hit); if(!n||Math.hypot(n.x-from.x,n.y-from.y)>230) break;
+    M.fx.push({t:"zap",x1:from.x,y1:from.y-20,x2:n.x,y2:n.y-20,life:20,max:20,block:true,col:s.col}); hurt(n,Math.round((s.jdmg||18)*((p.owner&&p.owner.mult)||1)),p.owner,"",s.elem); hit.push(n); from=n }
 }
+function spawnMinion(owner,key,x,y){ const s=MINIONS[key];
+  const m={imp:true,mk:key,spec:s,owner,team:owner.team,x:clamp(x,20,W-20),y:s.fly?y-50:y-4,vx:0,vy:0,grounded:!!s.fly,face:owner.face,hp:s.hp,maxHp:s.hp,dead:false,rooted:0,bonus:0};
+  if(!s.fly) unstick(m); M.imps.push(m); M.fx.push({t:"poof",x:m.x,y:m.y-s.size,life:30,max:30,col:s.col}); return m }
+function powerFamiliar(u){ if(!u.fams||!u.fams.length) return;
+  if(u.famLvl>=5){ if(u.isPlayer) toast("Your familiar is at full power"); return }
+  if(u.hp<=20){ if(u.isPlayer) toast("Not enough health to power your familiar"); return }
+  u.hp-=20; u.famLvl++; if(u.fams.includes("underdark")) u.lantern={x:u.x,y:u.y};
+  if(u.fams.includes("cogs")&&M.active===u) M.timer+=6;
+  M.fx.push({t:"text",x:u.x,y:u.y-78,txt:famName(u)+" level "+u.famLvl,life:70,max:70}); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:30,life:24,max:24,col:BK[u.fams[0]].col}); sfx("level"); renderHud(); renderSpellbar() }
+function famName(u){return u.fams.map(b=>BK[b].fam.name).join(" + ")}
 
 /* ----- bot AI ----- */
-function simShot(u,spellId,ang,power,target){
-  const s=SP[spellId]; const ox=u.x,oy=u.y-24;
-  let p;
-  if(s.kind==="lob"||s.kind==="hole"||s.kind==="hail"){const v=4+power*11;p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,wind:s.wind?1:0})}
-  else if(s.kind==="bomb"){const v=4+power*10;p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,bounce:true,timer:s.fuse})}
-  else p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*(s.speed||9),vy:Math.sin(ang)*(s.speed||9),grav:s.kind==="cone"?.4:(s.grav||0),life:s.kind==="cone"?45:160});
-  p.ownerUnit=u; p.team=u.team;
-  const units=M.units.filter(x=>x.alive);
-  for(let i=0;i<500;i++){const r=stepProj(p,{units});if(r){if(r.out)return null;return r}}
-  return null;
-}
-function scoreImpact(u,s,r){
-  if(!r) return -1; const reach=(s.rad||14)+14; let sc=0;
-  for(const t of M.units){ if(!t.alive) continue; const d=Math.hypot(t.x-r.x,t.y-18-r.y); if(r.unit===t||d<reach){ const dmg=(s.dmg||10)*(r.unit===t?1:1-d/reach*.55); sc+= t.team===u.team?-dmg*1.6:dmg+(dmg>=t.hp?60:0) } }
-  return sc;
-}
+const AI_AIM=["shot","spray","chain","arrow","lance"], AI_LOB=["ball","bomb","boulder","hole"], AI_TGT=["strike","barrage","meteor","cloud","geyser","aura","rain","skyfall","storm","root","ult"], AI_DEF=["ward","deflect","invuln","tower","aegis","stasis","firewall","icewall","zapaura"];
+function estDmg(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];return m.dmg*2}
+  let d=(s.dmg||0)*(s.count||1); if(s.split) d+=s.split.n*s.split.dmg*.35;
+  if(s.waves) d=s.dmg*s.waves.reduce((a,b)=>a+b,0)*.25; if(s.kind==="cloud") d=s.dmg*(s.count||2)*s.turns*.35; if(s.kind==="aura") d=s.dmg*s.turns*.5;
+  if(s.kind==="chain") d=s.dmg+(s.jdmg||0); if(s.kind==="barrage") d=s.dmg*s.count*(s.mode==="focus"||s.mode==="drops"?.7:.35); if(s.hits) d=s.dmg*2; if(s.rod) d=60; return d }
+function simShot(u,s,ang,power){
+  const ox=u.x,oy=u.y-24; let p;
+  if(s.type==="lob"){ const bomb=s.kind==="bomb"||s.kind==="boulder", v=4+power*(bomb?10:11); p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:bomb?1:(s.grav??1),wind:1,bounce:bomb,timer:bomb?(s.fuse||150):null}) }
+  else p=mkProj({x:ox,y:oy,vx:Math.cos(ang)*(s.speed||14),vy:Math.sin(ang)*(s.speed||14),grav:s.grav||0,life:160});
+  p.ownerUnit=u; p.team=u.team; const units=M.units.filter(x=>x.alive);
+  for(let i=0;i<500;i++){const r=stepProj(p,{units});if(r){if(r.out)return null;return r}} return null }
+function scoreImpact(u,dmg,rad,r){ if(!r) return -1; const reach=rad+14; let sc=0;
+  for(const t of M.units){ if(!t.alive) continue; const d=Math.hypot(t.x-r.x,t.y-18-r.y); if(r.unit===t||d<reach){ const v=dmg*(r.unit===t?1:1-d/reach*.55); sc+=t.team===u.team?-v*1.6:v+(v>=t.hp?60:0) } } return sc }
 function planBot(u){
-  const errMul={easy:2.2,normal:1,hard:.45}[u.diff]||1;
-  const options=[];
+  const errMul={easy:2.2,normal:1,hard:.45}[u.diff]||1, options=[];
   const avail=u.spells.filter(id=>canCast(u,id));
-  const enemies=M.units.filter(e=>e.alive&&e.team!==u.team);
-  if(!enemies.length) return {skip:true};
-  if(u.hp<120&&avail.includes("healing_mist")) options.push({spell:"healing_mist",tx:u.x,ty:u.y,score:70});
-  if(u.hp<140&&avail.includes("sanctuary")) options.push({spell:"sanctuary",tx:u.x,ty:u.y,score:95});
-  if(u.absorb<=0) for(const id of ["aegis_tower","frost_armor","tower_shield","mirror_ward","stone_skin","ward"]) if(avail.includes(id)&&u.hp<170&&Math.random()<.6){options.push({spell:id,tx:u.x,ty:u.y,score:SP[id].absorb*.45});break}
-  if(avail.includes("dread_mask")&&u.maskT<=0) options.push({spell:"dread_mask",tx:u.x,ty:u.y,score:70});
-  if(avail.includes("tremor")){const g=M.units.filter(e=>e.alive&&e.team!==u.team&&e.grounded).length;if(g) options.push({spell:"tremor",tx:u.x,ty:u.y,score:g*28})}
-  if(u.hp<110&&avail.includes("arcane_shield")&&Math.random()<.4) options.push({spell:"arcane_shield",tx:u.x,ty:u.y,score:40});
-  if(avail.includes("imp")&&enemies.length) options.push({spell:"imp",tx:u.x,ty:u.y,score:35});
-  if(avail.includes("starfall")&&enemies.length>=2) options.push({spell:"starfall",tx:u.x,ty:u.y,score:enemies.length*45});
+  const enemies=M.units.filter(e=>e.alive&&e.team!==u.team); if(!enemies.length) return {skip:true};
+  const nearest=nearestEnemy(u.x,u.y,u.team), nd=Math.hypot(nearest.x-u.x,nearest.y-u.y);
+  const myMin=M.imps.filter(m=>!m.dead&&m.owner===u).length;
+  const foeLiving=M.imps.filter(m=>!m.dead&&m.team!==u.team&&!(m.spec.undead||m.undead)).length, ownLiving=M.imps.filter(m=>!m.dead&&m.team===u.team&&!(m.spec.undead||m.undead)).length;
+  const exposed=u.absorb<=0&&!u.tower&&!(u.invulnT>0)&&!(u.deflectT>0);
+  for(const id of avail){ const s=SP[id], k=s.kind; let sc=null;
+    if(AI_DEF.includes(k)){ if(exposed&&u.hp<170) sc=25+(250-u.hp)*.3+(k==="zapaura"&&nd<90?30:0)-(k==="firewall"&&nd>200?20:0) }
+    else if(k==="heal"||k==="regen"){ if(u.hp<170) sc=(s.heal||30)*(250-u.hp)/120 }
+    else if(k==="pact"){ if(myMin&&u.hp<120) sc=60 }
+    else if(k==="minion"){ if(myMin<3) sc=26+MINIONS[s.minion].hp/12 }
+    else if(k==="energise"){ if(u.spells.filter(x=>SP[x].book==="arcane").length>=3&&!(u.energyT>0)) sc=22 }
+    else if(k==="mask"){ if(!(u.maskT>0)) sc=60 }
+    else if(k==="hydrate"){ if(myMin) sc=18*myMin }
+    else if(k==="lich"||k==="wings"){ if(u.hp>90) sc=40 }
+    else if(k==="flash"||k==="glyph"){ if(nd<85) sc=estDmg(s)*1.4+20 }
+    else if(k==="quake") sc=enemies.some(e=>e.tower)?40:12;
+    else if(k==="tidal") sc=85;
+    else if(k==="pit") sc=(foeLiving-ownLiving)*35;
+    else if(k==="freeze") sc=enemies.length*30;
+    else if(k==="impboom"){ if(M.imps.some(m=>!m.dead&&m.owner===u&&m.mk==="imp"&&enemiesNear(u.team,m.x,m.y,50).length)) sc=40 }
+    if(sc!=null&&sc>0) options.push({spell:id,tx:u.x,ty:u.y,score:sc});
+  }
+  const aimC=avail.filter(id=>AI_AIM.includes(SP[id].kind)).sort((a,b)=>estDmg(SP[b])-estDmg(SP[a])).slice(0,4);
+  const lobC=avail.filter(id=>{const s=SP[id];return AI_LOB.includes(s.kind)&&!s.bell&&!s.stasis&&!s.healHit}).sort((a,b)=>estDmg(SP[b])-estDmg(SP[a])).slice(0,3);
   for(const e of enemies.slice().sort((a,b)=>Math.abs(a.x-u.x)-Math.abs(b.x-u.x)).slice(0,2)){
     const tx=e.x,ty=e.y-18;
-    for(const id of avail){ const s=SP[id];
-      if(["rain","storm","skyfall"].includes(s.kind)){ const near=enemies.filter(o=>Math.abs(o.x-e.x)<120).length; if(Math.hypot(e.x-u.x,e.y-u.y)>200) options.push({spell:id,tx,ty:e.y-10,score:s.dmg*s.count*.35*near*(u.mult||1),targeted:true}); continue }
-      if(s.kind==="bolt"||s.kind==="meteor"||s.kind==="ult"){ const sc=(s.dmg+(s.dmg>=e.hp?60:0))*(s.kind==="ult"&&enemies.length===1&&e.hp>s.dmg?.6:1) - (Math.hypot(e.x-u.x,e.y-u.y)<s.rad+20?200:0); options.push({spell:id,tx,ty:e.y-10,score:sc*.9,targeted:true}); continue }
-      if(["shot","arrow","wind","chain","cone","lance"].includes(s.kind)&&s.type==="shot"){
-        if(s.kind==="cone"&&Math.hypot(e.x-u.x,e.y-u.y)>200) continue;
-        const base=Math.atan2(ty-(u.y-24),tx-u.x);
-        for(const da of [0,-.04,.04,-.1,.1,-.2,.2]){const r=simShot(u,id,base+da,1,e);const sc=scoreImpact(u,s,r)*(s.kind==="cone"?4:1)+(s.kind==="wind"&&r&&r.unit&&(e.x<200||e.x>W-200)?40:0);if(sc>0)options.push({spell:id,ang:base+da,power:1,score:sc});}
-      }
-      if(s.kind==="lob"||s.kind==="bomb"||s.kind==="hole"||s.kind==="hail"){
-        let best=null;
-        for(let a=-170;a<=-10;a+=10){ const ang=a*Math.PI/180; if((tx-u.x)*Math.cos(ang)<-20&&Math.abs(tx-u.x)>80) continue;
-          for(let pw=.25;pw<=1.001;pw+=.1){ const r=simShot(u,id,ang,pw,e); const sc=scoreImpact(u,s,r); if(!best||sc>best.score) best={spell:id,ang,power:pw,score:sc} } }
-        if(best&&best.score>0) options.push(best);
-      }
+    for(const id of avail){ const s=SP[id], k=s.kind;
+      if(AI_TGT.includes(k)){ const near=enemies.filter(o=>Math.abs(o.x-e.x)<(s.rad||30)+50).length, self=Math.hypot(e.x-u.x,e.y-u.y)<(s.rad||30)+60;
+        const est=estDmg(s), sc=est*near*(u.mult||1)*(est>=e.hp?1.4:1)-(self?250:0); if(sc>0) options.push({spell:id,tx,ty:e.y-10,score:sc*.85,targeted:true}) }
+      else if(k==="pull"){ if(e.x<230||e.x>W-230) options.push({spell:id,tx:e.x,ty:e.y-20,score:45,targeted:true}) }
     }
+    for(const id of aimC){ const s=SP[id], est=estDmg(s), b0=Math.atan2(ty-(u.y-24),tx-u.x);
+      for(const da of [0,-.04,.04,-.1,.1,-.2,.2]){ const r=simShot(u,s,b0+da,1), sc=scoreImpact(u,est,s.rad||14,r); if(sc>0) options.push({spell:id,ang:b0+da,power:1,score:sc}) } }
+    for(const id of lobC){ const s=SP[id], est=estDmg(s); let best=null;
+      for(let a=-170;a<=-10;a+=10){ const ang=a*Math.PI/180; if((tx-u.x)*Math.cos(ang)<-20&&Math.abs(tx-u.x)>80) continue;
+        for(let pw=.25;pw<=1.001;pw+=.1){ const r=simShot(u,s,ang,pw), sc=scoreImpact(u,est,s.rad||20,r); if(!best||sc>best.score) best={spell:id,ang,power:pw,score:sc} } }
+      if(best&&best.score>0) options.push(best) }
   }
   options.sort((a,b)=>b.score-a.score);
   let choice=options[0];
   if(u.diff==="easy"&&options.length>2&&Math.random()<.35) choice=options[Math.floor(Math.random()*Math.min(3,options.length))];
   if(!choice||choice.score<5){
-    // nothing good: move toward nearest enemy, then blink or lob blindly
-    const e=nearestEnemy(u.x,u.y,u.team);
-    if(avail.includes("blink")&&Math.random()<.5){ for(let k=0;k<20;k++){const tx=u.x+Math.sign(e.x-u.x)*rand(120,250),sy=surfaceY(tx|0,170);if(sy!=null&&!bodyHits(tx,sy)) return {spell:"blink",tx,ty:sy-20,walk:0}} }
-    const lob=avail.find(id=>SP[id].kind==="lob")||avail[0];
-    return {spell:lob,ang:e.x>u.x?-.8:-2.34,power:.7,walk:Math.sign(e.x-u.x)*90};
+    const e=nearest, tele=avail.find(id=>SP[id].kind==="tele");
+    if(tele&&Math.random()<.5){ for(let k=0;k<20;k++){const tx=u.x+Math.sign(e.x-u.x)*rand(120,250),sy=surfaceY(tx|0,170);if(sy!=null&&!bodyHits(tx,sy)) return {spell:tele,tx,ty:sy-20,walk:0}} }
+    const lob=avail.find(id=>SP[id].type==="lob"&&SP[id].dmg)||avail.find(id=>SP[id].type==="shot")||avail[0];
+    if(!lob) return {skip:true};
+    return {spell:lob,ang:e.x>u.x?-.8:-2.34,power:.7,walk:(u.tower&&!u.tower.moves)?0:Math.sign(e.x-u.x)*90};
   }
   if(choice.ang!=null){ choice.ang+=rand(-1,1)*.035*errMul; choice.power=clamp(choice.power+rand(-1,1)*.03*errMul,.1,1) }
   else if(choice.targeted){ choice.tx+=rand(-1,1)*26*errMul }
   return choice;
 }
 function runBot(u){
-  if(!M.botPlan){ M.botPlan={t:0,plan:null} }
+  if(!M.botPlan){ M.botPlan={t:0,plan:null,frees:0} }
   const bp=M.botPlan; bp.t++;
   if(bp.t===35){ bp.plan=planBot(u); if(bp.plan.skip){endTurnSoon();return} bp.walkLeft=Math.abs(bp.plan.walk||0); bp.walkDir=Math.sign(bp.plan.walk||0); }
   if(!bp.plan) return;
-  if(u.frozen||u.rooted) bp.walkLeft=0;
-  if(bp.walkLeft>0){ const bx=u.x; walk(u,bp.walkDir); if(Math.abs(u.x-bx)<.1){ if(bp.jumped) bp.walkLeft=0; else {jump(u);bp.jumped=true}} bp.walkLeft-=1.6; if(bp.walkLeft<=0){bp.replan=true} return }
-  if(!u.grounded) return;
-  if(bp.replan){bp.replan=false;bp.plan=planBot(u);if(bp.plan.walk) bp.plan.walk=0; bp.aimT=0}
+  if(u.frozen||u.rooted||(u.tower&&!u.tower.moves)) bp.walkLeft=0;
+  if(bp.walkLeft>0){ const bx=u.x; walk(u,bp.walkDir); if(Math.abs(u.x-bx)<.1){ if(bp.jumped||u.tower) bp.walkLeft=0; else {jump(u);bp.jumped=true}} bp.walkLeft-=1.6; if(bp.walkLeft<=0){bp.replan=true} return }
+  if(!u.grounded&&!(u.flyT>0)) return;
+  if(bp.replan){bp.replan=false;bp.plan=planBot(u);if(bp.plan.skip){endTurnSoon();return} if(bp.plan.walk) bp.plan.walk=0; bp.aimT=0}
   bp.aimT=(bp.aimT||0)+1;
-  const p=bp.plan, s=SP[p.spell];
+  const p=bp.plan;
   if(p.ang!=null){ M.botAim={ang:p.ang,power:p.power}; u.face=Math.cos(p.ang)>=0?1:-1 }
   if(bp.aimT<45) return;
   M.botAim=null;
   let tx=p.tx,ty=p.ty;
   if(p.ang!=null){ tx=u.x+Math.cos(p.ang)*100; ty=u.y-24+Math.sin(p.ang)*100 }
   if(!castSpell(u,p.spell,tx,ty,p.power||1)) endTurnSoon();
+  else if(SP[p.spell].free){ bp.t=20; bp.plan=null; bp.aimT=0; if(++bp.frees>2) endTurnSoon() }
 }
-function endTurnSoon(){ M.cast=true; M.fx.push({t:"wait",life:20,max:20,block:true}) }
+function endTurnSoon(){ M.cast=true; waitFx(20) }
 
-/* ----- imps ----- */
-function runImps(){
+/* ----- minions ----- */
+function runMinions(){
   M.impTimer--;
-  const imps=M.imps.filter(i=>!i.dead&&i.team===M.active.team);
-  for(const i of imps){
-    const e=nearestEnemy(i.x,i.y,i.team); if(!e) continue;
-    if(Math.hypot(e.x-i.x,e.y-i.y)<26){impBoom(i);continue}
-    if(i.grounded){ const bx=i.x; walk(i,Math.sign(e.x-i.x)||1); if(Math.abs(i.x-bx)<.1&&M.impTimer%30===0) jump(i) }
+  const u=M.active;
+  const mine=M.imps.filter(i=>!i.dead&&(i.owner===u||(!i.owner.alive&&i.team===u.team)));
+  for(const m of mine){
+    const s=m.spec, e=nearestEnemy(m.x,m.y,m.team); if(!e) continue;
+    const dir=Math.sign(e.x-m.x)||1; m.face=dir;
+    const d=Math.hypot(e.x-m.x,e.y-m.y);
+    if(M.impTimer>30&&!m.rooted){
+      const stopAt=s.style==="melee"?26:s.style==="aura"?40:(s.range||200)*.6;
+      if(d>stopAt){
+        if(s.fly){ const ty=e.y-60, a=Math.atan2(ty-m.y,e.x-m.x); m.x+=Math.cos(a)*2.2; m.y=Math.max(30,m.y+Math.sin(a)*2.2) }
+        else if(m.grounded){ const steps=s.speed>=1.5?2:1, every=s.speed<1?Math.max(1,Math.round(1/s.speed)):1;
+          if(M.impTimer%every===0) for(let k=0;k<steps;k++){ const bx=m.x; walk(m,dir); if(Math.abs(m.x-bx)<.1&&M.impTimer%25===0) jump(m) } }
+      }
+    }
+    if(M.impTimer===25) minionAttack(m,e);
   }
-  if(M.impTimer<=0){ for(const i of imps){ i.life--; if(i.life<=0) impBoom(i) } M.phase="impsWait" }
+  if(M.impTimer<=0) M.phase="impsWait";
+}
+function minionAttack(m,e){ const s=m.spec, dmg=s.dmg+(m.bonus||0), my=m.y-s.size, d=Math.hypot(e.x-m.x,(e.y-18)-my);
+  if(s.style==="melee"&&d<42){ dmgAny(e,dmg,m.owner,s.elem||""); M.fx.push({t:"ring",x:e.x,y:e.y-20,r:16,life:14,max:14,col:"#fff"}); sfx("hit"); if(!e.tower&&!e.rooted){e.vx+=Math.sign(e.x-m.x)*2;e.vy-=2;e.grounded=false;e.y-=1} }
+  else if(s.style==="shot"&&d<(s.range||240)){ const a=Math.atan2(e.y-20-my,e.x-m.x); M.proj.push(mkProj({spell:{dmg,rad:12,col:s.col,book:s.elem||"",elem:s.elem||""},owner:m.owner,team:m.team,ownerUnit:m,x:m.x,y:my,vx:Math.cos(a)*11,vy:Math.sin(a)*11,life:80,small:true})) }
+  else if(s.style==="breath"&&d<(s.range||240)){ const a=Math.atan2(e.y-20-my,e.x-m.x); for(let k=-2;k<=2;k++){const b=a+k*.1;M.proj.push(mkProj({spell:{dmg,rad:14,col:s.col,book:s.elem,elem:s.elem},owner:m.owner,team:m.team,ownerUnit:m,x:m.x,y:my,vx:Math.cos(b)*9,vy:Math.sin(b)*9,grav:.15,life:70,small:true}))} }
+  else if(s.style==="aura"){ for(const t of enemiesNear(m.team,m.x,my,s.range||60)) dmgAny(t,dmg,m.owner,s.elem||""); M.fx.push({t:"ring",x:m.x,y:my,r:s.range||60,life:20,max:20,col:s.col}) }
 }
 
 /* ----- main loop ----- */
@@ -1437,19 +1907,19 @@ function tick(){
   for(const un of M.units) if(un.alive) physBody(un,false);
   for(const i of M.imps) if(!i.dead) physBody(i,true);
   M.imps=M.imps.filter(i=>!i.dead);
-  // projectiles
   for(const p of M.proj.slice()){
-    p.trail.push([p.x,p.y]); if(p.trail.length>10) p.trail.shift();
+    p.trail.push([p.x,p.y]); if(p.trail.length>(p.small?5:10)) p.trail.shift();
+    if(p.drops&&p.age>0&&p.age%p.drops===0) M.proj.push(mkProj({spell:{dmg:10,rad:10,col:"#d9a441",book:"cogs",elem:"cogs"},owner:p.owner,team:p.team,x:p.x,y:p.y+4,vx:0,vy:1,grav:1,small:true}));
     const r=stepProj(p);
-    if(r){ M.proj.splice(M.proj.indexOf(p),1); if(!r.out){ if(p.chain&&r.unit) chainHit(p,r); else explode(r.x,r.y,p.spell,p.owner);
-      if(p.hail){ for(let k=0;k<p.spell.shards;k++){const a=-Math.PI/2+(k-1.5)*.45;M.proj.push(mkProj({spell:{dmg:18,rad:16,col:p.spell.col},owner:p.owner,team:p.team,x:r.x,y:r.y-8,vx:Math.cos(a)*5,vy:Math.sin(a)*6,grav:1}))} } } }
+    if(r){ const i=M.proj.indexOf(p); if(i>=0) M.proj.splice(i,1); if(!r.out) impact(p,r) }
   }
   for(const f of M.fx){ f.life--; if(f.t==="later"&&f.life<=0&&f.fn){f.fn();f.fn=null} }
   M.fx=M.fx.filter(f=>f.life>0);
+  zonesTick();
   for(const q of M.parts){q.x+=q.vx;q.y+=q.vy;q.vy+=.15;q.life--} M.parts=M.parts.filter(q=>q.life>0);
   for(const n of M.nums){n.y-=.6;n.life--} M.nums=M.nums.filter(n=>n.life>0);
   if(!u) return;
-  if(M.phase==="imps"){ runImps(); return }
+  if(M.phase==="imps"){ runMinions(); return }
   if(M.phase==="impsWait"){ if(settled()){ if(checkEnd()) return; if(!u.alive){M.phase="resolve";return} M.phase="turn" } return }
   if(M.phase==="turn"){
     if(!u.alive){ M.phase="resolve"; return }
@@ -1499,7 +1969,7 @@ function draw(){
   const u=M.active;
   // range ring for targeted spells
   if(u&&u.isPlayer&&M.phase==="turn"&&!M.cast){ const s=SP[u.spells[M.selSpell]]; if(s&&s.range){cx.strokeStyle="rgba(255,255,255,.35)";cx.setLineDash([6,6]);cx.beginPath();cx.arc(u.x,u.y-18,s.range,0,7);cx.stroke();cx.setLineDash([])} }
-  for(const i of M.imps) drawImp(i);
+  drawZones(); for(const i of M.imps) if(!i.dead) drawMinion(i);
   for(const un of M.units) if(un.alive) drawUnit(un,un===u&&M.phase==="turn");
   // aim
   if(u&&M.phase==="turn"&&!M.cast&&u.alive){
@@ -1510,8 +1980,8 @@ function draw(){
       if(M.charging||(!u.isPlayer&&M.botAim)){cx.lineWidth=6;cx.strokeStyle=`hsl(${120-pw*120},90%,55%)`;cx.beginPath();cx.arc(u.x,u.y-24,26,-Math.PI/2,-Math.PI/2+pw*Math.PI*2);cx.stroke()} cx.lineWidth=1 }
     if(u.isPlayer&&s&&s.type==="target"){cx.strokeStyle=s.col;cx.lineWidth=2;cx.beginPath();cx.arc(mouse.x,mouse.y,Math.max(10,(s.rad||12)),0,7);cx.moveTo(mouse.x-16,mouse.y);cx.lineTo(mouse.x+16,mouse.y);cx.moveTo(mouse.x,mouse.y-16);cx.lineTo(mouse.x,mouse.y+16);cx.stroke();cx.lineWidth=1}
   }
-  for(const p of M.proj){ const c=p.spell.col; cx.strokeStyle=c;cx.globalAlpha=.5;cx.lineWidth=p.big?10:4;cx.beginPath();p.trail.forEach((t,i)=>i?cx.lineTo(t[0],t[1]):cx.moveTo(t[0],t[1]));cx.stroke();cx.globalAlpha=1;
-    cx.fillStyle=c;cx.shadowColor=c;cx.shadowBlur=14;cx.beginPath();cx.arc(p.x,p.y,p.big?11:p.bounce?7:5,0,7);cx.fill();cx.shadowBlur=0;cx.lineWidth=1;
+  for(const p of M.proj){ const c=p.spell.col; cx.strokeStyle=c;cx.globalAlpha=.5;cx.lineWidth=p.big?10:p.small?2:4;cx.beginPath();p.trail.forEach((t,i)=>i?cx.lineTo(t[0],t[1]):cx.moveTo(t[0],t[1]));cx.stroke();cx.globalAlpha=1;
+    cx.fillStyle=c;cx.shadowColor=c;cx.shadowBlur=p.small?6:14;cx.beginPath();cx.arc(p.x,p.y,p.big?11:p.small?3:p.bounce?7:5,0,7);cx.fill();cx.shadowBlur=0;cx.lineWidth=1;
     if(p.timer!=null){cx.fillStyle="#fff";cx.font="bold 14px Barlow Condensed, sans-serif";cx.fillText(Math.ceil(p.timer/60),p.x+8,p.y-8)} }
   for(const q of M.parts){cx.globalAlpha=Math.min(1,q.life/30);cx.fillStyle=q.col;cx.fillRect(q.x,q.y,q.sz,q.sz)} cx.globalAlpha=1;
   for(const f of M.fx){ const k=f.life/f.max;
@@ -1530,14 +2000,26 @@ function drawUnit(u,active){
     for(let i=0;i<3;i++){const a=t*2+i*2.1;cx.fillStyle=c;cx.globalAlpha=.8;cx.beginPath();cx.arc(u.x+Math.cos(a)*22,u.y-24+Math.sin(a*1.3)*26,2,0,7);cx.fill()} cx.globalAlpha=1 }
   if(u.maskT>0){ for(let i=0;i<6;i++){const a=t*1.6+i*1.05;cx.fillStyle=i%2?"rgba(20,6,28,.55)":"rgba(90,40,120,.45)";cx.beginPath();cx.ellipse(u.x+Math.cos(a)*16,u.y-26+Math.sin(a*1.3)*20,9,14,a,0,7);cx.fill()} }
   if(u.absorb>0&&!u.rooted){cx.fillStyle="rgba(127,208,255,.16)";cx.strokeStyle="rgba(170,225,255,.95)";cx.lineWidth=2.5;cx.beginPath();cx.ellipse(u.x,u.y-26,26,34,0,0,7);cx.fill();cx.stroke();cx.lineWidth=1}
+  if(u.fams&&u.fams.length){ const fc=BK[u.fams[0]].col, a=t*2.2, fx=u.x+Math.cos(a)*26, fy=u.y-46+Math.sin(a*1.4)*6; cx.fillStyle=fc; cx.strokeStyle="#111"; cx.lineWidth=1.5; cx.beginPath(); cx.arc(fx,fy,5+u.famLvl*.6,0,7); cx.fill(); cx.stroke();
+    for(let k=0;k<u.famLvl;k++){cx.fillStyle="#fff";cx.beginPath();cx.arc(fx-6+k*3,fy-9,1.2,0,7);cx.fill()} cx.lineWidth=1 }
+  if(u.wings){ cx.fillStyle="rgba(255,255,255,.92)"; cx.strokeStyle="#c9c2a8"; for(const d of [-1,1]){ cx.beginPath(); cx.moveTo(u.x,u.y-34); cx.quadraticCurveTo(u.x+d*30,u.y-58-Math.sin(t*6)*5,u.x+d*34,u.y-30); cx.quadraticCurveTo(u.x+d*18,u.y-30,u.x,u.y-26); cx.fill(); cx.stroke() } }
+  if(u.lich){ cx.fillStyle="rgba(91,209,122,.18)"; cx.beginPath(); cx.arc(u.x,u.y-24,60,0,7); cx.fill() }
+  if(u.deflectT>0&&u.deflectReady){ cx.strokeStyle=u.deflectCol||"#fff"; cx.globalAlpha=.7; cx.lineWidth=2; cx.setLineDash([6,5]); cx.beginPath(); cx.arc(u.x,u.y-24,32,t*2,t*2+5.5); cx.stroke(); cx.setLineDash([]); cx.globalAlpha=1; cx.lineWidth=1 }
+  if(u.invulnT>0){ const g2=cx.createRadialGradient(u.x,u.y-24,6,u.x,u.y-24,40); g2.addColorStop(0,"rgba(255,247,200,.0)"); g2.addColorStop(.7,"rgba(255,247,200,.35)"); g2.addColorStop(1,"rgba(255,247,200,0)"); cx.fillStyle=g2; cx.beginPath(); cx.arc(u.x,u.y-24,40,0,7); cx.fill() }
+  if(u.zapT>0){ cx.strokeStyle="#bfe3ff"; cx.lineWidth=1.5; for(let k=0;k<3;k++){const a=t*5+k*2.1;cx.beginPath();cx.moveTo(u.x+Math.cos(a)*16,u.y-24+Math.sin(a)*20);cx.lineTo(u.x+Math.cos(a)*30,u.y-24+Math.sin(a)*34);cx.stroke()} cx.lineWidth=1 }
   if(u.shield){cx.strokeStyle="rgba(143,184,255,.9)";cx.lineWidth=3;cx.beginPath();cx.ellipse(u.x,u.y-24,22,30,0,0,7);cx.stroke();cx.lineWidth=1}
   cx.save();cx.translate(u.x,u.y);if(u.face>0)cx.scale(-1,1);
   if(u.frozen){cx.filter="hue-rotate(160deg) saturate(1.6)"}
+  if(u.lich){cx.filter="hue-rotate(80deg) saturate(.7) brightness(.85)"}
   if(u.maskT>0){cx.filter=(cx.filter&&cx.filter!=="none"?cx.filter+" ":"")+"brightness(.75) saturate(.6)"}
   cx.drawImage(IMG[u.gender],-w/2,-h+2,w,h);cx.restore();
-  if(u.maskT>0){ const mx=u.x+(u.face>0?1:-1)*1, my=u.y-h*0.43; cx.fillStyle="#f4f1ea";cx.strokeStyle="#111";cx.lineWidth=1.2;cx.beginPath();cx.ellipse(mx,my,w*0.2,h*0.12,0,0,7);cx.fill();cx.stroke();
+  if(u.maskT>0){ const mx=u.x+(u.face>0?1:-1)*1, my=u.y-h*0.5; cx.fillStyle="#f4f1ea";cx.strokeStyle="#111";cx.lineWidth=1.2;cx.beginPath();cx.ellipse(mx,my,w*0.24,h*0.135,0,0,7);cx.fill();cx.stroke();
     cx.fillStyle="#120814";cx.beginPath();cx.ellipse(mx-w*0.08,my-1,2.6,1.6,.35,0,7);cx.ellipse(mx+w*0.08,my-1,2.6,1.6,-.35,0,7);cx.fill();cx.beginPath();cx.moveTo(mx-3,my+4);cx.quadraticCurveTo(mx,my+6,mx+3,my+4);cx.stroke(); }
-  if(u.rooted>0&&u.absorb>0){ cx.save();cx.globalAlpha=.85;const tw=46,th=70,tx0=u.x-tw/2,ty0=u.y-th+4;
+  if(u.tower){ const tw=u.tower, tx0=u.x-25, ty0=u.y-74; cx.save(); cx.globalAlpha=.88; cx.fillStyle=tw.col+"66"; cx.strokeStyle=tw.col; cx.lineWidth=3;
+    cx.beginPath(); cx.moveTo(tx0,u.y+4); cx.lineTo(tx0,ty0+12); for(let i=0;i<5;i++){cx.lineTo(tx0+i*10,ty0+(i%2?0:12));cx.lineTo(tx0+(i+1)*10,ty0+(i%2?0:12))} cx.lineTo(tx0+50,u.y+4); cx.closePath(); cx.fill(); cx.stroke();
+    cx.globalAlpha=1; cx.fillStyle="#111"; cx.fillRect(u.x-22,ty0-8,44,4); cx.fillStyle=tw.col; cx.fillRect(u.x-22,ty0-8,44*clamp(tw.hp/tw.max,0,1),4); cx.restore(); cx.lineWidth=1 }
+  if(u.rooted>0&&!u.aegisT){ cx.strokeStyle="#3f8f3a"; cx.lineWidth=3; for(const d of [-1,1]){cx.beginPath();cx.moveTo(u.x+d*14,u.y+2);cx.quadraticCurveTo(u.x+d*4,u.y-14,u.x+d*10,u.y-22);cx.stroke()} cx.lineWidth=1 }
+  if(u.aegisT>0&&u.absorb>0){ cx.save();cx.globalAlpha=.85;const tw=46,th=70,tx0=u.x-tw/2,ty0=u.y-th+4;
     const gr=cx.createLinearGradient(tx0,0,tx0+tw,0);gr.addColorStop(0,"rgba(255,211,106,.25)");gr.addColorStop(.5,"rgba(255,240,190,.12)");gr.addColorStop(1,"rgba(255,211,106,.25)");
     cx.fillStyle=gr;cx.strokeStyle="#ffd36a";cx.lineWidth=3;cx.beginPath();cx.moveTo(tx0,ty0+10);for(let i=0;i<5;i++){cx.lineTo(tx0+i*tw/5,ty0+(i%2?0:10));cx.lineTo(tx0+(i+1)*tw/5,ty0+(i%2?0:10))}cx.lineTo(tx0+tw,u.y+4);cx.lineTo(tx0,u.y+4);cx.closePath();cx.fill();cx.stroke();cx.restore();cx.lineWidth=1 }
   if(u.absorb>0){cx.font="bold 12px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";cx.strokeText("+"+u.absorb,u.x-32,u.y-52);cx.fillStyle="#9fdcff";cx.fillText("+"+u.absorb,u.x-32,u.y-52);cx.textAlign="left";cx.lineWidth=1}
@@ -1550,10 +2032,46 @@ function drawUnit(u,active){
   if(active){cx.fillStyle="#f2cf7c";cx.beginPath();const b=Math.sin(t*6)*3;cx.moveTo(u.x-7,u.y-80+b);cx.lineTo(u.x+7,u.y-80+b);cx.lineTo(u.x,u.y-71+b);cx.fill()}
   cx.textAlign="left";cx.lineWidth=1;
 }
-function drawImp(i){cx.save();cx.translate(i.x,i.y);cx.fillStyle="#d8405f";cx.strokeStyle="#3a0b16";cx.lineWidth=2;cx.beginPath();cx.arc(0,-9,9,0,7);cx.fill();cx.stroke();
-  cx.beginPath();cx.moveTo(-6,-15);cx.lineTo(-9,-23);cx.lineTo(-2,-17);cx.moveTo(6,-15);cx.lineTo(9,-23);cx.lineTo(2,-17);cx.fill();cx.fillStyle="#ffe066";cx.fillRect(-4,-11,2.5,2.5);cx.fillRect(2,-11,2.5,2.5);
-  cx.fillStyle=i.team?"#ff7a5c":"#5fb4ff";cx.fillRect(-8,-24,16*i.life/3,3);cx.restore()}
-
+function drawZones(){ const t=performance.now()/1000;
+  for(const z of M.zones){
+    if(z.type==="aura"){ const g=cx.createRadialGradient(z.x,z.y,4,z.x,z.y,z.r); g.addColorStop(0,z.col+"88"); g.addColorStop(1,z.col+"00"); cx.fillStyle=g; cx.beginPath(); cx.arc(z.x,z.y,z.r*(1+Math.sin(t*2)*.05),0,7); cx.fill();
+      cx.fillStyle="rgba(255,255,255,.55)"; for(let k=0;k<4;k++){const a=t+k*1.57;cx.beginPath();cx.arc(z.x+Math.cos(a)*z.r*.5,z.y+Math.sin(a)*z.r*.35,2.2,0,7);cx.fill()} }
+    else if(z.type==="napalm"){ cx.fillStyle=`rgba(255,${120+Math.sin(t*9+z.x)*60|0},30,.9)`; cx.beginPath(); cx.ellipse(z.x,z.y-2,6,3,0,0,7); cx.fill(); cx.fillStyle="rgba(255,220,90,.8)"; cx.beginPath(); cx.moveTo(z.x-3,z.y-2); cx.lineTo(z.x,z.y-9-Math.sin(t*12+z.x)*2); cx.lineTo(z.x+3,z.y-2); cx.fill() }
+    else if(z.type==="firewall"){ cx.globalAlpha=z.ready?.95:.4; for(let k=0;k<5;k++){ const h=40+Math.sin(t*10+k*2)*10; cx.fillStyle=z.thorn?(k%2?"#2f6b2a":"#5fa83f"):(k%2?"#ff7a2e":"#ffd166"); cx.beginPath(); cx.moveTo(z.x-10+k*5,z.y+2); cx.lineTo(z.x-8+k*5,z.y-h); cx.lineTo(z.x-5+k*5,z.y+2); cx.fill() } cx.globalAlpha=1 }
+    else if(z.type==="glyph"){ cx.strokeStyle=z.col; cx.lineWidth=2; cx.globalAlpha=.6+Math.sin(t*4+z.x)*.3; cx.beginPath(); cx.arc(z.x,z.y,7,0,7); cx.moveTo(z.x-4,z.y); cx.lineTo(z.x+4,z.y); cx.moveTo(z.x,z.y-4); cx.lineTo(z.x,z.y+4); cx.stroke(); cx.globalAlpha=1; cx.lineWidth=1 }
+    else if(z.type==="stasis"){ cx.fillStyle="rgba(190,225,255,.14)"; cx.strokeStyle="rgba(217,164,65,.8)"; cx.lineWidth=2; cx.setLineDash([5,4]); cx.beginPath(); cx.arc(z.x,z.y,z.r,0,7); cx.fill(); cx.stroke(); cx.setLineDash([]); cx.lineWidth=1 }
+    else if(z.type==="beacon"){ cx.fillStyle="#d9a441"; cx.strokeStyle="#5a3c0a"; cx.beginPath(); cx.moveTo(z.x-7,z.y+6); cx.quadraticCurveTo(z.x-7,z.y-10,z.x,z.y-10); cx.quadraticCurveTo(z.x+7,z.y-10,z.x+7,z.y+6); cx.closePath(); cx.fill(); cx.stroke() }
+    else if(z.type==="cloud"){ const c=z.mode==="lightning"?"#59627a":z.mode==="stars"?"#fff2b8":z.mode==="snow"?"#e8f2f8":"#7d8fa3"; cx.fillStyle=c; cx.globalAlpha=.9; for(let k=-2;k<=2;k++){cx.beginPath();cx.ellipse(z.x+k*22,z.cy+Math.abs(k)*4,26,16,0,0,7);cx.fill()} cx.globalAlpha=1;
+      cx.font="bold 13px Barlow Condensed, sans-serif"; cx.textAlign="center"; cx.fillStyle="#111"; cx.fillText(z.turns,z.x,z.cy+5); cx.textAlign="left" }
+    else if(z.type==="geyser"){ cx.fillStyle="rgba(255,255,255,.5)"; for(let k=0;k<3;k++){cx.beginPath();cx.arc(z.x+Math.sin(t*3+k*2)*40,z.y-((t*40+k*20)%40),2,0,7);cx.fill()} }
+  }
+}
+function drawMinion(m){ const s=m.spec, r=s.size, t=performance.now()/1000, by=m.y-(s.fly?Math.sin(t*3+m.x)*3:0);
+  const col=(m.undead&&!s.undead)?"#86b07f":s.col;
+  cx.save(); cx.translate(m.x,by); if(m.face<0) cx.scale(-1,1);
+  cx.fillStyle=col; cx.strokeStyle="rgba(0,0,0,.75)"; cx.lineWidth=2;
+  const eye=(x,y,rr=1.8)=>{cx.fillStyle="#fff";cx.beginPath();cx.arc(x,y,rr+.8,0,7);cx.fill();cx.fillStyle="#111";cx.beginPath();cx.arc(x+.6,y,rr,0,7);cx.fill()};
+  if(s.shape==="dragon"){ cx.fillStyle=shade(col,-25); cx.beginPath(); cx.moveTo(-2,-r*1.1); cx.lineTo(-r*1.5,-r*2.3-Math.sin(t*8)*6); cx.lineTo(-r*.2,-r*.8); cx.fill(); cx.stroke();
+    cx.fillStyle=col; cx.beginPath(); cx.ellipse(0,-r,r*1.2,r*.65,0,0,7); cx.fill(); cx.stroke(); cx.beginPath(); cx.ellipse(r*1.15,-r*1.45,r*.55,r*.4,-.3,0,7); cx.fill(); cx.stroke();
+    cx.beginPath(); cx.moveTo(-r*1.1,-r); cx.quadraticCurveTo(-r*2,-r*.5,-r*2.2,-r*1.3); cx.stroke(); eye(r*1.3,-r*1.55) }
+  else if(s.shape==="spirit"){ cx.globalAlpha=.9; cx.beginPath(); cx.arc(0,-r*1.3,r,0,7); cx.fill(); cx.stroke(); cx.beginPath(); cx.moveTo(-r*.7,-r); cx.quadraticCurveTo(0,r*.6+Math.sin(t*6)*3,r*.7,-r); cx.fill(); cx.globalAlpha=1; eye(-r*.35,-r*1.35,1.5); eye(r*.35,-r*1.35,1.5) }
+  else if(s.shape==="swarm"){ for(let k=0;k<9;k++){ const a=t*3+k*.7; cx.fillStyle=k%2?"#2a1636":"#5b3a6e"; cx.beginPath(); cx.arc(Math.cos(a)*r*.9,-r+Math.sin(a*1.3)*r*.7,2.6,0,7); cx.fill() } }
+  else if(s.shape==="golem"){ cx.beginPath(); cx.roundRect(-r,-r*2,r*2,r*2,4); cx.fill(); cx.stroke(); cx.beginPath(); cx.roundRect(-r*.6,-r*2.6,r*1.2,r*.8,3); cx.fill(); cx.stroke(); eye(-r*.25,-r*2.2,1.4); eye(r*.25,-r*2.2,1.4) }
+  else if(s.shape==="knight"){ cx.beginPath(); cx.ellipse(0,-r,r*.8,r,0,0,7); cx.fill(); cx.stroke(); cx.fillStyle=shade(col,25); cx.beginPath(); cx.roundRect(-r*.6,-r*2.6,r*1.2,r*1,3); cx.fill(); cx.stroke(); cx.fillStyle="#111"; cx.fillRect(-r*.4,-r*2.2,r*.8,2.4) }
+  else if(s.shape==="beast"){ cx.beginPath(); cx.ellipse(0,-r*.9,r*1.2,r*.6,0,0,7); cx.fill(); cx.stroke(); cx.beginPath(); cx.ellipse(r*1.1,-r*1.4,r*.5,r*.42,0,0,7); cx.fill(); cx.stroke();
+    for(const lx of [-r*.7,-r*.2,r*.3,r*.7]){ cx.beginPath(); cx.moveTo(lx,-r*.5); cx.lineTo(lx,0); cx.stroke() } if(s.fly){ cx.fillStyle="#fff"; cx.beginPath(); cx.moveTo(-r*.2,-r*1.2); cx.lineTo(-r*1.2,-r*2.2-Math.sin(t*8)*4); cx.lineTo(r*.4,-r*1.3); cx.fill(); cx.stroke() } eye(r*1.25,-r*1.5,1.4) }
+  else if(s.shape==="treant"){ cx.fillStyle="#6b4a2a"; cx.beginPath(); cx.roundRect(-r*.5,-r*1.8,r,r*1.8,3); cx.fill(); cx.stroke(); cx.fillStyle=col; cx.beginPath(); cx.arc(0,-r*2.1,r*.9,0,7); cx.arc(-r*.7,-r*1.7,r*.5,0,7); cx.arc(r*.7,-r*1.7,r*.5,0,7); cx.fill(); cx.stroke(); eye(-r*.2,-r*1.2,1.5); eye(r*.2,-r*1.2,1.5) }
+  else { cx.beginPath(); cx.ellipse(0,-r,r*.85,r,0,0,7); cx.fill(); cx.stroke();
+    if(s.shape==="imp"){ cx.fillStyle=col; cx.beginPath(); cx.moveTo(-r*.6,-r*1.7); cx.lineTo(-r,-r*2.5); cx.lineTo(-r*.2,-r*1.9); cx.moveTo(r*.6,-r*1.7); cx.lineTo(r,-r*2.5); cx.lineTo(r*.2,-r*1.9); cx.fill() }
+    if(s.shape==="goblin"){ cx.beginPath(); cx.moveTo(-r*.7,-r*1.4); cx.lineTo(-r*1.6,-r*1.8); cx.lineTo(-r*.6,-r*1.1); cx.moveTo(r*.7,-r*1.4); cx.lineTo(r*1.6,-r*1.8); cx.lineTo(r*.6,-r*1.1); cx.fill(); cx.stroke() }
+    if(s.shape==="troll"){ cx.fillStyle="#d8e8d0"; cx.beginPath(); cx.moveTo(-r*.5,-r*1.8); cx.lineTo(-r*.7,-r*2.3); cx.lineTo(-r*.25,-r*1.9); cx.moveTo(r*.5,-r*1.8); cx.lineTo(r*.7,-r*2.3); cx.lineTo(r*.25,-r*1.9); cx.fill() }
+    if(s.shape==="dwarf"){ cx.fillStyle="#d8d2c8"; cx.beginPath(); cx.moveTo(-r*.6,-r*1.0); cx.quadraticCurveTo(0,r*.3,r*.6,-r*1.0); cx.fill(); cx.fillStyle="#8a8f96"; cx.beginPath(); cx.arc(0,-r*1.75,r*.65,Math.PI,0); cx.fill(); cx.stroke() }
+    if(s.shape==="cyclops") eye(r*.1,-r*1.25,3); else { eye(-r*.3,-r*1.3); eye(r*.3,-r*1.3) } }
+  cx.restore();
+  const top=by-(s.shape==="dragon"?r*2.4:r*2.6)-6;
+  cx.fillStyle="#111"; cx.fillRect(m.x-r,top,r*2,4); cx.fillStyle=m.team?"#ff7a5c":"#5fb4ff"; cx.fillRect(m.x-r,top,r*2*clamp(m.hp/m.maxHp,0,1),4);
+  if(m.rooted>0){ cx.strokeStyle="#3f8f3a"; cx.lineWidth=2; cx.beginPath(); cx.moveTo(m.x-r,m.y); cx.quadraticCurveTo(m.x,m.y-r,m.x+r,m.y); cx.stroke(); cx.lineWidth=1 }
+}
 /* ----- HUD ----- */
 function renderHud(){
   if(!M) return;
@@ -1565,12 +2083,12 @@ function renderHud(){
   renderHudTimer();
 }
 function renderHudTimer(){const t=$("#hTimer");const v=Math.ceil(M.timer);t.textContent=v;t.classList.toggle("low",v<=5);if(M.active&&M.active.isPlayer&&v<=5&&v>0&&!M.cast&&Math.abs(M.timer-v)<.05)sfx("tick")}
-function spellState(u,id){const s=SP[id];const cd=u.cool[id]||0;const out=s.uses&&(u.used[id]||0)>=s.uses;return {cd,out,ok:!cd&&!out}}
 function renderSpellbar(){
   if(!M) return; const me_=M.units.find(u=>u.isPlayer); const s=SP[me_.spells[M.selSpell]]; if(!s) return;
   $("#spellBtnIco").innerHTML=sico(s); $("#spellBtnName").textContent=s.name;
   const st=spellState(me_,s.id);
-  $("#spellTip").innerHTML=`<b>${esc(s.name)}</b> · ${esc(spellMeta(s))} · ${esc(s.desc)}${st.cd?` <span class="tag">Recharging ${st.cd}</span>`:st.out?' <span class="tag">Used</span>':""}`;
+  $("#spellTip").innerHTML=`<b>${esc(s.name)}</b> · ${esc(spellMeta(s))} · ${esc(s.desc)}${st.why?` <span class="tag">${esc(st.why)}</span>`:""}`;
+  const fb=$("#famBtn"); const showF=me_.fams&&me_.fams.length&&M.active===me_; fb.hidden=!showF; if(showF){ fb.textContent=`${famName(me_)} ${me_.famLvl}/5`; fb.title=`Costs 20 HP per level. ${me_.fams.map(b=>BK[b].fam.desc).join(" ")}`; fb.disabled=me_.famLvl>=5 }
   if(!$("#wheel").hidden) renderWheel();
 }
 let wheelPick=null;
@@ -1578,17 +2096,19 @@ function openWheel(){ if(!M) return; wheelPick=M.selSpell; $("#wheel").hidden=fa
 function closeWheel(){ $("#wheel").hidden=true }
 function renderWheel(){
   const me_=M.units.find(u=>u.isPlayer); const n=me_.spells.length; const ring=$("#wheelRing");
-  ring.innerHTML=me_.spells.map((id,i)=>{const s=SP[id],st=spellState(me_,id),a=-Math.PI/2+i/n*Math.PI*2,r=40;
-    return `<button class="wsp ${i===wheelPick?"sel":""} ${st.ok?"":"off"}" data-i="${i}" style="left:${50+Math.cos(a)*r}%;top:${50+Math.sin(a)*r}%;background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" aria-label="${esc(s.name)}">${icon(s.kind)}${i<10?`<span class="k">${(i+1)%10}</span>`:""}${st.cd?`<span class="cd">${st.cd}</span>`:st.out?'<span class="cd">✕</span>':""}</button>`}).join("")+`<div class="hub">Pick a<br>spell</div>`;
+  const outer=Math.min(n,16), inner=n-outer;
+  ring.innerHTML=me_.spells.map((id,i)=>{const s=SP[id],st=spellState(me_,id),inn=i>=outer,a=-Math.PI/2+(inn?(i-outer)/inner:i/outer)*Math.PI*2,r=inn?25:42;
+    return `<button class="wsp ${i===wheelPick?"sel":""} ${st.ok?"":"off"}" data-i="${i}" style="left:${50+Math.cos(a)*r}%;top:${50+Math.sin(a)*r}%;background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" aria-label="${esc(s.name)}">${icon(s.kind)}${i<10?`<span class="k">${(i+1)%10}</span>`:""}${st.cd?`<span class="cd">${st.cd}</span>`:st.out?'<span class="cd">✕</span>':""}</button>`}).join("")+`${inner?"":'<div class="hub">Pick a<br>spell</div>'}`;
   ring.querySelectorAll(".wsp").forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.i; if(wheelPick===i&&spellState(me_,me_.spells[i]).ok){selectSpell(i);closeWheel();return} wheelPick=i; renderWheel()});
   const s=SP[me_.spells[wheelPick]], st=spellState(me_,s.id);
   $("#wheelInfo").innerHTML=`<div class="row" style="gap:10px;flex-wrap:nowrap">${sico(s)}<h3>${esc(s.name)}</h3></div><p>${esc(s.desc)}</p>${spellStats(s,me_)}
-    ${st.cd?`<div class="why">Recharging: ready in ${st.cd} turn${st.cd>1?"s":""}</div>`:st.out?'<div class="why">Already used this match</div>':""}
+    ${st.why?`<div class="why">${esc(st.why)}</div>`:""}
     <div class="row"><button class="wood" id="wUse" ${st.ok?"":"disabled"}>Use this spell</button><button class="wood sm" id="wClose">Close</button></div>`;
   $("#wUse").onclick=()=>{selectSpell(wheelPick);closeWheel()}; $("#wClose").onclick=closeWheel;
 }
 function selectSpell(i){const me_=M.units.find(u=>u.isPlayer);if(i<0||i>=me_.spells.length)return;M.selSpell=i;M.charging=false;M.charge=0;sfx("click");renderSpellbar()}
 $("#spellBtn").onclick=openWheel;
+$("#famBtn").onclick=()=>{ if(playerTurn()) powerFamiliar(M.active); else toast("Power your familiar on your turn") };
 $("#wheel").addEventListener("click",e=>{if(e.target.id==="wheel")closeWheel()});
 
 /* ----- input ----- */
@@ -1645,7 +2165,7 @@ addEventListener("blur",()=>{keys.left=keys.right=false});
 $$(".pad [data-t]").forEach(b=>{const t=b.dataset.t;b.addEventListener("contextmenu",e=>e.preventDefault());
   b.addEventListener("pointerdown",e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){} b.classList.add("on");
     if(!playerTurn()){toast(M&&M.active&&M.active.isPlayer?"Wait for your spell to land":"Wait for your turn");return}
-    if(t==="left")keys.left=true;if(t==="right")keys.right=true;if(M.active.rooted){keys.left=keys.right=false;toast("You can't move while your Aegis Tower stands")}else if(!M.active.frozen){if(t==="jump")jump(M.active,false);if(t==="high")jump(M.active,true)}else toast("You're frozen this turn")});
+    if(t==="left")keys.left=true;if(t==="right")keys.right=true;if(M.active.rooted){keys.left=keys.right=false;toast(M.active.aegisT?"You can't move while your Aegis Tower stands":"You can't move this turn")}else if(!M.active.frozen){if(t==="jump")jump(M.active,false);if(t==="high")jump(M.active,true)}else toast("You're frozen this turn")});
   for(const ev of ["pointerup","pointercancel","lostpointercapture"]) b.addEventListener(ev,()=>{b.classList.remove("on");if(t==="left")keys.left=false;if(t==="right")keys.right=false})});
 function skipTurn(){if(!playerTurn())return;M.cast=true;M.fx.push({t:"wait",life:10,max:10,block:true});toast("Turn skipped")}
 $("#skipBtn").onclick=skipTurn;
@@ -1669,7 +2189,7 @@ function endMatch(winner,reason){
   u.games++;u.kills+=p.kills;u.orbs+=orbs;u.gems=(u.gems||0)+gems; if(won)u.wins++;else if(!draw)u.losses++;
   const before=u.level; const levelUps=[];
   if(u.level<MAX_LEVEL){ u.xp+=xp; while(u.level<MAX_LEVEL&&u.xp>=xpNeed(u.level)){u.xp-=xpNeed(u.level);u.level++;levelUps.push(u.level)} if(u.level>=MAX_LEVEL) u.xp=0 }
-  const newSpells=SPELLS.filter(s=>s.lvl>before&&s.lvl<=u.level);
+  const newSpells=SPELLS.filter(s=>s.book!=="prestige"&&s.lvl>before&&s.lvl<=u.level);
   const oldSlots=slotsFor(before); fixBook(u,slotsFor(u.level)>oldSlots); save();
   if(levelUps.length) sfx("level");
   const title=draw?"Draw":won?"Victory!":"Defeat";

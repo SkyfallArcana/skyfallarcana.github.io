@@ -1,0 +1,44 @@
+name: Deploy game
+
+# Every push to main publishes the game to GitHub Pages with a new version number.
+# Installed copies on phones and PCs see the new version and offer a one-tap update.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stamp version
+        run: |
+          VERSION="$(date -u +%Y.%m.%d)-${GITHUB_RUN_NUMBER}"
+          mkdir -p _site
+          cp -r index.html sw.js manifest.webmanifest assets icons _site/
+          sed -i "s/__VERSION__/${VERSION}/g" _site/sw.js _site/index.html
+          touch _site/.nojekyll
+          echo "Version ${VERSION}"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

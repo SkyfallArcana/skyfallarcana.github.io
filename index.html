@@ -512,7 +512,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;border-radius:10px;bo
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 "use strict";
-const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp"};
+const IMG_SRC={sky:"assets/sky.jpg",terrain:"assets/terrain.webp",male:"assets/male.webp",female:"assets/female.webp",champion_male:"assets/champion_male.webp",champion_female:"assets/champion_female.webp",blue_wizard:"assets/blue_wizard.webp",pink_witch:"assets/pink_witch.webp",storm_dragon:"assets/storm_dragon.webp",aegis_tower:"assets/aegis_tower.webp"};
 const IMG={};
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -782,6 +782,7 @@ function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book!=="minion"&&(s.book==
 function effLevel(u){return u.allSpells?50:u.level}
 function effPres(u){return u.allSpells?5:(u.prestige||0)}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
+const AEGIS_H=150, AEGIS_LIFT=AEGIS_H-16;
 const AURAS=[null,{n:"Blue",c:"#3fa2ff"},{n:"Red",c:"#ff3b3b"},{n:"Purple",c:"#a64dff"},{n:"Green",c:"#36d96b"},{n:"Pink",c:"#ff6ad5"}];
 function xpNeed(l){return 100+30*(l-1)}
 const RANKS=[[0,"Novice"],[900,"Apprentice"],[1100,"Acolyte"],[1300,"Messenger"],[1500,"Mage"],[1800,"High Mage"],[2200,"Arch Mage"],[2700,"Grand Arcanist"]];
@@ -1358,12 +1359,24 @@ function addRock(drawFn,bx,by,bw,bh){
 function surfaceY(x,from=0){for(let y=from;y<H;y++) if(isSolid(x,y)) return y;return null}
 
 /* ----- bodies ----- */
-const feetSolid=(x,y)=>isSolid(x-5,y)||isSolid(x,y)||isSolid(x+5,y);
-const bodyHits=(x,y)=>isSolid(x,y-6)||isSolid(x,y-18)||isSolid(x,y-32)||isSolid(x-6,y-14)||isSolid(x+6,y-14);
-function unstick(u){let n=0;while(n<140&&(bodyHits(u.x,u.y)||isSolid(u.x,u.y-1))){u.y--;n++}}
+// Minions are solid: wizards and other minions can't pass through them (walk around, jump over, or stand on top).
+let PHYS_SELF=null;
+function boxOf(b){ return b.imp?{hw:Math.max(8,b.spec.size*.9),hh:b.spec.size*2}:{hw:7,hh:36} }
+function bodyBlock(x,y){ if(!M) return false;
+  for(const m of M.imps){ if(m.dead||m===PHYS_SELF) continue; const bx=boxOf(m); if(Math.abs(x-m.x)<bx.hw&&y>m.y-bx.hh&&y<=m.y+1) return true }
+  if(PHYS_SELF&&PHYS_SELF.imp) for(const u of M.units){ if(!u.alive) continue; if(Math.abs(x-u.x)<8&&y>u.y-36&&y<=u.y+1) return true }
+  return false }
+const feetSolid=(x,y)=>isSolid(x-5,y)||isSolid(x,y)||isSolid(x+5,y)||bodyBlock(x-4,y)||bodyBlock(x+4,y);
+const bodyHits=(x,y)=>isSolid(x,y-6)||isSolid(x,y-18)||isSolid(x,y-32)||isSolid(x-6,y-14)||isSolid(x+6,y-14)||bodyBlock(x,y-6)||bodyBlock(x,y-20)||bodyBlock(x,y-32);
+function unstick(u){const prev=PHYS_SELF;PHYS_SELF=u;let n=0;while(n<140&&(bodyHits(u.x,u.y)||isSolid(u.x,u.y-1))){u.y--;n++}PHYS_SELF=prev}
+function flyMove(m,nx,ny){ const prev=PHYS_SELF; PHYS_SELF=m; const hh=m.spec.size*2;
+  const blocked=(x,y)=>bodyBlock(x,y-2)||bodyBlock(x,y-hh/2)||bodyBlock(x,y-hh+2)||isSolid(x,y-hh/2);
+  if(!blocked(nx,m.y)) m.x=nx; if(!blocked(m.x,ny)) m.y=ny; PHYS_SELF=prev }
 function allBodies(){return M?[...M.units.filter(u=>u.alive),...M.imps]:[]}
 function walksWater(u){return u.imp?!!u.spec.swim:!!(u.fams&&u.fams.includes("seas")&&u.famLvl>=5)}
 function physBody(u,isImp){
+  PHYS_SELF=u;
+  if(!isImp&&u.aegisT>0&&u.absorb>0){ u.vx=0; u.vy=0; return }
   if(isImp&&u.spec.fly) return;
   const ww=walksWater(u);
   if(ww&&u.y>=M.water&&u.vy>=0){u.y=M.water;u.vy=0;u.vx=0;u.grounded=true;return}
@@ -1382,6 +1395,7 @@ function land(u,isImp){
   u.vy=0;u.vx=0;u.grounded=true;
 }
 function walk(u,dir){
+  PHYS_SELF=u;
   u.face=dir;
   if(!u.imp&&u.tower&&!u.tower.moves) return;
   if(!u.imp&&u.flyT>0&&!u.grounded){ u.vx=dir*2.6; return }
@@ -1514,7 +1528,7 @@ function pickMinion(){
 function moveCtrlMinion(m){
   if(m.rooted) return;
   const dir=keys.left?-1:keys.right?1:0;
-  if(m.spec.fly){ m.x=clamp(m.x+dir*2.4,12,W-12); if(dir) m.face=dir; if(keys.up) m.y=Math.max(m.spec.size*3.6+10,m.y-2.4); if(keys.down){ const ny=m.y+2.4; if(!isSolid(m.x,ny+2)) m.y=Math.min(M.water-4,ny) } return }
+  if(m.spec.fly){ if(dir) m.face=dir; const nx=clamp(m.x+dir*2.4,12,W-12); let ny=m.y; if(keys.up) ny=Math.max(m.spec.size*3.6+10,m.y-2.4); if(keys.down&&!isSolid(m.x,m.y+4)) ny=Math.min(M.water-4,m.y+2.4); flyMove(m,nx,ny); return }
   if(dir){ const steps=m.spec.speed>=1.5?2:1; for(let k=0;k<steps;k++) walk(m,dir) }
 }
 function turnStart(u){
@@ -1684,7 +1698,7 @@ function castSpell(u,id,tx,ty,power){
   const ox=u.x, oy=u.y-(u.imp?u.spec.size:24), ang=Math.atan2(ty-oy,tx-ox), cred=u.imp?u.owner:u;
   if(s.type==="target"){
     if(s.range&&Math.hypot(tx-u.x,ty-u.y)>s.range){toast("Out of range");return false}
-    if(s.kind==="tele"){ if(bodyHits(tx,ty+18)||isSolid(tx,ty)){toast("Pick an open spot");return false} }
+    if(s.kind==="tele"){ PHYS_SELF=u; if(bodyHits(tx,ty+18)||isSolid(tx,ty)){toast("Pick an open spot");return false} }
   }
   if(s.kind==="minion"&&(isSolid(tx,ty)||isSolid(tx,ty-14))){ if(u.isPlayer) toast("Pick an open spot to summon"); return false }
   if(s.kind==="pact"&&!M.imps.some(m=>!m.dead&&m.owner===u)){ if(u.isPlayer) toast("You need minions to drain"); return false }
@@ -1766,7 +1780,7 @@ function castSpell(u,id,tx,ty,power){
     // prestige spells
     case "heal": heal(u,s.heal); for(const a of M.units) if(a!==u&&a.team===u.team&&Math.hypot(a.x-u.x,a.y-u.y)<160) heal(a,s.allyHeal||20); sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-20,r:60,life:30,max:30,col:s.col}); waitFx(40); break;
     case "ward": if(s.stack){u.absorb+=s.absorb;u.absorbT=Math.max(u.absorbT||0,999)} else {u.absorb=Math.max(u.absorb,s.absorb);u.absorbT=Math.max(u.absorbT||0,s.turns+1)} if(s.reflect)u.reflect=s.reflect; if(s.freezeHit)u.freezeHit=1; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:30,max:30,col:s.col}); waitFx(30); break;
-    case "aegis": u.absorb=s.absorb; u.absorbT=s.turns+1; u.rooted=s.turns+1; u.aegisT=s.turns+1; u.vx=0; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:50,life:36,max:36,col:s.col}); waitFx(36); break;
+    case "aegis": u.absorb=s.absorb; u.absorbT=s.turns+1; u.rooted=s.turns+1; u.aegisT=s.turns+1; u.vx=0; u.vy=0; u.tower=null; u.aegisBase=u.y; u.y-=AEGIS_LIFT; u.grounded=true; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:50,life:36,max:36,col:s.col}); waitFx(36); break;
     case "mask": u.mult=s.mult; u.maskT=s.turns+1; sfx("zap"); M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Damage ×2",life:80,max:80}); for(let i=0;i<40;i++){const a=rand(0,6.28);M.parts.push({x:u.x,y:u.y-24,vx:Math.cos(a)*rand(.5,3),vy:Math.sin(a)*rand(.5,3)-1,life:60,col:i%2?"#1a0a22":"#5b2a7a",sz:4})} waitFx(40); break;
     case "rain": case "skyfall": case "storm": { let delay=1;
       for(let k=0;k<s.count;k++){ const ex=tx+(s.count===1?0:(k/(s.count-1)-.5)*(s.kind==="skyfall"?260:s.kind==="storm"?120:180))+rand(-12,12);
@@ -1976,7 +1990,7 @@ function runMinions(){
     if(M.impTimer>30&&!m.rooted){
       const stopAt=s.style==="melee"?26:s.style==="aura"?40:(s.range||200)*.6;
       if(d>stopAt){
-        if(s.fly){ const ty=e.y-60, a=Math.atan2(ty-m.y,e.x-m.x); m.x+=Math.cos(a)*2.2; m.y=Math.max(s.size*3.6+10,m.y+Math.sin(a)*2.2) }
+        if(s.fly){ const ty=e.y-60, a=Math.atan2(ty-m.y,e.x-m.x); flyMove(m,m.x+Math.cos(a)*2.2,Math.max(s.size*3.6+10,m.y+Math.sin(a)*2.2)) }
         else if(m.grounded){ const steps=s.speed>=1.5?2:1, every=s.speed<1?Math.max(1,Math.round(1/s.speed)):1;
           if(M.impTimer%every===0) for(let k=0;k<steps;k++){ const bx=m.x; walk(m,dir); if(Math.abs(m.x-bx)<.1&&M.impTimer%25===0) jump(m) } }
       }
@@ -2150,17 +2164,24 @@ function drawUnit(u,active){
     cx.beginPath(); cx.moveTo(tx0,u.y+4); cx.lineTo(tx0,ty0+12); for(let i=0;i<5;i++){cx.lineTo(tx0+i*10,ty0+(i%2?0:12));cx.lineTo(tx0+(i+1)*10,ty0+(i%2?0:12))} cx.lineTo(tx0+50,u.y+4); cx.closePath(); cx.fill(); cx.stroke();
     cx.globalAlpha=1; cx.fillStyle="#111"; cx.fillRect(u.x-22,ty0-8,44,4); cx.fillStyle=tw.col; cx.fillRect(u.x-22,ty0-8,44*clamp(tw.hp/tw.max,0,1),4); cx.restore(); cx.lineWidth=1 }
   if(u.rooted>0&&!u.aegisT){ cx.strokeStyle="#3f8f3a"; cx.lineWidth=3; for(const d of [-1,1]){cx.beginPath();cx.moveTo(u.x+d*14,u.y+2);cx.quadraticCurveTo(u.x+d*4,u.y-14,u.x+d*10,u.y-22);cx.stroke()} cx.lineWidth=1 }
-  if(u.aegisT>0&&u.absorb>0){ cx.save();cx.globalAlpha=.85;const tw=46,th=70,tx0=u.x-tw/2,ty0=u.y-th+4;
-    const gr=cx.createLinearGradient(tx0,0,tx0+tw,0);gr.addColorStop(0,"rgba(255,211,106,.25)");gr.addColorStop(.5,"rgba(255,240,190,.12)");gr.addColorStop(1,"rgba(255,211,106,.25)");
-    cx.fillStyle=gr;cx.strokeStyle="#ffd36a";cx.lineWidth=3;cx.beginPath();cx.moveTo(tx0,ty0+10);for(let i=0;i<5;i++){cx.lineTo(tx0+i*tw/5,ty0+(i%2?0:10));cx.lineTo(tx0+(i+1)*tw/5,ty0+(i%2?0:10))}cx.lineTo(tx0+tw,u.y+4);cx.lineTo(tx0,u.y+4);cx.closePath();cx.fill();cx.stroke();cx.restore();cx.lineWidth=1 }
-  if(u.absorb>0){cx.font="bold 12px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";cx.strokeText("+"+u.absorb,u.x-32,u.y-52);cx.fillStyle="#9fdcff";cx.fillText("+"+u.absorb,u.x-32,u.y-52);cx.textAlign="left";cx.lineWidth=1}
+  if(u.aegisT>0&&u.absorb>0&&IMG.aegis_tower&&IMG.aegis_tower.naturalWidth){ const im=IMG.aegis_tower, th=AEGIS_H, tw=th*im.width/im.height, top=u.y-16;
+    cx.drawImage(im,u.x-tw/2,top,tw,th);
+    // dome hovering over the wizard, like the artwork
+    const dy=u.y-h+1, dw=28; cx.save(); cx.fillStyle="#3d4452"; cx.strokeStyle="#151a22"; cx.lineWidth=2.5;
+    cx.beginPath(); cx.ellipse(u.x,dy+4,dw,9,0,0,7); cx.fill(); cx.stroke();
+    const g=cx.createLinearGradient(u.x-dw,0,u.x+dw,0); g.addColorStop(0,"#2c323d"); g.addColorStop(.45,"#6b7485"); g.addColorStop(1,"#272c36");
+    cx.fillStyle=g; cx.beginPath(); cx.moveTo(u.x-dw*.82,dy+2); cx.quadraticCurveTo(u.x-dw*.8,dy-22,u.x,dy-24); cx.quadraticCurveTo(u.x+dw*.8,dy-22,u.x+dw*.82,dy+2); cx.closePath(); cx.fill(); cx.stroke();
+    cx.fillStyle="#4a5262"; cx.beginPath(); cx.moveTo(u.x-4,dy-22); cx.lineTo(u.x,dy-36); cx.lineTo(u.x+4,dy-22); cx.closePath(); cx.fill(); cx.stroke();
+    cx.strokeStyle="rgba(140,170,255,.8)"; cx.lineWidth=2; const t2=performance.now()/600; cx.beginPath(); cx.ellipse(u.x,u.y+th*.35,tw*.62,12,Math.sin(t2)*.12,t2,t2+4.2); cx.stroke(); cx.restore(); cx.lineWidth=1 }
+  if(u.absorb>0){cx.font="bold 12px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";const ay2=u.y-52-((u.aegisT>0&&u.absorb>0)?38:0);cx.strokeText("+"+u.absorb,u.x-32,ay2);cx.fillStyle="#9fdcff";cx.fillText("+"+u.absorb,u.x-32,ay2);cx.textAlign="left";cx.lineWidth=1}
   // hp & name
+  const yo=(u.aegisT>0&&u.absorb>0)?38:0;
   const col=u.team?"#ff7a5c":"#5fb4ff";
   cx.font="bold 15px Barlow Condensed, sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#000";
-  cx.strokeText(u.name,u.x,u.y-62);cx.fillStyle=active?"#f2cf7c":"#fff";cx.fillText(u.name,u.x,u.y-62);
-  cx.fillStyle="#111";cx.fillRect(u.x-20,u.y-58,40,6);cx.fillStyle=col;cx.fillRect(u.x-20,u.y-58,40*u.hp/u.maxHp,6);
-  cx.font="bold 13px Barlow Condensed, sans-serif";cx.strokeText(u.hp,u.x+30,u.y-52);cx.fillStyle="#fff";cx.fillText(u.hp,u.x+30,u.y-52);
-  if(active){cx.fillStyle="#f2cf7c";cx.beginPath();const b=Math.sin(t*6)*3;cx.moveTo(u.x-7,u.y-80+b);cx.lineTo(u.x+7,u.y-80+b);cx.lineTo(u.x,u.y-71+b);cx.fill()}
+  cx.strokeText(u.name,u.x,u.y-62-yo);cx.fillStyle=active?"#f2cf7c":"#fff";cx.fillText(u.name,u.x,u.y-62-yo);
+  cx.fillStyle="#111";cx.fillRect(u.x-20,u.y-58-yo,40,6);cx.fillStyle=col;cx.fillRect(u.x-20,u.y-58-yo,40*u.hp/u.maxHp,6);
+  cx.font="bold 13px Barlow Condensed, sans-serif";cx.strokeText(u.hp,u.x+30,u.y-52-yo);cx.fillStyle="#fff";cx.fillText(u.hp,u.x+30,u.y-52-yo);
+  if(active){cx.fillStyle="#f2cf7c";cx.beginPath();const b=Math.sin(t*6)*3;cx.moveTo(u.x-7,u.y-80+b-yo);cx.lineTo(u.x+7,u.y-80+b-yo);cx.lineTo(u.x,u.y-71+b-yo);cx.fill()}
   cx.textAlign="left";cx.lineWidth=1;
 }
 function drawZones(){ const t=performance.now()/1000;
@@ -2403,7 +2424,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.25-1644";
+const APP_VERSION="2026.10.25-1741";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

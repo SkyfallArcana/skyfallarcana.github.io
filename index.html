@@ -1169,7 +1169,9 @@ const PANELS={
    <li>Pick a spell: click it or press 1–9, 0.</li>
    <li>Straight spells: click to fire toward the cursor. Lobbed spells: hold the mouse to charge, release to throw.</li>
    <li>Targeted spells: click the spot. Q skips your turn.</li></ul></div>
+   <div class="row"><span class="muted">Version ${/VERSION/.test(APP_VERSION)?"preview":APP_VERSION}</span><button class="wood sm" id="oUpd" type="button">Check for updates</button></div>
    ${memoryOnly?'<p class="err">This browser is blocking storage, so progress resets when you close the page.</p>':""}`);
+  b.querySelector("#oUpd").onclick=async()=>{ toast("Checking…"); const got=await window.checkForUpdate(); if(!got) setTimeout(()=>toast("You have the latest version"),800) };
   const S=(id,v)=>b.querySelector(id).value=v;
   S("#oSound",o.sound?"1":"0");S("#oVol",o.vol);S("#oTurn",o.turn);S("#oDmg",o.dmgNums?"1":"0");
   b.querySelector("#oSound").onchange=e=>{o.sound=e.target.value==="1";save()};
@@ -2259,15 +2261,19 @@ function applyUpdate(){ updShownOnce=true; const w=swReg&&swReg.waiting; if(w) w
 function initPWA(){
   const v=$("#verTag"); if(v) v.textContent=/VERSION/.test(APP_VERSION)?"":"v"+APP_VERSION;
   $("#updNow").onclick=()=>{ if(inMatch()){ $("#updBar").hidden=true; toast("Updating after this match"); M.updateAfter=true; return } applyUpdate() };
+  window.checkForUpdate=async()=>false;
   if(!window.SKYFALL_PWA||!("serviceWorker" in navigator)) return;
   let reloading=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloading) return; reloading=true; location.reload() });
   navigator.serviceWorker.register("sw.js").then(reg=>{
     swReg=reg;
     if(reg.waiting&&navigator.serviceWorker.controller) showUpdate();
-    reg.addEventListener("updatefound",()=>{ const nw=reg.installing; nw&&nw.addEventListener("statechange",()=>{ if(nw.state==="installed"&&navigator.serviceWorker.controller){ updShownOnce=true; $("#updBar").hidden=false } }) });
+    reg.addEventListener("updatefound",()=>{ const nw=reg.installing; nw&&nw.addEventListener("statechange",()=>{ if(nw.state==="installed"&&navigator.serviceWorker.controller){
+      if(!inMatch()){ toast("Updating Skyfall Arcana…"); setTimeout(applyUpdate,700) } else { updShownOnce=true; $("#updBar").hidden=false } } }) });
+    check();
     const check=()=>reg.update().catch(()=>{});
-    setInterval(check,10*60*1000);
+    window.checkForUpdate=async()=>{ try{ await reg.update(); if(reg.waiting){ applyUpdate(); return true } if(reg.installing){ toast("Downloading the update…"); return true } }catch(e){} return false };
+    setInterval(check,2*60*1000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") check() });
   }).catch(()=>{});
 }

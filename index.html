@@ -1701,7 +1701,7 @@ function nextTurn(first){
   const u=team[idx%team.length]; M.nextIdx[M.teamTurn]=(idx+1)%team.length;
   M.turnNo++; M.round=Math.ceil(M.turnNo/2); for(const x of M.units) if(x.halfFly){x.halfFly=false;x.flyT=0}
   if(M.round>60){return endMatch(null,"Turn limit reached")}
-  M.active=u; M.charge=0; M.charging=false; M.aiming=false; M.botPlan=null; M.cast=false;
+  M.active=u; M.charge=0; M.charging=false; M.aiming=false; M.botPlan=null; M.cast=false; M.resolveT=0;
   M.wind=Math.round(rand(-10,10))/10;
   for(const k in u.cool) if(u.cool[k]>0) u.cool[k]--;
   u.shield=false;
@@ -2508,7 +2508,8 @@ function tick(){
     secAcc++; if(secAcc%15===0) renderHudTimer();
     return;
   }
-  if(M.phase==="impsWait"){ if(settled()){ if(checkEnd()) return; if(!u.alive){M.phase="resolve";return} M.phase="turn"; if(u.isPlayer) renderSpellbar() } return }
+  if(M.phase==="impsWait"){ M.resolveT=(M.resolveT||0)+1; if(M.resolveT>720&&!settled()){ M.proj=[]; M.fx=M.fx.filter(f=>!f.block); for(const x of [...M.units.filter(a=>a.alive),...M.imps.filter(i=>!i.dead)]) if(!x.grounded&&!(x.flyT>0)&&!(x.imp&&x.spec.fly)){ x.vx=0; x.vy=0; unstick(x); let k=0; while(k<400&&!feetSolid(x.x,x.y+1)&&x.y<M.water){x.y++;k++} x.grounded=true } }
+    if(settled()){ M.resolveT=0; if(checkEnd()) return; if(!u.alive){M.phase="resolve";return} M.phase="turn"; if(u.isPlayer) renderSpellbar() } return }
   if(M.phase==="turn"){
     if(!u.alive){ M.phase="resolve"; return }
     if(!M.cast){
@@ -2525,7 +2526,11 @@ function tick(){
     return;
   }
   if(M.phase==="resolve"){
-    if(settled()){ M.phase="between"; u.frozen=0; setTimeout(()=>{ if(M&&!M.over) nextTurn() },500) }
+    // safety net: if something never settles, clear it after 12 seconds so the match keeps going
+    M.resolveT=(M.resolveT||0)+1;
+    if(M.resolveT>720&&!settled()){ console.warn("Turn watchdog: forcing the turn to finish",JSON.stringify({proj:M.proj.map(p=>p.spell&&p.spell.id),fx:M.fx.filter(f=>f.block).map(f=>f.t),last:M.lastCast}));
+      M.proj=[]; M.fx=M.fx.filter(f=>!f.block); for(const x of [...M.units.filter(a=>a.alive),...M.imps.filter(i=>!i.dead)]){ if(!x.grounded&&!(x.flyT>0)&&!(x.imp&&x.spec.fly)){ x.vx=0; x.vy=0; unstick(x); let k=0; while(k<400&&!feetSolid(x.x,x.y+1)&&x.y<M.water){x.y++;k++} x.grounded=true } } }
+    if(settled()){ M.resolveT=0; M.phase="between"; u.frozen=0; setTimeout(()=>{ if(M&&!M.over) nextTurn() },500) }
   }
 }
 
@@ -2911,7 +2916,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.26-0550";
+const APP_VERSION="2026.10.26-1435";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

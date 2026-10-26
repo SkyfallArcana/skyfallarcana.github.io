@@ -1,7 +1,7 @@
 // Skyfall Arcana service worker.
-// The deploy workflow replaces 2026.10.26-0550 on every push, so each update gets a new cache
+// The deploy workflow replaces 2026.10.26-1435 on every push, so each update gets a new cache
 // and the app shows its "Update now" button (or updates on next launch).
-const VERSION = "2026.10.26-0550";
+const VERSION = "2026.10.26-1435";
 const CACHE = "skyfall-" + VERSION;
 const FILES = [
   "./",

@@ -912,7 +912,159 @@ function spellMeta(s){const b=[]; const d=dmgText(s); if(d&&s.kind!=="minion") b
   const c=chargesOf(s); b.push(c===1?"once per match":c?`${c} charges`:""); if(s.init) b.push(`ready turn ${s.init+1}`);
   if(c!==1) b.push((s.cd||0)<=1?"every turn":`recharge ${s.cd}`); if(s.free) b.push("free action");
   return b.filter(Boolean).join(" · ")}
-function sico(s){return `<span class="sico" style="background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})">${icon(s.kind)}</span>`}
+/* Original spell icons (one per spell). White line art on the book colour. */
+const W_="#fff", K_="rgba(0,0,0,.55)";
+const GLYPHS={
+ fireball:`<path d="M20 6c0 5-4 6-4 10a4 4 0 0 0 8 0c0-2-1-3-1-3 3 2 4 5 4 8a10 10 0 0 1-20 0c0-7 6-9 7-15 1 3 3 4 6 0z" fill="${W_}"/>`,
+ flamearrow:`<path d="M4 28L22 10" stroke="${W_}" stroke-width="3" stroke-linecap="round"/><path d="M18 6l8-2-2 8z" fill="${W_}"/><path d="M6 20c-2 2-2 5 0 6 2 1 4 0 4-3-1 1-2 0-2-1 0-2 2-2 2-4-2 0-3 1-4 2z" fill="${W_}"/>`,
+ lavabomb:`<circle cx="14" cy="19" r="9" fill="${W_}"/><path d="M20 12l4-5" stroke="${W_}" stroke-width="2.5"/><path d="M25 3l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="${W_}"/><path d="M10 17c2 1 3 4 6 3" stroke="${K_}" stroke-width="2" fill="none"/>`,
+ magma:`<circle cx="16" cy="18" r="7" fill="${W_}"/><circle cx="6" cy="10" r="3" fill="${W_}"/><circle cx="26" cy="10" r="3" fill="${W_}"/><circle cx="6" cy="26" r="3" fill="${W_}"/><circle cx="26" cy="26" r="3" fill="${W_}"/><circle cx="16" cy="5" r="3" fill="${W_}"/>`,
+ flameshield:`<path d="M16 4l10 4v7c0 7-5 11-10 13C11 26 6 22 6 15V8z" fill="none" stroke="${W_}" stroke-width="2.4"/><path d="M16 9c0 4-4 5-4 9a4 4 0 0 0 8 0c0-3-2-4-2-6-1 1-2 1-2-3z" fill="${W_}"/>`,
+ flamewall:`<path d="M4 28h24" stroke="${W_}" stroke-width="2.5"/><path d="M7 27c0-6 3-7 3-12 2 3 2 6 2 6 1-5 2-8 2-14 3 5 5 9 5 15 1-2 2-3 2-5 2 3 3 6 3 10z" fill="${W_}"/>`,
+ napalm:`<path d="M3 13c5-3 10-3 14 0" stroke="${W_}" stroke-width="2.5" fill="none" stroke-dasharray="2 3"/><circle cx="21" cy="14" r="2.5" fill="${W_}"/><circle cx="26" cy="19" r="2.5" fill="${W_}"/><path d="M4 27c2-3 4-3 6 0 2-3 4-3 6 0 2-3 4-3 6 0 2-3 4-3 6 0" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ napalmbomb:`<circle cx="15" cy="15" r="8" fill="${W_}"/><path d="M21 9l4-4" stroke="${W_}" stroke-width="2.5"/><path d="M4 28c2-3 4-3 6 0 2-3 4-3 6 0 2-3 4-3 6 0 2-3 4-3 6 0" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ rainfire:`<g fill="${W_}"><circle cx="8" cy="22" r="3.4"/><circle cx="16" cy="18" r="3.4"/><circle cx="24" cy="14" r="3.4"/></g><path d="M4 8l4 8M12 4l4 8M20 2l4 6" stroke="${W_}" stroke-width="2"/>`,
+ rainarrows:`<path d="M10 3v18M16 3v20M22 3v18" stroke="${W_}" stroke-width="2.2"/><path d="M7 19l3 5 3-5M13 21l3 5 3-5M19 19l3 5 3-5" fill="${W_}"/><path d="M6 29h20" stroke="${W_}" stroke-width="2"/>`,
+ volcano:`<path d="M3 28l8-14h10l8 14z" fill="${W_}"/><path d="M13 14c0-4 1-6 3-10 2 4 3 6 3 10" stroke="${W_}" stroke-width="2.4" fill="none"/><circle cx="10" cy="6" r="2" fill="${W_}"/><circle cx="23" cy="5" r="2" fill="${W_}"/>`,
+ dragon:`<path d="M5 24c3-8 9-12 17-12l4-5 1 6c2 1 3 3 3 5-4 0-6-1-8-2-4 2-7 6-8 10z" fill="${W_}"/><path d="M14 13L9 4l9 6" fill="${W_}"/><circle cx="24" cy="13" r="1.4" fill="#000"/>`,
+ meteorshower:`<g fill="${W_}"><circle cx="10" cy="12" r="3"/><circle cx="20" cy="9" r="3"/><circle cx="16" cy="20" r="3"/><circle cx="26" cy="18" r="3"/></g><path d="M3 3l6 6M13 1l6 6M7 11l7 7M19 9l6 6" stroke="${W_}" stroke-width="1.8"/><path d="M4 28h24" stroke="${W_}" stroke-width="2"/>`,
+ firewave:`<circle cx="16" cy="16" r="5" fill="${W_}"/><circle cx="16" cy="16" r="10" fill="none" stroke="${W_}" stroke-width="2.2"/><path d="M16 1v4M16 27v4M1 16h4M27 16h4" stroke="${W_}" stroke-width="2.4"/>`,
+ aarrow:`<path d="M3 26C9 12 17 9 27 8" stroke="${W_}" stroke-width="2.4" fill="none"/><path d="M3 18C9 8 17 5 27 4" stroke="${W_}" stroke-width="1.6" fill="none" opacity=".7"/><path d="M22 4l6 4-5 5" stroke="${W_}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`,
+ abomb:`<circle cx="15" cy="20" r="8" fill="${W_}"/><path d="M15 12V4M9 6l3 5M21 6l-3 5" stroke="${W_}" stroke-width="2.2"/><path d="M12 2l3 3 3-3" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ atower:`<path d="M10 28V11h12v17M8 11h16V6h-3v2h-3V6h-4v2h-3V6H8z" fill="${W_}"/><path d="M16 15l2 4-2 4-2-4z" fill="#000" opacity=".5"/>`,
+ energise:`<path d="M18 2L8 17h7l-3 13 12-17h-7z" fill="${W_}"/><path d="M4 6l3 3M28 6l-3 3M4 26l3-3" stroke="${W_}" stroke-width="2"/>`,
+ gate:`<ellipse cx="16" cy="16" rx="8" ry="13" fill="none" stroke="${W_}" stroke-width="2.6"/><ellipse cx="16" cy="16" rx="3" ry="7" fill="${W_}"/>`,
+ portal:`<ellipse cx="8" cy="16" rx="5" ry="10" fill="none" stroke="${W_}" stroke-width="2.4"/><ellipse cx="24" cy="16" rx="5" ry="10" fill="none" stroke="${W_}" stroke-width="2.4"/><path d="M11 13h10M18 10l3 3-3 3M21 20H11M14 17l-3 3 3 3" stroke="${W_}" stroke-width="1.8" fill="none"/>`,
+ imps:`<g fill="${W_}"><circle cx="10" cy="20" r="5"/><circle cx="22" cy="20" r="5"/><circle cx="16" cy="12" r="5"/><path d="M12 8l-2-5 4 3M20 8l2-5-4 3"/></g>`,
+ impdestruct:`<g fill="${W_}"><circle cx="9" cy="22" r="4"/><path d="M6 19l-1-4 3 2M12 19l1-4-3 2"/></g><path d="M13 18L25 6M16 22l10-6M11 14l4-10" stroke="${W_}" stroke-width="2"/><path d="M22 4l4 2-1 4M24 14l3 2-3 2" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ aglyph:`<circle cx="16" cy="16" r="11" fill="none" stroke="${W_}" stroke-width="1.6" stroke-dasharray="2 4"/><g fill="none" stroke="${W_}" stroke-width="2"><circle cx="16" cy="5" r="2.5"/><circle cx="27" cy="16" r="2.5"/><circle cx="16" cy="27" r="2.5"/><circle cx="5" cy="16" r="2.5"/></g><circle cx="16" cy="16" r="3" fill="${W_}"/>`,
+ sigil:`<path d="M16 5l11 19H5z" fill="none" stroke="${W_}" stroke-width="1.6" stroke-dasharray="2 3"/><g fill="none" stroke="${W_}" stroke-width="2.2"><circle cx="16" cy="5" r="3"/><circle cx="27" cy="24" r="3"/><circle cx="5" cy="24" r="3"/></g>`,
+ aflash:`<circle cx="16" cy="16" r="4" fill="${W_}"/><path d="M16 2v7M16 23v7M2 16h7M23 16h7M6 6l5 5M21 21l5 5M26 6l-5 5M11 21l-5 5" stroke="${W_}" stroke-width="2.4"/>`,
+ egg:`<path d="M16 4c6 0 10 9 10 15a10 10 0 0 1-20 0C6 13 10 4 16 4z" fill="${W_}"/><path d="M9 17l4 3 3-3 4 3 3-2" stroke="${K_}" stroke-width="1.8" fill="none"/>`,
+ devil:`<circle cx="16" cy="18" r="8" fill="${W_}"/><path d="M10 12L7 3l7 6M22 12l3-9-7 6" fill="${W_}"/><path d="M24 26l4 2-1-4" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ mist:`<path d="M5 12c3-3 6-3 9 0s6 3 9 0M5 18c3-3 6-3 9 0s6 3 9 0M8 24c3-3 6-3 9 0s5 3 8 0" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ pebbles:`<g fill="${W_}"><circle cx="20" cy="16" r="3"/><circle cx="26" cy="12" r="2.5"/><circle cx="25" cy="21" r="2.5"/><circle cx="14" cy="20" r="2"/><circle cx="14" cy="11" r="2"/></g><path d="M3 16h7" stroke="${W_}" stroke-width="2.4"/>`,
+ scatter:`<path d="M12 14l6-5 7 3 1 7-6 4-7-2z" fill="${W_}"/><g fill="${W_}"><circle cx="6" cy="24" r="2"/><circle cx="12" cy="28" r="2"/><circle cx="24" cy="28" r="2"/><circle cx="5" cy="9" r="2"/></g>`,
+ quake:`<path d="M2 18l5-6 4 8 5-12 4 10 4-6 6 6" stroke="${W_}" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M4 27h7l3 3 3-3h11" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ disruption:`<circle cx="16" cy="16" r="5" fill="${W_}"/><g fill="${W_}"><circle cx="16" cy="4" r="3"/><circle cx="27" cy="12" r="3"/><circle cx="23" cy="26" r="3"/><circle cx="9" cy="26" r="3"/><circle cx="5" cy="12" r="3"/></g>`,
+ mud:`<path d="M6 22c-3-4 0-9 4-8 0-5 6-7 9-4 4-2 8 1 7 5 4 1 4 7 0 8-3 3-7 2-9 0-3 2-8 2-11-1z" fill="${W_}"/><circle cx="12" cy="19" r="2" fill="${K_}"/><circle cx="20" cy="17" r="2.4" fill="${K_}"/>`,
+ megaboulder:`<circle cx="16" cy="15" r="10" fill="${W_}"/><path d="M10 11l5 3 4-4M12 20l4-2 5 3" stroke="${K_}" stroke-width="2" fill="none"/><path d="M3 29h4M10 29h4M18 29h4M25 29h4" stroke="${W_}" stroke-width="2"/>`,
+ slab:`<path d="M4 18l6-6h18l-6 6z" fill="${W_}"/><path d="M4 18v5h18v-5M22 23l6-6v-5" fill="none" stroke="${W_}" stroke-width="2.2"/>`,
+ fortress:`<path d="M4 28V12h5v3h4v-3h6v3h4v-3h5v16z" fill="${W_}"/><path d="M13 28v-6a3 3 0 0 1 6 0v6" fill="#000" opacity=".5"/><path d="M4 12V7h3v2h3V7h3v5" fill="${W_}"/>`,
+ dwarf:`<path d="M8 13a8 8 0 0 1 16 0z" fill="${W_}"/><path d="M9 14c0 9 3 14 7 14s7-5 7-14" fill="${W_}"/><path d="M24 6l6 6M27 4l-6 6" stroke="${W_}" stroke-width="2.4"/><circle cx="13" cy="17" r="1.5" fill="#000"/><circle cx="19" cy="17" r="1.5" fill="#000"/>`,
+ golem:`<path d="M9 4h14v8H9z" fill="${W_}"/><path d="M5 13h22v10H5z" fill="${W_}"/><path d="M8 24h6v6H8zM18 24h6v6h-6z" fill="${W_}"/><rect x="12" y="7" width="2.4" height="2.4" fill="#000"/><rect x="18" y="7" width="2.4" height="2.4" fill="#000"/>`,
+ meteor:`<circle cx="19" cy="19" r="8" fill="${W_}"/><path d="M3 3l11 11M8 2l9 9M2 8l9 9" stroke="${W_}" stroke-width="2.2"/><path d="M16 17l3 2 3-3" stroke="${K_}" stroke-width="1.8" fill="none"/>`,
+ fissure:`<path d="M2 24h28" stroke="${W_}" stroke-width="2.4"/><path d="M14 24l2-5-2-4 3-4-1-4" stroke="${W_}" stroke-width="2.2" fill="none"/><g fill="${W_}"><circle cx="9" cy="12" r="2.6"/><circle cx="23" cy="9" r="2.6"/><circle cx="25" cy="17" r="2"/></g>`,
+ stone:`<path d="M6 22l4-8h12l4 8z" fill="${W_}"/><path d="M14 26h4" stroke="${W_}" stroke-width="2"/>`,
+ goat:`<path d="M8 20c0-6 4-9 10-9h4l3-4 1 5c2 1 3 3 2 5h-4v8h-3v-6h-6v6h-3v-5z" fill="${W_}"/><path d="M22 7c-1-3 1-5 3-4" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ shock:`<path d="M2 16h4l2-4 3 8 3-8 3 8 3-8 3 8 2-4h5" stroke="${W_}" stroke-width="2.4" fill="none" stroke-linejoin="round"/>`,
+ chainl:`<path d="M3 6l7 6-4 4 8 6-3 3 13 5" stroke="${W_}" stroke-width="2.6" fill="none" stroke-linejoin="round"/><circle cx="10" cy="12" r="2.4" fill="${W_}"/><circle cx="14" cy="22" r="2.4" fill="${W_}"/>`,
+ windshield:`<path d="M16 4l10 4v7c0 7-5 11-10 13C11 26 6 22 6 15V8z" fill="none" stroke="${W_}" stroke-width="2.4"/><path d="M10 13h9a2.5 2.5 0 1 0-2.5-2.5M10 18h11a2.5 2.5 0 1 1-2.5 2.5" stroke="${W_}" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+ hurricane:`<path d="M5 7h22M8 12h17M11 17h11M13 22h7M15 27h3" stroke="${W_}" stroke-width="2.6" stroke-linecap="round"/>`,
+ shockbomb:`<circle cx="14" cy="19" r="9" fill="${W_}"/><path d="M20 12l4-5" stroke="${W_}" stroke-width="2.5"/><path d="M15 13l-4 7h4l-2 6 6-8h-4l2-5z" fill="#000" opacity=".55"/>`,
+ stormshield:`<circle cx="16" cy="16" r="6" fill="${W_}"/><path d="M16 2l-2 5h3l-2 4M30 16l-5-2v3l-4-2M16 30l2-5h-3l2-4M2 16l5 2v-3l4 2" stroke="${W_}" stroke-width="1.8" fill="none"/>`,
+ cyclops:`<circle cx="16" cy="16" r="11" fill="${W_}"/><circle cx="16" cy="14" r="5" fill="#000" opacity=".25"/><circle cx="16" cy="14" r="2.6" fill="#000"/><path d="M10 22h12" stroke="#000" stroke-width="2" opacity=".5"/>`,
+ rod:`<path d="M16 30V10" stroke="${W_}" stroke-width="3"/><path d="M12 10l4-6 4 6z" fill="${W_}"/><path d="M8 3l2 4-3 1 2 4M24 3l-2 4 3 1-2 4" stroke="${W_}" stroke-width="1.8" fill="none"/>`,
+ spirit:`<path d="M8 14a8 8 0 0 1 16 0v12l-3-2-2 3-3-3-3 3-2-3-3 2z" fill="${W_}"/><circle cx="13" cy="14" r="1.8" fill="#000"/><circle cx="19" cy="14" r="1.8" fill="#000"/>`,
+ flight:`<path d="M4 22c6-2 10-8 12-16 2 8 6 14 12 16-6 0-9-2-12-6-3 4-6 6-12 6z" fill="${W_}"/>`,
+ storm:`<path d="M7 15a5 5 0 0 1 2-9 7 7 0 0 1 13 2 4 4 0 0 1 2 7z" fill="${W_}"/><path d="M12 17l-3 6h3l-2 6M21 17l-3 6h3l-2 6" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ whistle:`<path d="M4 10h13a3 3 0 1 0-3-3M4 16h18a3 3 0 1 1-3 3M4 22h8" stroke="${W_}" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M24 22c2-1 3-3 4-6" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ static:`<circle cx="16" cy="16" r="6" fill="none" stroke="${W_}" stroke-width="2.4"/><circle cx="16" cy="16" r="2" fill="${W_}"/><path d="M16 4v4M16 24v4M4 16h4M24 16h4M8 8l3 3M21 21l3 3M24 8l-3 3M11 21l-3 3" stroke="${W_}" stroke-width="1.8"/>`,
+ iceball:`<circle cx="15" cy="15" r="7" fill="${W_}"/><path d="M24 8l4-2M25 14h4M23 21l3 3M10 24l-2 4" stroke="${W_}" stroke-width="2.2"/><path d="M12 13l3 2 3-3" stroke="${K_}" stroke-width="1.6" fill="none"/>`,
+ icebomb:`<circle cx="14" cy="19" r="9" fill="${W_}"/><path d="M20 12l4-5" stroke="${W_}" stroke-width="2.5"/><path d="M14 13v12M9 16l10 6M19 16l-10 6" stroke="#000" stroke-width="1.6" opacity=".45"/>`,
+ shards:`<path d="M3 16l10-2-10-2zM3 16l12 6-10-8zM3 16l12-6-10 8z" fill="${W_}"/><path d="M18 8l8-3-5 6zM19 16h10l-10 2zM18 24l8 3-5-6z" fill="${W_}"/>`,
+ frostarrow:`<path d="M4 28L22 10" stroke="${W_}" stroke-width="3" stroke-linecap="round"/><path d="M18 6l8-2-2 8z" fill="${W_}"/><path d="M6 18v8M2 22h8M3 19l6 6M9 19l-6 6" stroke="${W_}" stroke-width="1.6"/>`,
+ snowball:`<circle cx="16" cy="12" r="7" fill="${W_}"/><g fill="${W_}"><circle cx="8" cy="24" r="1.8"/><circle cx="14" cy="27" r="1.8"/><circle cx="20" cy="24" r="1.8"/><circle cx="25" cy="27" r="1.8"/></g>`,
+ blizzard:`<path d="M7 13a5 5 0 0 1 2-9 7 7 0 0 1 13 2 4 4 0 0 1 2 7z" fill="${W_}"/><path d="M10 18v8M6 22h8M20 18v8M16 22h8" stroke="${W_}" stroke-width="2"/>`,
+ iceshield:`<circle cx="16" cy="16" r="12" fill="none" stroke="${W_}" stroke-width="2.4"/><path d="M16 4v24M4 16h24M8 8l16 16M24 8L8 24" stroke="${W_}" stroke-width="1.4" opacity=".7"/>`,
+ icecastle:`<path d="M6 28V14l3-6 3 6v-3l4-7 4 7v3l3-6 3 6v14z" fill="${W_}"/><path d="M14 28v-5a2 2 0 0 1 4 0v5" fill="#000" opacity=".45"/>`,
+ sylph:`<circle cx="16" cy="11" r="5" fill="${W_}"/><path d="M11 16c-6 0-8 6-8 10 4-2 6-4 8-6M21 16c6 0 8 6 8 10-4-2-6-4-8-6" fill="${W_}"/><path d="M13 17h6l-1 11h-4z" fill="${W_}"/>`,
+ giant:`<path d="M9 9h14v9H9z" fill="${W_}"/><path d="M4 18h24v12H4z" fill="${W_}"/><path d="M6 6l4 3M26 6l-4 3" stroke="${W_}" stroke-width="2"/><circle cx="13" cy="13" r="1.6" fill="#000"/><circle cx="19" cy="13" r="1.6" fill="#000"/><path d="M6 4a4 3 0 0 1 8 0M18 4a4 3 0 0 1 8 0" stroke="${W_}" stroke-width="1.6" fill="none"/>`,
+ comet:`<circle cx="21" cy="21" r="7" fill="${W_}"/><path d="M2 2l14 14M8 2l10 10M2 8l10 10" stroke="${W_}" stroke-width="2"/><path d="M21 15v12M15 21h12" stroke="#000" stroke-width="1.4" opacity=".4"/>`,
+ leap:`<path d="M4 26c6-18 18-18 24 0" stroke="${W_}" stroke-width="2.4" fill="none" stroke-dasharray="3 3"/><circle cx="16" cy="9" r="4" fill="${W_}"/><path d="M24 22v6M21 25h6" stroke="${W_}" stroke-width="2"/>`,
+ waterball:`<path d="M16 4c5 7 8 11 8 15a8 8 0 0 1-16 0c0-4 3-8 8-15z" fill="${W_}"/><path d="M12 19a4 4 0 0 0 4 4" stroke="${K_}" stroke-width="2" fill="none"/>`,
+ maelstrom:`<path d="M16 16m-3 0a3 3 0 1 0 6 0a6 6 0 1 0-12 0a9 9 0 1 0 18 0a12 12 0 1 0-24 0" stroke="${W_}" stroke-width="2.2" fill="none"/>`,
+ troll:`<circle cx="16" cy="17" r="9" fill="${W_}"/><path d="M7 14L2 9l7 2M25 14l5-5-7 2" fill="${W_}"/><circle cx="12.5" cy="16" r="2" fill="#000"/><circle cx="19.5" cy="16" r="2" fill="#000"/><path d="M13 22h6" stroke="#000" stroke-width="1.6"/>`,
+ hydration:`<path d="M12 6c4 6 6 9 6 12a6 6 0 0 1-12 0c0-3 2-6 6-12z" fill="${W_}"/><path d="M24 8v10M19 13h10" stroke="${W_}" stroke-width="3" stroke-linecap="round"/>`,
+ deluge:`<g fill="${W_}"><path d="M8 4c2 3 3 5 3 6a3 3 0 0 1-6 0c0-1 1-3 3-6z"/><path d="M18 8c2 3 3 5 3 6a3 3 0 0 1-6 0c0-1 1-3 3-6z"/><path d="M12 17c2 3 3 5 3 6a3 3 0 0 1-6 0c0-1 1-3 3-6z"/><path d="M24 18c2 3 3 5 3 6a3 3 0 0 1-6 0c0-1 1-3 3-6z"/></g>`,
+ summer:`<path d="M7 14a5 5 0 0 1 2-9 7 7 0 0 1 13 2 4 4 0 0 1 2 7z" fill="${W_}"/><path d="M9 18l-1 4M14 18l-1 4M19 18l-1 4M24 18l-1 4M11 25l-1 4M17 25l-1 4M22 25l-1 4" stroke="${W_}" stroke-width="2"/>`,
+ brine:`<path d="M3 16h8" stroke="${W_}" stroke-width="2.4"/><g fill="${W_}"><rect x="14" y="10" width="4" height="4" transform="rotate(20 16 12)"/><rect x="20" y="15" width="4" height="4" transform="rotate(-15 22 17)"/><rect x="15" y="19" width="4" height="4"/><rect x="24" y="8" width="3" height="3"/><rect x="25" y="22" width="3" height="3"/></g>`,
+ brinebomb:`<circle cx="15" cy="17" r="8" fill="${W_}"/><g fill="${W_}"><rect x="2" y="6" width="3" height="3"/><rect x="26" y="5" width="3" height="3"/><rect x="27" y="22" width="3" height="3"/><rect x="3" y="25" width="3" height="3"/><rect x="14" y="2" width="3" height="3"/></g>`,
+ goblin:`<circle cx="16" cy="18" r="8" fill="${W_}"/><path d="M8 15L1 11l7 7M24 15l7-4-7 7" fill="${W_}"/><circle cx="13" cy="17" r="1.8" fill="#000"/><circle cx="19" cy="17" r="1.8" fill="#000"/><path d="M12 22l2 1 2-1 2 1 2-1" stroke="#000" stroke-width="1.4" fill="none"/>`,
+ clams:`<path d="M5 22a8 8 0 0 1 16 0z" fill="${W_}"/><path d="M9 22l2-6M13 22v-7M17 22l-2-6" stroke="#000" stroke-width="1.4" opacity=".45"/><path d="M18 12a6 6 0 0 1 12 0z" fill="${W_}"/><path d="M4 28c3-2 6-2 9 0s6 2 9 0" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ oceansfury:`<path d="M2 22c3-8 9-10 12-4 2-6 8-8 10-2 2-4 5-4 6-2v14H2z" fill="${W_}"/><path d="M6 16c2-4 5-5 8-3" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ waterlord:`<path d="M8 10l3-6 2 4 3-5 3 5 2-4 3 6z" fill="${W_}"/><path d="M9 11h14v4a7 7 0 0 1-14 0z" fill="${W_}"/><path d="M11 18c0 6 2 10 5 10s5-4 5-10" fill="${W_}"/><circle cx="13" cy="14" r="1.4" fill="#000"/><circle cx="19" cy="14" r="1.4" fill="#000"/>`,
+ kraken:`<path d="M8 14a8 8 0 0 1 16 0v3H8z" fill="${W_}"/><path d="M9 17c-2 4-5 6-7 6M13 17c-1 5-2 8-5 10M19 17c1 5 2 8 5 10M23 17c2 4 5 6 7 6M16 17v11" stroke="${W_}" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="13" cy="12" r="1.6" fill="#000"/><circle cx="19" cy="12" r="1.6" fill="#000"/>`,
+ protshield:`<path d="M16 4l10 4v7c0 7-5 11-10 13C11 26 6 22 6 15V8z" fill="${W_}"/><path d="M16 10v12M10 16h12" stroke="#000" stroke-width="2.4" opacity=".45"/>`,
+ skyray:`<path d="M12 2h8l-2 22h-4z" fill="${W_}"/><path d="M6 28c3-3 7-4 10-4s7 1 10 4" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ shiningbolt:`<path d="M3 24c6-12 12-16 18-14" stroke="${W_}" stroke-width="2" fill="none" stroke-dasharray="3 3"/><path d="M24 4l2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1z" fill="${W_}"/>`,
+ risingstar:`<path d="M16 2l3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1z" fill="${W_}"/><g fill="${W_}"><circle cx="5" cy="26" r="2"/><circle cx="12" cy="28" r="2"/><circle cx="20" cy="28" r="2"/><circle cx="27" cy="26" r="2"/></g>`,
+ pegasus:`<path d="M6 22c0-5 4-8 9-8h6l3-5 2 5-2 3v5h-2v5h-3v-5h-7v5H9v-5z" fill="${W_}"/><path d="M12 14c-2-5-6-8-10-7 2 3 5 5 8 7" fill="${W_}"/>`,
+ paladin:`<path d="M8 12a8 8 0 0 1 16 0v6H8z" fill="${W_}"/><path d="M10 14h12" stroke="#000" stroke-width="2.2" opacity=".55"/><path d="M16 4v-3M7 20h18v9H7z" fill="${W_}"/><path d="M16 20v9M12 24h8" stroke="#000" stroke-width="1.6" opacity=".4"/>`,
+ forestseed:`<path d="M16 30V16" stroke="${W_}" stroke-width="3"/><circle cx="16" cy="11" r="8" fill="${W_}"/><circle cx="9" cy="15" r="5" fill="${W_}"/><circle cx="23" cy="15" r="5" fill="${W_}"/>`,
+ pixies:`<g fill="${W_}"><circle cx="9" cy="10" r="3"/><circle cx="23" cy="10" r="3"/><circle cx="16" cy="22" r="3"/></g><g fill="${W_}" opacity=".7"><path d="M5 8l-3-4 5 2M13 8l3-4-5 2M19 8l-3-4 5 2M27 8l3-4-5 2M12 20l-3-4 5 2M20 20l3-4-5 2"/></g>`,
+ healsphere:`<circle cx="16" cy="16" r="11" fill="${W_}"/><path d="M16 9v14M9 16h14" stroke="#000" stroke-width="3" opacity=".45" stroke-linecap="round"/>`,
+ lightcastle:`<path d="M5 28V14h4v-4h4v4h6v-4h4v4h4v14z" fill="${W_}"/><path d="M16 2l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="${W_}"/><path d="M14 28v-5a2 2 0 0 1 4 0v5" fill="#000" opacity=".45"/>`,
+ invuln:`<circle cx="16" cy="16" r="12" fill="none" stroke="${W_}" stroke-width="2.6"/><circle cx="16" cy="16" r="7" fill="${W_}"/><path d="M13 16l2 3 5-6" stroke="#000" stroke-width="2" fill="none" opacity=".55"/>`,
+ wings:`<path d="M16 12c-4-8-12-8-14-2 4 0 6 2 8 6-3 0-5 2-6 4 5 1 9-2 12-8zM16 12c4-8 12-8 14-2-4 0-6 2-8 6 3 0 5 2 6 4-5 1-9-2-12-8z" fill="${W_}"/><circle cx="16" cy="20" r="3" fill="${W_}"/>`,
+ thornball:`<circle cx="16" cy="16" r="6" fill="${W_}"/><path d="M16 3v6M16 23v6M3 16h6M23 16h6M7 7l4 4M21 21l4 4M25 7l-4 4M11 21l-4 4" stroke="${W_}" stroke-width="2.4"/>`,
+ thornbomb:`<circle cx="15" cy="18" r="8" fill="${W_}"/><path d="M21 11l4-5" stroke="${W_}" stroke-width="2.5"/><path d="M15 6v4M15 26v4M3 18h4M23 18h4M7 10l3 3M23 26l-3-3M7 26l3-3" stroke="${W_}" stroke-width="2"/>`,
+ vinewhip:`<path d="M3 24c6-2 6-10 12-10s5 8 11 4" stroke="${W_}" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M26 18l3-4M24 12l4 1" stroke="${W_}" stroke-width="2"/><path d="M9 18c-2-2-4-2-5 0 2 1 4 1 5 0z" fill="${W_}"/>`,
+ vinebridge:`<path d="M2 20c8 6 20 6 28 0" stroke="${W_}" stroke-width="3" fill="none"/><path d="M8 23c-1-3-4-3-5-1 2 1 3 1 5 1zM16 25c0-3 3-4 4-2-1 1-3 2-4 2zM23 23c1-3 4-3 5-1-2 1-3 1-5 1z" fill="${W_}"/><path d="M2 20v8M30 20v8" stroke="${W_}" stroke-width="2.4"/>`,
+ entangle:`<circle cx="16" cy="16" r="7" fill="none" stroke="${W_}" stroke-width="2"/><path d="M4 10c6 2 6 10 12 12s8-6 12-4M4 22c6-2 8-10 14-10s6 4 10 2" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ vinebomb:`<circle cx="15" cy="18" r="8" fill="${W_}"/><path d="M21 11l4-5" stroke="${W_}" stroke-width="2.5"/><g fill="${W_}"><circle cx="4" cy="8" r="3"/><circle cx="28" cy="20" r="3"/><circle cx="5" cy="27" r="3"/></g>`,
+ mantrap:`<path d="M16 30V18" stroke="${W_}" stroke-width="3"/><path d="M6 14a10 10 0 0 1 20 0z" fill="${W_}"/><path d="M6 14a10 7 0 0 0 20 0" fill="${W_}" opacity=".7"/><path d="M9 14l2 3 2-3 2 3 2-3 2 3 2-3 2 3" stroke="#000" stroke-width="1.4" fill="none" opacity=".55"/><path d="M10 24c-3-2-6-1-7 1M22 24c3-2 6-1 7 1" stroke="${W_}" stroke-width="2.2" fill="none"/>`,
+ sanctuary:`<path d="M16 6c3 4 3 8 0 12-3-4-3-8 0-12zM6 14c5 0 8 3 10 6-4 1-8 0-10-6zM26 14c-5 0-8 3-10 6 4 1 8 0 10-6z" fill="${W_}"/><path d="M8 26h16" stroke="${W_}" stroke-width="2.6"/><circle cx="16" cy="16" r="14" fill="none" stroke="${W_}" stroke-width="1.4" stroke-dasharray="2 3"/>`,
+ elves:`<path d="M9 14l3-10 3 10z" fill="${W_}"/><circle cx="12" cy="17" r="4" fill="${W_}"/><path d="M8 22h8v8H8z" fill="${W_}"/><path d="M22 6a8 12 0 0 1 0 20" stroke="${W_}" stroke-width="2" fill="none"/><path d="M22 6v20M18 16h10" stroke="${W_}" stroke-width="1.4"/>`,
+ flurry:`<path d="M3 26L17 12M7 29L22 16M3 20L14 9" stroke="${W_}" stroke-width="2"/><path d="M15 9l5-2-2 5zM20 13l5-2-2 5zM12 6l5-2-2 5z" fill="${W_}"/>`,
+ natureswrath:`<path d="M16 30c-6-6-6-14 0-28 6 14 6 22 0 28z" fill="none" stroke="${W_}" stroke-width="2"/><g fill="${W_}"><ellipse cx="9" cy="10" rx="3" ry="1.6" transform="rotate(-30 9 10)"/><ellipse cx="23" cy="14" rx="3" ry="1.6" transform="rotate(30 23 14)"/><ellipse cx="10" cy="22" rx="3" ry="1.6" transform="rotate(20 10 22)"/><ellipse cx="22" cy="25" rx="3" ry="1.6" transform="rotate(-20 22 25)"/></g>`,
+ vinebloom:`<circle cx="16" cy="16" r="4" fill="${W_}"/><g fill="${W_}"><circle cx="16" cy="6" r="4"/><circle cx="26" cy="14" r="4"/><circle cx="22" cy="25" r="4"/><circle cx="10" cy="25" r="4"/><circle cx="6" cy="14" r="4"/></g>`,
+ forest:`<g fill="${W_}"><path d="M8 4l6 10H2z"/><path d="M8 10l7 11H1z"/><path d="M24 6l6 10H18z"/><path d="M24 12l7 11H17z"/></g><path d="M8 21v6M24 23v5" stroke="${W_}" stroke-width="3"/>`,
+ denofdarkness:`<path d="M5 28V12l3-6 3 6v-2h10v2l3-6 3 6v16z" fill="${W_}"/><circle cx="16" cy="20" r="4" fill="#000" opacity=".5"/><circle cx="14.6" cy="19.4" r="1" fill="${W_}"/><circle cx="17.4" cy="19.4" r="1" fill="${W_}"/>`,
+ skull:`<path d="M16 4a10 10 0 0 1 10 10c0 4-2 6-4 7v4h-3v-2h-2v2h-2v-2h-2v2h-3v-4c-2-1-4-3-4-7A10 10 0 0 1 16 4z" fill="${W_}"/><circle cx="12" cy="14" r="2.6" fill="#000"/><circle cx="20" cy="14" r="2.6" fill="#000"/>`,
+ rainchaos:`<g fill="${W_}"><circle cx="8" cy="9" r="4"/><circle cx="22" cy="7" r="4"/><circle cx="15" cy="20" r="4"/><circle cx="26" cy="21" r="3"/></g><g fill="#000" opacity=".55"><circle cx="6.6" cy="8.6" r="1"/><circle cx="9.4" cy="8.6" r="1"/><circle cx="20.6" cy="6.6" r="1"/><circle cx="23.4" cy="6.6" r="1"/><circle cx="13.6" cy="19.6" r="1"/><circle cx="16.4" cy="19.6" r="1"/></g>`,
+ drain:`<circle cx="9" cy="16" r="6" fill="${W_}"/><path d="M15 16h10M21 12l4 4-4 4" stroke="${W_}" stroke-width="2.4" fill="none"/><path d="M27 8c2 2 3 4 3 5a3 3 0 0 1-6 0c0-1 1-3 3-5z" fill="${W_}"/>`,
+ deathbomb:`<circle cx="15" cy="18" r="9" fill="${W_}"/><path d="M21 11l4-5" stroke="${W_}" stroke-width="2.5"/><circle cx="12" cy="17" r="2" fill="#000" opacity=".6"/><circle cx="18" cy="17" r="2" fill="#000" opacity=".6"/><path d="M12 22h6" stroke="#000" stroke-width="1.6" opacity=".6"/>`,
+ swarm:`<g fill="${W_}"><circle cx="8" cy="10" r="2.2"/><circle cx="16" cy="7" r="2.2"/><circle cx="24" cy="11" r="2.2"/><circle cx="11" cy="18" r="2.2"/><circle cx="21" cy="19" r="2.2"/><circle cx="15" cy="26" r="2.2"/><circle cx="26" cy="25" r="2.2"/></g>`,
+ darkknight:`<path d="M8 13a8 8 0 0 1 16 0v7H8z" fill="${W_}"/><path d="M10 15h12M13 18h6" stroke="#000" stroke-width="2" opacity=".6"/><path d="M8 9L4 3l6 4M24 9l4-6-6 4" fill="${W_}"/><path d="M7 21h18v8H7z" fill="${W_}"/>`,
+ raisedead:`<path d="M10 30v-8M22 30v-8" stroke="${W_}" stroke-width="2.4"/><path d="M6 22h20" stroke="${W_}" stroke-width="2.4"/><path d="M12 18a6 6 0 1 1 8 0v3h-8z" fill="${W_}"/><path d="M16 2v6M13 5h6" stroke="${W_}" stroke-width="2"/>`,
+ wraith:`<path d="M7 12a9 9 0 0 1 18 0v16l-3-3-3 4-3-4-3 4-3-4-3 3z" fill="${W_}"/><path d="M11 12l3 2M21 12l-3 2" stroke="#000" stroke-width="2" opacity=".6"/>`,
+ decay:`<circle cx="16" cy="16" r="12" fill="none" stroke="${W_}" stroke-width="2" stroke-dasharray="3 3"/><path d="M16 9a6 6 0 0 1 6 6c0 3-2 4-3 4v3h-6v-3c-1 0-3-1-3-4a6 6 0 0 1 6-6z" fill="${W_}"/>`,
+ darkdef:`<path d="M16 4l10 4v7c0 7-5 11-10 13C11 26 6 22 6 15V8z" fill="${W_}"/><path d="M16 11c2 3 3 5 3 6a3 3 0 0 1-6 0c0-1 1-3 3-6z" fill="#000" opacity=".55"/>`,
+ pit:`<ellipse cx="16" cy="20" rx="13" ry="6" fill="${W_}"/><ellipse cx="16" cy="20" rx="8" ry="3" fill="#000" opacity=".6"/><path d="M8 12l3 4M24 12l-3 4M16 6v8" stroke="${W_}" stroke-width="2"/>`,
+ lich:`<path d="M16 3a10 10 0 0 1 10 10c0 4-2 6-4 7v4h-3v-2h-2v2h-2v-2h-2v2h-3v-4c-2-1-4-3-4-7A10 10 0 0 1 16 3z" fill="${W_}"/><path d="M8 6l3-4 2 4 3-4 3 4 2-4 3 4" stroke="${W_}" stroke-width="1.8" fill="none"/><circle cx="12" cy="13" r="2.4" fill="#000"/><circle cx="20" cy="13" r="2.4" fill="#000"/>`,
+ staticball:`<circle cx="12" cy="18" r="6" fill="${W_}"/><path d="M3 30c3-6 6-8 9-12" stroke="${W_}" stroke-width="1.8" stroke-dasharray="2 3" fill="none"/><path d="M19 10l3-3M21 16h4M18 22l3 3" stroke="${W_}" stroke-width="2"/>`,
+ staticshield:`<circle cx="16" cy="16" r="12" fill="none" stroke="${W_}" stroke-width="2.4" stroke-dasharray="4 2"/><circle cx="16" cy="16" r="4" fill="${W_}"/><path d="M5 9l4 2M27 9l-4 2M5 23l4-2M27 23l-4-2" stroke="${W_}" stroke-width="2"/>`,
+ mecharrow:`<path d="M3 26L21 8" stroke="${W_}" stroke-width="3"/><path d="M17 4l9-1-1 9z" fill="${W_}"/><circle cx="9" cy="27" r="2.4" fill="none" stroke="${W_}" stroke-width="1.6"/><circle cx="14" cy="22" r="2.4" fill="none" stroke="${W_}" stroke-width="1.6"/>`,
+ cog:`<circle cx="16" cy="16" r="6" fill="none" stroke="${W_}" stroke-width="3"/><path d="M16 3v5M16 24v5M3 16h5M24 16h5M7 7l3.5 3.5M21.5 21.5L25 25M25 7l-3.5 3.5M10.5 21.5L7 25" stroke="${W_}" stroke-width="3.4" stroke-linecap="round"/>`,
+ recall:`<path d="M10 22c0-8 2-14 6-14s6 6 6 14z" fill="${W_}"/><path d="M8 22h16M16 4v4" stroke="${W_}" stroke-width="2.4"/><circle cx="16" cy="15" r="2.6" fill="#000" opacity=".5"/><path d="M5 27h22" stroke="${W_}" stroke-width="2"/>`,
+ bell:`<path d="M9 22c0-8 2-15 7-15s7 7 7 15z" fill="${W_}"/><path d="M6 22h20" stroke="${W_}" stroke-width="2.4"/><circle cx="16" cy="26" r="2.6" fill="${W_}"/><path d="M4 10c1-3 3-5 5-6M28 10c-1-3-3-5-5-6" stroke="${W_}" stroke-width="2" fill="none"/>`,
+ clocktower:`<path d="M9 30V12l7-9 7 9v18z" fill="${W_}"/><circle cx="16" cy="16" r="4.5" fill="none" stroke="#000" stroke-width="1.6" opacity=".55"/><path d="M16 13.5V16h2" stroke="#000" stroke-width="1.6" fill="none" opacity=".55"/>`,
+ cuckoo:`<path d="M6 14l10-9 10 9v14H6z" fill="${W_}"/><circle cx="16" cy="18" r="4.5" fill="none" stroke="#000" stroke-width="1.6" opacity=".55"/><path d="M16 9l5-1-2 3z" fill="#000" opacity=".5"/>`,
+ blast:`<path d="M3 16h12" stroke="${W_}" stroke-width="3" stroke-linecap="round"/><path d="M17 8l4 4 5-2-1 5 4 3-5 1-1 5-3-4-5 1 2-5z" fill="${W_}"/>`,
+ clockbomb:`<circle cx="15" cy="18" r="9" fill="${W_}"/><path d="M21 11l4-5" stroke="${W_}" stroke-width="2.5"/><path d="M15 13v5l3 2" stroke="#000" stroke-width="2" fill="none" opacity=".55"/>`,
+ redo:`<path d="M8 10a10 10 0 1 1-2 10" stroke="${W_}" stroke-width="2.6" fill="none"/><path d="M4 6v7h7" stroke="${W_}" stroke-width="2.6" fill="none"/><path d="M16 10v7l4 3" stroke="${W_}" stroke-width="2.4" fill="none"/>`,
+ steamdragon:`<path d="M5 24c3-8 9-12 17-12l4-5 1 6c2 1 3 3 3 5-4 0-6-1-8-2-4 2-7 6-8 10z" fill="${W_}"/><circle cx="12" cy="19" r="3" fill="none" stroke="#000" stroke-width="1.4" opacity=".5"/><path d="M26 4c2-2 4 0 3 2M22 3c1-2 4-1 3 1" stroke="${W_}" stroke-width="1.6" fill="none"/>`,
+ dilation:`<path d="M9 3h14M9 29h14M10 3c0 7 6 9 6 13s-6 6-6 13M22 3c0 7-6 9-6 13s6 6 6 13" stroke="${W_}" stroke-width="2.4" fill="none"/><path d="M12 25h8l-4-5z" fill="${W_}"/>`
+};
+const SPELL_GLYPH={
+ arcane_arrow:"aarrow",arcane_bomb:"abomb",arcane_tower:"atower",arcane_energiser:"energise",arcane_gate:"gate",arcane_portal:"portal",summon_imps:"imps",imp_destruction:"impdestruct",arcane_glyph:"aglyph",arcane_sigil:"sigil",arcane_flash:"aflash",dragon_egg:"egg",little_devil:"devil",arcane_mist:"mist",
+ fireball:"fireball",fire_arrow:"flamearrow",lava_bomb:"lavabomb",magma_bomb:"magma",flame_shield:"flameshield",flame_wall:"flamewall",napalm:"napalm",napalm_bomb:"napalmbomb",rain_of_fire:"rainfire",rain_of_arrows:"rainarrows",volcano:"volcano",fire_dragon:"dragon",meteor_shower:"meteorshower",fire_wave:"firewave",
+ thunderbolt:"shock",chain_lightning:"chainl",wind_shield:"windshield",hurricane:"hurricane",shock_bomb:"shockbomb",storm_shield:"stormshield",summon_cyclops:"cyclops",lightning_rod:"rod",storm_spirit:"spirit",flight:"flight",storm:"storm",storm_dragon:"dragon",whistling_winds:"whistle",electrostatic:"static",
+ ice_ball:"iceball",ice_bomb:"icebomb",frost_shards:"shards",frost_arrow:"frostarrow",snowball:"snowball",blizzard:"blizzard",ice_shield:"iceshield",ice_castle:"icecastle",snow_sprite:"sylph",frost_giant:"giant",comet:"comet",frost_dragon:"dragon",frost_leap:"leap",
+ water_ball:"waterball",whirlpool:"maelstrom",water_trolls:"troll",hydration:"hydration",downpour:"deluge",rain_cloud:"summer",salt_spray:"brine",salt_bomb:"brinebomb",salt_goblin:"goblin",clam_barrage:"clams",tidal_fury:"oceansfury",sea_lord:"waterlord",summon_kraken:"kraken",
+ holy_ward:"protshield",sunbeam:"skyray",light_bolt:"shiningbolt",falling_stars:"risingstar",summon_pegasus:"pegasus",summon_paladin:"paladin",grove_seed:"forestseed",summon_pixies:"pixies",healing_orb:"healsphere",light_castle:"lightcastle",divine_barrier:"invuln",angel_wings:"wings",
+ thorn_ball:"thornball",thorn_bomb:"thornbomb",vine_whip:"vinewhip",vine_bridge:"vinebridge",entangle_ball:"entangle",vine_bomb:"vinebomb",summon_man_trap:"mantrap",sanctuary_tower:"sanctuary",summon_elves:"elves",flurry:"flurry",natures_wrath:"natureswrath",vine_bloom:"vinebloom",forestation:"forest",
+ pebble_shot:"pebbles",scatter_rock:"scatter",quake:"quake",mud_burst:"disruption",mud_ball:"mud",great_boulder:"megaboulder",rock_slab:"slab",fortress:"fortress",summon_dwarf:"dwarf",rock_golem:"golem",meteor:"meteor",fissure:"fissure",stepping_stone:"stone",mountain_goat:"goat",
+ dark_keep:"denofdarkness",rain_of_skulls:"rainchaos",drain_bolt:"drain",decay_bomb:"deathbomb",summon_swarm:"swarm",dark_knight:"darkknight",necro_orb:"raisedead",summon_wraith:"wraith",rot_aura:"decay",blood_pact:"darkdef",devouring_pit:"pit",undeath:"lich",
+ stasis_orb:"staticball",stasis_shield:"staticshield",gear_arrow:"mecharrow",falling_cog:"cog",recall_beacon:"recall",recall_bell:"bell",clock_tower:"clocktower",gear_burst:"cuckoo",time_blast:"blast",clockwork_bomb:"clockbomb",rewind:"redo",time_freeze:"steamdragon",time_dilation:"dilation",
+ m_imp_boom:"aflash",m_hatch:"egg",m_flash:"aflash",m_glyph2:"aglyph",m_rawr:"dragon",m_mine:"dwarf",m_kablam:"lavabomb",m_pickaxe:"dwarf",m_wallop:"golem",m_cyc_shock:"shock",m_cyc_chain:"chainl",m_shock_shield:"stormshield",m_spirit_shield:"windshield",m_spirit_hurricane:"hurricane",
+ m_sylph_arrow:"frostarrow",m_ice_shield:"iceshield",m_giant_smash:"giant",m_charge:"darkknight",m_drain:"drain",m_prot_shield:"protshield",m_sunder:"aflash",m_fairy_ring:"pixies",m_dive:"maelstrom",m_hydration:"hydration",m_latch:"entangle",m_depths:"oceansfury",m_cannons:"blast",
+ m_volley:"elves",m_flurry:"flurry",m_vine_bloom:"vinebloom",m_recall:"recall",m_rake:"steamdragon",m_fire_breath:"fireball",m_lightning_breath:"shock",m_ice_breath:"iceball",m_market:"dwarf",m_banish:"gate"
+};
+function spellSvg(s){ const g=GLYPHS[SPELL_GLYPH[s.id]]; return g?'<svg viewBox="0 0 32 32" aria-hidden="true">'+g+'</svg>':icon(s.kind) }
+
+function sico(s){return `<span class="sico" style="background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})">${spellSvg(s)}</span>`}
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>clamp(Math.round(v+(p/100)*255),0,255);return `rgb(${f(r)},${f(g)},${f(b)})`}
 
 /* ================= STORAGE ================= */
@@ -2594,7 +2746,7 @@ function renderWheel(){
   const me_=pbody(); const n=me_.spells.length; const ring=$("#wheelRing"); if(!n){ closeWheel(); return }
   const outer=Math.min(n,16), inner=n-outer;
   ring.innerHTML=me_.spells.map((id,i)=>{const s=SP[id],st=spellState(me_,id),inn=i>=outer,a=-Math.PI/2+(inn?(i-outer)/inner:i/outer)*Math.PI*2,r=inn?25:42;
-    return `<button class="wsp ${i===wheelPick?"sel":""} ${st.ok?"":"off"}" data-i="${i}" style="left:${50+Math.cos(a)*r}%;top:${50+Math.sin(a)*r}%;background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" aria-label="${esc(s.name)}">${icon(s.kind)}${i<10?`<span class="k">${(i+1)%10}</span>`:""}${st.cd?`<span class="cd">${st.cd}</span>`:st.out?'<span class="cd">✕</span>':""}</button>`}).join("")+`${inner?"":'<div class="hub">Pick a<br>spell</div>'}`;
+    return `<button class="wsp ${i===wheelPick?"sel":""} ${st.ok?"":"off"}" data-i="${i}" style="left:${50+Math.cos(a)*r}%;top:${50+Math.sin(a)*r}%;background:linear-gradient(160deg,${s.col},${shade(s.col,-45)})" aria-label="${esc(s.name)}">${spellSvg(s)}${i<10?`<span class="k">${(i+1)%10}</span>`:""}${st.cd?`<span class="cd">${st.cd}</span>`:st.out?'<span class="cd">✕</span>':""}</button>`}).join("")+`${inner?"":'<div class="hub">Pick a<br>spell</div>'}`;
   ring.querySelectorAll(".wsp").forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.i; if(wheelPick===i&&spellState(me_,me_.spells[i]).ok){useFromWheel(i);return} wheelPick=i; renderWheel()});
   const s=SP[me_.spells[wheelPick]], st=spellState(me_,s.id);
   $("#wheelInfo").innerHTML=`<div class="row" style="gap:10px;flex-wrap:nowrap">${sico(s)}<h3>${esc(s.name)}</h3></div><p>${esc(s.desc)}</p>${spellStats(s,me_)}
@@ -2759,7 +2911,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.26-0545";
+const APP_VERSION="2026.10.26-0550";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

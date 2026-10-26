@@ -531,227 +531,246 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 // type: shot (straight), lob (gravity arc, charge power), target (click spot), self (instant), build, minion, arena
 /* ================= SPELLBOOKS (Arcanists-style: 10 elemental books, level 1/2/3 spells, familiars) ================= */
 const BOOKS=[
- {id:"arcane",name:"Arcane",col:"#9b7bff",unlock:[1,8,0],fam:null},
- {id:"flame",name:"Flame",col:"#ff7a2e",unlock:[5,12,30],fam:{name:"Fire Sprite",desc:"+10% damage on your Flame spells per level."}},
- {id:"stone",name:"Stone",col:"#b08a5a",unlock:[5,14,32],fam:{name:"Pebble Pet",desc:"Every hit you take is 1 lower per level."}},
- {id:"storm",name:"Storm",col:"#9ad1ff",unlock:[10,18,34],fam:{name:"Thundercloud",desc:"+1 Thunderbolt hit per level. Storm spells recharge 1 turn faster every 2 levels."}},
- {id:"frost",name:"Frost",col:"#aee9ff",unlock:[10,20,36],fam:{name:"Frost Fox",desc:"You jump 8% higher per level."}},
- {id:"seas",name:"Seas",col:"#3fa9e6",unlock:[15,24,38],fam:{name:"Seahorse",desc:"Water magic hurts you 20% less per level. At level 5 you can walk on water."}},
- {id:"overlight",name:"Overlight",col:"#ffe58a",unlock:[15,26,40],fam:{name:"Little Angel",desc:"+1 shield per level at the start of each of your turns (up to 50 total)."}},
- {id:"nature",name:"Nature",col:"#6fc26b",unlock:[20,28,42],fam:{name:"Sprout",desc:"Heal 2 HP per level at the start of each of your turns."}},
- {id:"underdark",name:"Underdark",col:"#8d63d6",unlock:[20,30,44],fam:{name:"Soul Lantern",desc:"Leaves a lantern where you power it. If you're knocked out, you come back at the lantern with 20 HP per level (once)."}},
- {id:"cogs",name:"Cogs",col:"#d9a441",unlock:[25,32,46],fam:{name:"Pocket Watch",desc:"+6 seconds on your turn timer per level."}}
+ {id:"arcane",name:"Arcane",col:"#9b7bff",unlock:[1,8,0],fam:{name:"Unstable Portal",desc:"Level 1: learn Little Devil. Level 2: learn Arcane Mist. Level 3: Arcane Tower starts with 50 health. Level 5: Arcane Energiser lasts forever and Arcane Tower starts with 75."}},
+ {id:"flame",name:"Flame",col:"#ff7a2e",unlock:[5,12,30],fam:{name:"Harpy",desc:"+10% Flame damage and bigger Flame blasts per level, plus extra fireballs, arrows and napalm for Rain of Fire, Rain of Arrows and Napalm. Level 5: learn Meteor Shower and Fire Wave."}},
+ {id:"stone",name:"Stone",col:"#b08a5a",unlock:[5,14,32],fam:{name:"Pet Rock",desc:"Every hit on you and your minions is 1 lower per level. Level 1: learn Stepping Stone. Level 3: learn Summon Mountain Goat."}},
+ {id:"storm",name:"Storm",col:"#9ad1ff",unlock:[10,18,34],fam:{name:"Storm Cloud",desc:"+1 Thunder Shock hit per level, Storm recharges 1 turn faster per level, and Conductor Rod strikes more. Level 5: Wind Shield recharges every 7 turns, and learn Whistling Winds and Electrostatic Charge."}},
+ {id:"frost",name:"Frost",col:"#aee9ff",unlock:[10,20,36],fam:{name:"Frost Sprite",desc:"+1 Ice Shield use and +5 Frost Arrow damage per level, and your minions jump higher. Level 1: learn Frost Leap."}},
+ {id:"seas",name:"Seas",col:"#3fa9e6",unlock:[15,24,38],fam:{name:"Seahorse",desc:"You and your minions walk on water, and water hurts you 20% less per level. Level 5: Water Ball, Deluge and English Summer can't hurt you, and learn Summon Kraken."}},
+ {id:"overlight",name:"Overlight",col:"#ffe58a",unlock:[15,26,40],fam:{name:"Cherub",desc:"+1 shield per level at the start of each of your turns (up to 50), +2 Shining Bolt and +5 Sunder damage per level. Level 1: Protection Shields stack without limit. Level 5: Rising Star recharges every 5 turns."}},
+ {id:"nature",name:"Nature",col:"#6fc26b",unlock:[20,28,42],fam:{name:"Fungus",desc:"Bigger Thorn and Vine Bombs, +2 Elf arrows and a longer Vine Bridge per level. Level 5: learn Forestation."}},
+ {id:"underdark",name:"Underdark",col:"#8d63d6",unlock:[20,30,44],fam:{name:"Soul Jar",desc:"Leaves a jar where you power it. If you're knocked out, you come back at the jar with 20 health per level (once). Level 5: Rain of Chaos is less random."}},
+ {id:"cogs",name:"Cogs",col:"#d9a441",unlock:[25,32,46],fam:{name:"Timepiece",desc:"+6 seconds on your turn timer and +1 Time Dilation use per level. Level 1: learn Time Dilation. Level 5: Cog Fall recharges every 3 turns and Clockwork Bombs always go off on your next turn."}}
 ];
 const BK=Object.fromEntries(BOOKS.map(b=>[b.id,b]));
 BK.prestige={id:"prestige",name:"Prestige",col:"#ffd36a",unlock:[1,1,1],fam:null};
 BK.minion={id:"minion",name:"Minion",col:"#c9c2b5",unlock:[999,999,999],fam:null};
 const MINION_ABIL={
- imp:["m_arcane_bolt","m_imp_boom"], dwarf:["m_pick","m_dynamite","m_dig"], golem:["m_smash","m_boulder_toss"], cyclops:["m_punch","m_eye_beam"],
- storm_spirit:["m_zap","m_thunderclap"], snow_sprite:["m_ice_shard","m_snowball"], frost_giant:["m_club","m_frost_breath"], swarm:["m_sting","m_swarm_cloud"],
- dark_knight:["m_slash","m_shield_bash"], wraith:["m_soul_drain","m_wail"], pegasus:["m_kick","m_charge"], paladin:["m_holy_strike","m_lay_hands"],
- pixie:["m_spark","m_pixie_portal"], troll:["m_troll_club","m_water_spit"], goblin:["m_scratch","m_goblin_boom"], sea_lord:["m_trident","m_wave"],
- wolf:["m_bite","m_pounce"], treant:["m_root_slam","m_thorns"], fire_dragon:["m_fire_breath","m_dragon_fireball"], storm_dragon:["m_lightning_breath","m_thunder_strike"], frost_dragon:["m_ice_breath","m_dragon_ice_bomb"]
+ imp:["m_banish","m_imp_boom"], dragon_egg:["m_hatch"], hatchling:["m_flash","m_glyph2"], baby_dragon:["m_rawr"],
+ dwarf:["m_mine","m_kablam","m_market"], golem:["m_wallop","scatter_rock","great_boulder","mud_ball"], goat:[],
+ cyclops:["m_cyc_shock","m_cyc_chain"], storm_spirit:["m_shock_shield","m_spirit_shield","m_spirit_hurricane"],
+ sylph:["m_sylph_arrow","m_ice_shield"], frost_giant:["m_giant_smash","ice_ball","ice_bomb","snowball"],
+ swarm:[], dark_knight:["m_charge","m_drain"], wraith:["m_drain"],
+ pegasus:["m_prot_shield"], paladin:["m_sunder","m_prot_shield","summon_pegasus","healing_orb"], pixie:["healing_orb","m_fairy_ring"],
+ troll:["m_dive"], goblin:[], sea_lord:["water_ball","water_trolls","m_hydration","m_dive"], kraken:["water_ball","m_hydration","m_latch","m_depths","m_dive"], ship:["m_cannons"],
+ man_trap:["thorn_ball","thorn_bomb","vine_whip","vine_bridge","entangle_ball","vine_bomb","m_vine_bloom"], elf:["m_volley","m_flurry"],
+ recall:["m_recall"], steam_dragon:["m_rake"],
+ fire_dragon:["m_fire_breath"], storm_dragon:["m_lightning_breath"], frost_dragon:["m_ice_breath"]
 };
 const MINION_SPELLS=[
- {id:"m_arcane_bolt",name:"Arcane Bolt",type:"shot",kind:"shot",dmg:10,rad:12,speed:14,grav:0,cd:1,elem:"arcane",desc:"A small arcane bolt."},
- {id:"m_imp_boom",name:"Self Destruct",type:"self",kind:"selfboom",rad:30,cd:1,elem:"arcane",desc:"The imp explodes for damage equal to its health."},
- {id:"m_pick",name:"Pick Swing",type:"shot",kind:"melee",dmg:20,range:44,cd:1,desc:"Hit an enemy next to you with the pick."},
- {id:"m_dynamite",name:"Dynamite",type:"lob",kind:"bomb",dmg:40,rad:34,fuse:120,cd:3,elem:"stone",desc:"Throw a stick of dynamite. Explodes after 2 seconds."},
- {id:"m_dig",name:"Dig Tunnel",type:"shot",kind:"dig",cd:1,desc:"Dig a tunnel in the aimed direction."},
- {id:"m_smash",name:"Smash",type:"shot",kind:"melee",dmg:35,range:46,push:10,cd:1,desc:"A heavy punch that knocks enemies back."},
- {id:"m_boulder_toss",name:"Boulder Toss",type:"lob",kind:"ball",dmg:30,rad:24,cd:2,elem:"stone",desc:"Throw a boulder."},
- {id:"m_punch",name:"Punch",type:"shot",kind:"melee",dmg:30,range:44,push:8,cd:1,desc:"A big punch."},
- {id:"m_eye_beam",name:"Eye Beam",type:"shot",kind:"shot",dmg:25,rad:14,speed:20,grav:0,cd:2,elem:"storm",desc:"A crackling beam from the cyclops' eye."},
- {id:"m_zap",name:"Zap",type:"shot",kind:"shot",dmg:15,rad:12,speed:18,grav:0,cd:1,elem:"storm",desc:"A quick bolt of lightning."},
- {id:"m_thunderclap",name:"Thunderclap",type:"self",kind:"flash",dmg:20,rad:55,push:12,cd:3,elem:"storm",desc:"Blast nearby enemies away."},
- {id:"m_ice_shard",name:"Ice Shards",type:"shot",kind:"spray",count:6,dmg:5,rad:8,speed:13,spread:.08,grav:.2,cd:1,elem:"frost",desc:"Throw 6 small ice shards."},
- {id:"m_snowball",name:"Snowball",type:"lob",kind:"ball",dmg:15,rad:16,snow:1,cd:1,elem:"frost",desc:"A snowball that leaves a heap of snow."},
- {id:"m_club",name:"Club",type:"shot",kind:"melee",dmg:35,range:50,push:8,cd:1,desc:"Swing a huge icy club."},
- {id:"m_frost_breath",name:"Frost Breath",type:"shot",kind:"spray",count:6,dmg:6,rad:10,speed:9,spread:.1,grav:.15,freeze:1,cd:2,elem:"frost",desc:"Freezing breath. Targets can't move next turn."},
- {id:"m_sting",name:"Sting",type:"shot",kind:"melee",dmg:15,range:40,cd:1,elem:"underdark",desc:"The swarm stings an enemy."},
- {id:"m_swarm_cloud",name:"Plague Cloud",type:"target",kind:"aura",dmg:10,rad:45,turns:3,cd:4,elem:"underdark",col:"#5b3a6e",desc:"A cloud of bugs: 10 damage a turn for 3 turns."},
- {id:"m_slash",name:"Sword Slash",type:"shot",kind:"melee",dmg:40,range:46,cd:1,desc:"A heavy sword slash."},
- {id:"m_shield_bash",name:"Shield Bash",type:"shot",kind:"melee",dmg:20,range:44,push:15,cd:2,desc:"Bash an enemy far away with the shield."},
- {id:"m_soul_drain",name:"Soul Drain",type:"shot",kind:"shot",dmg:25,rad:14,speed:12,grav:0,drain:1,cd:1,elem:"underdark",desc:"Drains life from the target and heals your wizard."},
- {id:"m_wail",name:"Wail",type:"self",kind:"flash",dmg:15,rad:60,push:10,cd:3,elem:"underdark",desc:"A ghostly scream hurts everyone nearby."},
- {id:"m_kick",name:"Kick",type:"shot",kind:"melee",dmg:15,range:46,push:12,cd:1,desc:"A strong kick."},
- {id:"m_charge",name:"Charge",type:"target",kind:"pounce",dmg:20,range:170,cd:2,desc:"Fly at an enemy and slam into them."},
- {id:"m_holy_strike",name:"Holy Strike",type:"shot",kind:"melee",dmg:35,range:46,cd:1,elem:"overlight",desc:"A glowing sword strike. Double damage to undead."},
- {id:"m_lay_hands",name:"Lay on Hands",type:"self",kind:"mheal",heal:30,cd:3,desc:"Heal your wizard (or the nearest ally) for 30."},
- {id:"m_spark",name:"Spark",type:"shot",kind:"shot",dmg:8,rad:10,speed:15,grav:0,cd:1,elem:"overlight",desc:"A tiny spark."},
- {id:"m_pixie_portal",name:"Pixie Portal",type:"self",kind:"portal",cd:1,desc:"The pixie sacrifices itself to teleport your wizard to it."},
- {id:"m_troll_club",name:"Troll Club",type:"shot",kind:"melee",dmg:15,range:44,cd:1,desc:"Bonk an enemy."},
- {id:"m_water_spit",name:"Water Spit",type:"shot",kind:"shot",dmg:10,rad:12,speed:13,grav:.2,cd:1,elem:"seas",desc:"Spit a jet of water."},
- {id:"m_scratch",name:"Scratch",type:"shot",kind:"melee",dmg:10,range:40,cd:1,desc:"Scratch an enemy."},
- {id:"m_goblin_boom",name:"Salt Explosion",type:"self",kind:"selfboom",dmg:40,rad:40,salt:1,cd:1,elem:"seas",desc:"The goblin explodes into salt."},
- {id:"m_trident",name:"Trident",type:"shot",kind:"melee",dmg:45,range:52,push:8,cd:1,desc:"Stab with a giant trident."},
- {id:"m_wave",name:"Wave",type:"shot",kind:"spray",count:8,dmg:6,rad:10,speed:11,spread:.1,grav:.3,cd:2,elem:"seas",desc:"Send a wave of water."},
- {id:"m_bite",name:"Bite",type:"shot",kind:"melee",dmg:18,range:42,cd:1,desc:"Bite an enemy."},
- {id:"m_pounce",name:"Pounce",type:"target",kind:"pounce",dmg:18,range:150,cd:2,desc:"Leap at an enemy and bite."},
- {id:"m_root_slam",name:"Root Slam",type:"shot",kind:"melee",dmg:40,range:52,root:1,cd:1,elem:"nature",desc:"Slam with roots. The target can't move next turn."},
- {id:"m_thorns",name:"Thorn Spray",type:"shot",kind:"spray",count:6,dmg:6,rad:10,speed:13,spread:.08,grav:.25,cd:1,elem:"nature",desc:"Spray 6 thorns."},
- {id:"m_fire_breath",name:"Fire Breath",type:"shot",kind:"spray",count:7,dmg:15,rad:14,speed:9,spread:.1,grav:.15,cd:1,elem:"flame",desc:"Breathe a cone of fire."},
- {id:"m_dragon_fireball",name:"Dragon Fireball",type:"lob",kind:"ball",dmg:50,rad:32,cd:2,elem:"flame",desc:"A huge fireball."},
- {id:"m_lightning_breath",name:"Lightning Breath",type:"shot",kind:"chain",dmg:40,rad:14,speed:22,jumps:2,jdmg:25,cd:1,elem:"storm",desc:"Breathe lightning that jumps to 2 more enemies."},
- {id:"m_thunder_strike",name:"Thunder Strike",type:"target",kind:"strike",dmg:45,rad:26,cd:2,elem:"storm",desc:"Call lightning down on any spot."},
- {id:"m_ice_breath",name:"Ice Breath",type:"shot",kind:"spray",count:7,dmg:12,rad:12,speed:9,spread:.1,grav:.15,freeze:1,cd:1,elem:"frost",desc:"Freezing breath. Targets can't move next turn."},
- {id:"m_dragon_ice_bomb",name:"Ice Bomb",type:"lob",kind:"bomb",dmg:50,rad:30,fuse:150,split:{n:6,dmg:15,rad:12},cd:3,elem:"frost",desc:"A bomb of ice that bursts into shards."}
+ {id:"m_banish",name:"Banish",type:"self",kind:"banish",free:1,oncePerTurn:1,cd:1,desc:"The imp vanishes. No damage. Doesn't end your turn."},
+ {id:"m_imp_boom",name:"Self Destruct",type:"self",kind:"selfboom",rad:30,cd:1,elem:"arcane",hurtsOwner:1,desc:"The imp explodes for its current health, in a radius that grows with its health. This one can hurt you."},
+ {id:"m_hatch",name:"Hatch",type:"self",kind:"hatch",cd:1,desc:"Hatch: 1-24 health makes a Hatchling, 25-149 a Baby Dragon, 150 a Flame, Storm or Frost Dragon."},
+ {id:"m_flash",name:"Arcane Flash",type:"self",kind:"flash",dmg:15,rad:60,push:12,cd:1,elem:"arcane",desc:"A small Arcane Flash (15)."},
+ {id:"m_glyph2",name:"Arcane Glyph",type:"self",kind:"glyph",dmg:10,count:10,charges:2,cd:1,elem:"arcane",desc:"A ring of 10 glyphs (10 each). 2 uses."},
+ {id:"m_rawr",name:"Rawr!",type:"self",kind:"flash",dmg:50,rad:50,push:10,nodig:1,cd:1,desc:"A mighty roar that hurts everyone close by (50)."},
+ {id:"m_mine",name:"Mine",type:"target",kind:"mine_dig",dmg:50,range:220,cd:1,desc:"The dwarf digs straight through the ground toward the target, hitting anything it passes for 50."},
+ {id:"m_kablam",name:"Kablam!",type:"self",kind:"kablam",dmg:75,rad:34,towerX:2,cd:1,desc:"Lays dynamite (75, double to towers) and runs away."},
+ {id:"m_market",name:"Miner's Market",type:"self",kind:"market",free:1,cd:1,desc:"Spend 20 of the dwarf's health to buy a Pickaxe swing (30)."},
+ {id:"m_pickaxe",name:"Pickaxe",type:"shot",kind:"melee",dmg:30,range:44,cd:1,desc:"A pickaxe swing (30)."},
+ {id:"m_wallop",name:"Wallop",type:"shot",kind:"melee",dmg:30,range:60,push:10,cd:1,desc:"The golem's fist flies out a short way to hit the target (30)."},
+ {id:"m_cyc_shock",name:"Thunder Shock",type:"shot",kind:"spray",count:10,dmg:5,rad:10,speed:20,spread:.02,grav:0,cd:1,elem:"storm",desc:"Same as Thunder Shock (10x5)."},
+ {id:"m_cyc_chain",name:"Chain Lightning",type:"shot",kind:"chain",dmg:40,rad:18,speed:22,jumps:4,jdmg:40,cd:1,elem:"storm",desc:"Same as Chain Lightning (up to 200)."},
+ {id:"m_shock_shield",name:"Shock Shield",type:"self",kind:"zapaura",dmg:25,rad:75,turns:5,cd:1,elem:"storm",desc:"Storm Shield with no recharge: zaps anyone close (25 a turn)."},
+ {id:"m_spirit_shield",name:"Spirit Shield",type:"self",kind:"deflect",turns:3,cd:1,desc:"Wind Shield with unlimited uses: deflects projectiles for 3 turns."},
+ {id:"m_spirit_hurricane",name:"Spirit Hurricane",type:"self",kind:"pull",rad:170,sacrifice:1,charges:1,desc:"Hurricane around the spirit. The spirit is lost."},
+ {id:"m_sylph_arrow",name:"Sylph Arrow",type:"shot",kind:"arrow",count:3,dmg:20,rad:12,speed:9,cd:1,elem:"frost",desc:"Three homing frost arrows (20 each)."},
+ {id:"m_ice_shield",name:"Ice Shield",type:"self",kind:"icewall",free:1,cd:5,desc:"A thin ice barrier."},
+ {id:"m_giant_smash",name:"Smash",type:"shot",kind:"melee",dmg:30,range:50,push:16,cd:1,desc:"A short-range smash with huge knockback (30)."},
+ {id:"m_charge",name:"Charge",type:"target",kind:"mine_dig",dmg:70,range:260,charge:1,cd:1,desc:"Charges through the ground, hitting wizards in the way hard (up to 250)."},
+ {id:"m_drain",name:"Drain Bolt",type:"lob",kind:"ball",dmg:30,rad:18,drain:1,grav:.8,cd:1,elem:"underdark",desc:"A Drain Bolt (30). The caster heals by the damage dealt."},
+ {id:"m_prot_shield",name:"Protection Shield",type:"self",kind:"ward",absorb:50,stack:1,stackCap:150,cd:1,desc:"Absorbs 50 damage. Stacks up to 150."},
+ {id:"m_sunder",name:"Sunder",type:"self",kind:"flash",dmg:75,rad:40,push:10,noAllies:1,elem:"overlight",cd:1,desc:"Like Arcane Flash but stronger and smaller (75 Light). Doesn't hurt allies."},
+ {id:"m_fairy_ring",name:"Fairy Ring",type:"target",kind:"fairyring",charges:1,desc:"Friends at the target are teleported to the pixie. The pixie is lost."},
+ {id:"m_dive",name:"Dive",type:"target",kind:"tele",range:400,cd:1,desc:"Dives, then pops up at the selected spot."},
+ {id:"m_hydration",name:"Hydration",type:"lob",kind:"ball",dmg:50,rad:22,hydrate:1,water:1,charges:2,init:5,cd:1,elem:"seas",desc:"A water ball (50) that also makes Water Trolls grow."},
+ {id:"m_latch",name:"Latch",type:"lob",kind:"ball",dmg:0,rad:16,nodig:1,entangle:1,root:1,cd:1,elem:"seas",desc:"Roots the target to the ground and stops gating until it takes damage."},
+ {id:"m_depths",name:"From the Depths",type:"target",kind:"minion",range:300,minion:"ship",cd:5,desc:"A ship rises from the depths to fire its cannons."},
+ {id:"m_cannons",name:"Fire Cannons",type:"shot",kind:"spray",count:3,dmg:25,rad:22,speed:12,spread:.12,grav:.35,towerX:3,cd:1,desc:"A spread of 3 cannonballs. Massive damage to towers."},
+ {id:"m_volley",name:"Volley",type:"target",kind:"volley",dmg:20,cd:1,desc:"Sets a target. Every turn all your Elves shoot at it (20 each)."},
+ {id:"m_flurry",name:"Flurry",type:"target",kind:"flurry",dmg:20,count:3,init:3,cd:5,desc:"All your Elves fire 3 arrows each (20 each) at the target."},
+ {id:"m_vine_bloom",name:"Vine Bloom",type:"self",kind:"bloom",self:1,charges:2,init:5,cd:5,desc:"The Man-Trap bursts after one turn, releasing vine and thorn bombs."},
+ {id:"m_recall",name:"Recall",type:"self",kind:"recall",free:1,cd:1,desc:"The device is used up and teleports you to it. Doesn't end your turn."},
+ {id:"m_rake",name:"Rake",type:"shot",kind:"melee",dmg:50,range:50,push:16,cd:1,desc:"Steam-powered jaws (50) with high knockback."},
+ {id:"m_fire_breath",name:"Flame Dragon Breath",type:"shot",kind:"shot",dmg:25,rad:20,speed:13,grav:.05,split:{n:15,dmg:5,rad:8,napalm:1},cd:1,elem:"flame",desc:"A fire bolt (25) that bursts into napalm (up to 100)."},
+ {id:"m_lightning_breath",name:"Storm Dragon Breath",type:"shot",kind:"shot",dmg:75,rad:22,speed:20,grav:0,cd:1,elem:"storm",desc:"A powerful bolt in a straight line, all 75 in one hit."},
+ {id:"m_ice_breath",name:"Frost Dragon Breath",type:"shot",kind:"shot",dmg:105,rad:26,speed:16,grav:0,split:{n:10,dmg:2,rad:8,snow:1,snowSmall:1},cd:1,elem:"frost",desc:"A high-powered ice bolt (up to 125) that splits into snow."}
 ];
 const MINIONS={
- imp:{name:"Imp",hp:25,dmg:10,style:"shot",range:240,col:"#ff5d7a",shape:"imp",size:9,speed:1,elem:"arcane"},
- dwarf:{name:"Dwarf",hp:60,dmg:20,style:"melee",col:"#b9855a",shape:"dwarf",size:10,speed:1},
- golem:{name:"Rock Golem",hp:150,dmg:35,style:"melee",col:"#8a7a68",shape:"golem",size:14,speed:.5,resist:.5},
- cyclops:{name:"Cyclops",hp:120,dmg:30,style:"melee",col:"#7fa0c8",shape:"cyclops",size:13,speed:.8},
- storm_spirit:{name:"Storm Spirit",hp:50,dmg:15,style:"shot",range:280,col:"#bfe3ff",shape:"spirit",size:9,fly:1,elem:"storm"},
- snow_sprite:{name:"Snow Sprite",hp:40,dmg:15,style:"shot",range:260,col:"#e6f8ff",shape:"spirit",size:8,fly:1,elem:"frost"},
- frost_giant:{name:"Frost Giant",hp:160,dmg:35,style:"melee",col:"#9fd6f0",shape:"golem",size:16,speed:.5},
- swarm:{name:"Swarm",hp:25,dmg:15,style:"aura",range:60,col:"#5b3a6e",shape:"swarm",size:10,fly:1,undead:1,elem:"underdark"},
- dark_knight:{name:"Dark Knight",hp:180,dmg:40,style:"melee",col:"#3b3350",shape:"knight",size:13,speed:.7,img:"dark_knight"},
- wraith:{name:"Wraith",hp:80,dmg:25,style:"melee",col:"#8e7bb0",shape:"spirit",size:11,fly:1,undead:1,elem:"underdark"},
- pegasus:{name:"Pegasus",hp:70,dmg:15,style:"melee",col:"#f4f0ff",shape:"beast",size:12,fly:1},
- paladin:{name:"Paladin",hp:160,dmg:35,style:"melee",col:"#f2d27a",shape:"knight",size:13,speed:.7,elem:"overlight",img:"paladin"},
- pixie:{name:"Pixie",hp:20,dmg:8,style:"shot",range:240,col:"#ffd6f4",shape:"spirit",size:6,fly:1,elem:"overlight"},
- troll:{name:"Water Troll",hp:60,dmg:8,style:"melee",col:"#4f9c8f",shape:"troll",size:12,speed:.9,swim:1,img:"water_troll"},
- goblin:{name:"Salt Goblin",hp:40,dmg:10,style:"melee",col:"#c9c3b5",shape:"goblin",size:9,speed:1.2,deathBoom:{dmg:40,rad:40,col:"#e8e4da"}},
- sea_lord:{name:"Sea Lord",hp:300,dmg:45,style:"melee",col:"#2f7fb8",shape:"troll",size:17,speed:.6,swim:1,weak:1.5,img:"sea_lord"},
- wolf:{name:"Wolf",hp:45,dmg:18,style:"melee",col:"#8b8f96",shape:"beast",size:10,speed:1.8},
- treant:{name:"Treant",hp:200,dmg:40,style:"melee",col:"#5d7a3a",shape:"treant",size:17,speed:.4},
- fire_dragon:{name:"Fire Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#ff7a2e",shape:"dragon",size:20,fly:1,elem:"flame",img:"fire_dragon"},
- storm_dragon:{name:"Storm Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#9ad1ff",shape:"dragon",size:20,fly:1,elem:"storm",img:"storm_dragon"},
- frost_dragon:{name:"Frost Dragon",hp:200,dmg:15,style:"breath",range:240,col:"#bfefff",shape:"dragon",size:20,fly:1,elem:"frost",img:"frost_dragon"}
+ imp:{name:"Imp",hp:10,maxHp:250,dmg:0,style:"none",col:"#ff5d7a",shape:"imp",size:9,speed:1,elem:"arcane",arcaneFed:1,arcaneMinion:1},
+ dragon_egg:{name:"Dragon Egg",hp:10,maxHp:150,dmg:0,style:"none",col:"#e9d9b5",shape:"egg",size:9,speed:0,arcaneFed:1,arcaneMinion:1},
+ hatchling:{name:"Dragon Hatchling",hp:10,maxHp:24,dmg:0,style:"none",col:"#ff9a6a",shape:"dragon",size:9,fly:1,arcaneMinion:1},
+ baby_dragon:{name:"Baby Dragon",hp:60,maxHp:149,dmg:0,style:"none",col:"#ff8a4a",shape:"dragon",size:13,fly:1,arcaneMinion:1},
+ dwarf:{name:"Dwarf",hp:50,dmg:0,style:"none",col:"#b9855a",shape:"dwarf",size:10,speed:1,lowJump:1},
+ golem:{name:"Rock Golem",hp:100,dmg:0,style:"none",col:"#8a7a68",shape:"golem",size:14,speed:.5,flatResist:5,lowJump:1,arcaneMinion:1},
+ goat:{name:"Mountain Goat",hp:50,dmg:30,style:"touch",col:"#d8d2c4",shape:"beast",size:10,speed:1.6,highJump:1,arcaneMinion:1},
+ cyclops:{name:"Cyclops",hp:75,dmg:0,style:"none",col:"#7fa0c8",shape:"cyclops",size:13,speed:.8},
+ storm_spirit:{name:"Storm Spirit",hp:25,dmg:0,style:"none",col:"#bfe3ff",shape:"spirit",size:9,fly:1,elem:"storm"},
+ sylph:{name:"Sylph",hp:50,dmg:0,style:"none",col:"#e6f8ff",shape:"spirit",size:9,fly:1,elem:"frost"},
+ frost_giant:{name:"Frost Giant",hp:100,dmg:0,style:"none",col:"#9fd6f0",shape:"golem",size:16,speed:.5,snowCloud:1},
+ swarm:{name:"Swarm",hp:25,dmg:15,style:"aura",range:55,col:"#5b3a6e",shape:"swarm",size:10,fly:1,undead:1,elem:"underdark"},
+ dark_knight:{name:"Dark Knight",hp:100,dmg:0,style:"none",col:"#3b3350",shape:"knight",size:13,speed:.7,lowJump:1,img:"dark_knight"},
+ wraith:{name:"Wraith",hp:50,dmg:0,style:"none",col:"#8e7bb0",shape:"spirit",size:11,fly:1,undead:1,elem:"underdark"},
+ pegasus:{name:"Pegasus",hp:100,dmg:0,style:"none",col:"#f4f0ff",shape:"beast",size:12,fly:1},
+ paladin:{name:"Paladin",hp:100,dmg:0,style:"none",col:"#f2d27a",shape:"knight",size:13,speed:.7,lowJump:1,elem:"overlight",img:"paladin"},
+ pixie:{name:"Pixie",hp:25,dmg:0,style:"none",col:"#ffd6f4",shape:"spirit",size:6,fly:1,elem:"overlight"},
+ troll:{name:"Water Troll",hp:40,dmg:5,style:"touch",col:"#4f9c8f",shape:"troll",size:12,speed:.9,swim:1,img:"water_troll"},
+ goblin:{name:"Brine Goblin",hp:25,dmg:0,style:"none",col:"#c9c3b5",shape:"goblin",size:9,speed:1.2,deathBoom:{dmg:20,rad:30,col:"#e8e4da",n:16,sdmg:5}},
+ sea_lord:{name:"Water Lord",hp:500,dmg:0,style:"none",col:"#2f7fb8",shape:"troll",size:17,speed:.6,swim:1,weak:1.5,img:"sea_lord",arcaneMinion:1},
+ kraken:{name:"Kraken",hp:1000,dmg:0,style:"none",col:"#7a4fa8",shape:"kraken",size:22,speed:.5,swim:1,weakTo:"flame",arcaneMinion:1},
+ ship:{name:"Ghost Ship",hp:50,dmg:0,style:"none",col:"#6b5a44",shape:"ship",size:14,speed:.6,swim:1},
+ man_trap:{name:"Man-Trap",hp:100,dmg:0,style:"none",col:"#5aa84a",shape:"plant",size:13,speed:0},
+ elf:{name:"Elf",hp:40,dmg:0,style:"none",col:"#8ccf6a",shape:"elf",size:9,speed:1.2},
+ recall:{name:"Recall Device",hp:50,dmg:0,style:"none",col:"#d9a441",shape:"device",size:9,speed:0},
+ steam_dragon:{name:"Steam Dragon",hp:100,dmg:0,style:"none",col:"#b08a5a",shape:"dragon",size:16,fly:1,arcaneMinion:1},
+ fire_dragon:{name:"Flame Dragon",hp:200,dmg:0,style:"none",col:"#ff7a2e",shape:"dragon",size:20,fly:1,elem:"flame",img:"fire_dragon",immuneNapalm:1},
+ storm_dragon:{name:"Storm Dragon",hp:150,dmg:0,style:"none",col:"#9ad1ff",shape:"dragon",size:20,fly:1,elem:"storm",img:"storm_dragon"},
+ frost_dragon:{name:"Frost Dragon",hp:150,dmg:0,style:"none",col:"#bfefff",shape:"dragon",size:20,fly:1,elem:"frost",img:"frost_dragon"}
 };
 // [book, tier, id, name, props, description]
 const SPELL_ROWS=[
- // ---- Arcane (no familiar) ----
- ["arcane",1,"arcane_shot","Arcane Shot",{type:"shot",kind:"shot",dmg:28,rad:18,speed:17,grav:0,cd:1,lvl:1},"Long-range straight bolt. Hits the first thing in its path."],
- ["arcane",1,"arcane_arrow","Arcane Arrow",{type:"shot",kind:"arrow",dmg:10,rad:12,count:4,speed:8,cd:1,lvl:1},"Four homing arrows that curve toward the nearest enemy."],
- ["arcane",1,"arcane_gate","Arcane Gate",{type:"target",kind:"tele",range:300,cd:5,lvl:1},"Teleport to a clear spot within range."],
- ["arcane",1,"arcane_tower","Arcane Tower",{type:"self",kind:"tower",thp:50,cd:5,lvl:3},"A tower of arcane stone rises around you and soaks up 50 damage. Jump to leave it."],
- ["arcane",1,"summon_imps","Summon Imps",{type:"target",kind:"minion",range:240,minion:"imp",count:3,cd:5,lvl:4},"Summon 3 imps. Each turn they walk toward enemies and fire small arcane bolts."],
- ["arcane",1,"arcane_flash","Arcane Flash",{type:"self",kind:"flash",dmg:15,rad:70,push:14,cd:1,lvl:5},"Energy bursts out from you, throwing nearby enemies far away."],
- ["arcane",1,"arcane_glyph","Arcane Glyph",{type:"self",kind:"glyph",dmg:10,count:10,charges:4,cd:1,lvl:6},"A ring of 10 rune mines around you. Each explodes for 10 when an enemy touches it."],
- ["arcane",2,"arcane_bomb","Arcane Bomb",{type:"lob",kind:"bomb",dmg:10,rad:30,fuse:150,split:{n:3,dmg:10,rad:12,homing:1},cd:1,lvl:8,pair:"arcane_arrow"},"Bouncing bomb that bursts into 3 homing arcane arrows."],
- ["arcane",2,"arcane_rift","Arcane Rift",{type:"lob",kind:"ball",dmg:5,rad:14,bell:1,cd:3,lvl:9,pair:"arcane_gate"},"Whoever this orb hits is teleported to a random spot on the island."],
- ["arcane",2,"arcane_energiser","Arcane Energiser",{type:"self",kind:"energise",turns:5,cd:5,lvl:10,pair:"arcane_tower"},"For 5 turns every hit from your Arcane spells deals 5 extra damage."],
- ["arcane",2,"imp_detonation","Imp Detonation",{type:"self",kind:"impboom",cd:1,lvl:11,pair:"summon_imps"},"All your imps explode. Each blast deals damage equal to that imp's health."],
- ["arcane",2,"arcane_sigil","Arcane Sigil",{type:"target",kind:"sigil",dmg:10,count:3,charges:4,cd:1,lvl:12,pair:"arcane_glyph"},"Place 3 rune mines anywhere on the map."],
- // ---- Flame ----
- ["flame",1,"fireball","Fireball",{type:"lob",kind:"ball",dmg:50,rad:30,cd:1,lvl:1},"Lobbed fireball. Hold to charge. Wind pushes it."],
- ["flame",1,"lava_bomb","Lava Bomb",{type:"lob",kind:"bomb",dmg:50,rad:34,fuse:150,cd:1},"Bouncing bomb that explodes after 2.5 seconds."],
- ["flame",1,"flame_shield","Flame Shield",{type:"self",kind:"deflect",turns:5,once:1,cd:5},"For 5 turns, the first enemy spell to reach you each round bounces back."],
- ["flame",1,"napalm","Napalm",{type:"shot",kind:"spray",count:12,dmg:5,rad:8,speed:11,spread:.12,grav:.5,napalm:1,cd:1},"Sprays 12 burning blobs that stay on the ground for 5 turns and burn anyone touching them for 5."],
- ["flame",1,"rain_of_fire","Rain of Fire",{type:"target",kind:"barrage",mode:"line",count:5,dmg:25,rad:26,init:3,cd:5},"Five fireballs fall in a line across the target."],
- ["flame",2,"fire_arrow","Fire Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:26,speed:9,charges:4,cd:1,pair:"fireball"},"A homing arrow of fire."],
- ["flame",2,"magma_bomb","Magma Bomb",{type:"lob",kind:"bomb",dmg:25,rad:28,fuse:150,split:{n:5,dmg:25,rad:18},charges:4,cd:1,pair:"lava_bomb"},"Bouncing bomb that bursts into 5 fireballs."],
- ["flame",2,"flame_wall","Flame Wall",{type:"self",kind:"firewall",dmg:50,turns:5,cd:5,pair:"flame_shield"},"A wall of fire in front of you. Burns the first enemy to touch it for 50 and blocks one spell each round."],
- ["flame",2,"napalm_bomb","Napalm Bomb",{type:"lob",kind:"bomb",dmg:25,rad:24,fuse:150,split:{n:15,dmg:5,rad:8,napalm:1},charges:4,cd:1,pair:"napalm"},"Bomb that scatters 15 blobs of napalm."],
- ["flame",2,"rain_of_arrows","Rain of Arrows",{type:"target",kind:"barrage",mode:"focus",count:5,dmg:15,rad:18,init:5,cd:5,pair:"rain_of_fire"},"Five fire arrows rain down on exactly the spot you pick."],
- ["flame",3,"volcano","Volcano",{type:"target",kind:"volcano",waves:[1,2,3,4,5],dmg:25,rad:26,charges:1,init:5},"Pick a spot: a volcano starts growing under the island and pushes up through it, destroying the ground above. On turn 3 it breaks the surface and spills lava everywhere, then erupts for 2 more turns."],
- ["flame",3,"fire_dragon","Summon Fire Dragon",{type:"target",kind:"minion",range:240,minion:"fire_dragon",charges:1,init:5},"Summon a flying fire dragon that breathes flames on enemies."],
- // ---- Stone ----
- ["stone",1,"pebble_shot","Pebble Shot",{type:"shot",kind:"spray",count:10,dmg:5,rad:12,speed:13,spread:.08,grav:.25,cd:1},"Fires 10 pebbles. Digs through the ground fast."],
- ["stone",1,"quake","Quake",{type:"self",kind:"quake",init:3,cd:5},"Shake the whole island. Everyone is thrown into the air and towers crack for 68."],
- ["stone",1,"mud_ball","Mud Ball",{type:"lob",kind:"ball",dmg:25,rad:26,mud:1,charges:4,cd:1},"A ball of mud. Anyone it hits gets covered in a shell of mud rocks they have to break out of. Misses splatter mud rocks on the ground."],
- ["stone",1,"rock_slab","Rock Slab",{type:"target",kind:"slab",cd:1},"Create a slab of rock anywhere. Great for cover or a bridge."],
- ["stone",1,"summon_dwarf","Summon Dwarf",{type:"target",kind:"minion",range:240,minion:"dwarf",cd:5},"Summon a dwarf that walks to enemies and hits them with his pick."],
- ["stone",2,"scatter_rock","Scatter Rock",{type:"lob",kind:"ball",dmg:25,rad:22,split:{n:10,dmg:5,rad:10},charges:4,cd:1,pair:"pebble_shot"},"A rock that shatters into 10 pebbles."],
- ["stone",2,"mud_burst","Mud Burst",{type:"lob",kind:"ball",dmg:25,rad:24,mud:1,split:{n:4,dmg:25,rad:20,mud:1},charges:2,cd:1,pair:"quake"},"Bursts into 4 more mud balls. Anyone they hit gets stuck in a shell of mud rocks."],
- ["stone",2,"great_boulder","Great Boulder",{type:"lob",kind:"boulder",dmg:50,rad:22,hits:4,fuse:300,charges:2,init:3,cd:1,pair:"mud_ball"},"A heavy bouncing boulder. Hits up to 4 times for 50 each."],
- ["stone",2,"fortress","Fortress",{type:"self",kind:"tower",thp:100,charges:1,pair:"rock_slab"},"The strongest tower. Soaks up 100 damage. Jump to leave it."],
- ["stone",2,"rock_golem","Summon Rock Golem",{type:"target",kind:"minion",range:240,minion:"golem",init:3,cd:5,pair:"summon_dwarf"},"Summon a rock golem. Slow, tough, and takes half damage."],
- ["stone",3,"meteor","Meteor",{type:"target",kind:"meteor",dmg:60,rad:60,split:{n:12,dmg:8,rad:12},charges:1,init:5},"A huge rock crashes from the sky and shatters into pebbles."],
- ["stone",3,"fissure","Fissure",{type:"target",kind:"geyser",waves:[3,10],dmg:25,rad:24,charges:1,init:5},"The ground splits: rocks blast up from below the target over 2 turns."],
- // ---- Storm ----
- ["storm",1,"thunderbolt","Thunderbolt",{type:"shot",kind:"spray",count:10,dmg:5,rad:10,speed:20,spread:.02,grav:0,cd:1},"Ten fast, accurate lightning hits in a straight line."],
- ["storm",1,"wind_shield","Wind Shield",{type:"self",kind:"deflect",turns:3,charges:1},"For 3 turns, every enemy projectile that reaches you is blown back."],
- ["storm",1,"shock_bomb","Shock Bomb",{type:"lob",kind:"bomb",dmg:80,rad:40,nodig:1,push:12,fuse:150,charges:4,cd:1},"Bomb that blasts people far but leaves the ground alone."],
- ["storm",1,"summon_cyclops","Summon Cyclops",{type:"target",kind:"minion",range:240,minion:"cyclops",init:3,cd:5},"Summon a cyclops that marches up and punches enemies."],
- ["storm",1,"storm_spirit","Summon Storm Spirit",{type:"target",kind:"minion",range:240,minion:"storm_spirit",cd:5},"Summon a flying storm spirit that zaps enemies from the air."],
- ["storm",2,"chain_lightning","Chain Lightning",{type:"shot",kind:"chain",dmg:50,rad:14,speed:22,jumps:3,jdmg:30,init:3,cd:1,pair:"thunderbolt"},"Lightning that jumps to 3 more enemies nearby."],
- ["storm",2,"hurricane","Hurricane",{type:"target",kind:"pull",rad:170,init:3,cd:5,pair:"wind_shield"},"A whirlwind pulls everyone near the target together, then blows them away."],
- ["storm",2,"storm_shield","Storm Shield",{type:"self",kind:"zapaura",dmg:25,rad:75,turns:5,cd:5,pair:"shock_bomb"},"For 5 turns, lightning zaps every enemy near you for 25 each turn."],
- ["storm",2,"lightning_rod","Lightning Rod",{type:"lob",kind:"ball",dmg:10,rad:14,rod:1,charges:4,init:5,cd:1,pair:"summon_cyclops"},"Lodges in the ground and calls 1 to 5 lightning strikes of 25. Farther throws call more."],
- ["storm",2,"flight","Flight",{type:"self",kind:"flight",turns:3,free:1,cd:5,pair:"storm_spirit"},"Fly for 3 turns: jump to flap upward. Taking damage ends it. Doesn't end your turn."],
- ["storm",3,"storm","Storm",{type:"target",kind:"cloud",mode:"lightning",turns:3,count:3,dmg:25,rad:22,init:3,cd:5},"A storm cloud hangs over the target for 3 turns, striking lightning each turn."],
- ["storm",3,"storm_dragon","Summon Storm Dragon",{type:"target",kind:"minion",range:240,minion:"storm_dragon",charges:1,init:5},"Summon a flying storm dragon that breathes lightning."],
- // ---- Frost ----
- ["frost",1,"ice_ball","Ice Ball",{type:"lob",kind:"ball",dmg:50,rad:24,split:{n:4,dmg:6,rad:8},cd:1},"Explodes and shatters into ice."],
- ["frost",1,"frost_shards","Frost Shards",{type:"shot",kind:"spray",count:15,dmg:5,rad:8,speed:14,spread:.1,grav:.2,charges:4,cd:1},"Fires 15 sharp ice shards."],
- ["frost",1,"snowball","Snowball",{type:"lob",kind:"ball",dmg:20,rad:18,snow:1,cd:1},"Drops a heap of snow where it lands. Build cover or bury enemies."],
- ["frost",1,"ice_shield","Ice Shield",{type:"self",kind:"icewall",free:1,charges:4,cd:5},"Ice walls rise on both sides of you. Doesn't end your turn."],
- ["frost",1,"snow_sprite","Summon Snow Sprite",{type:"target",kind:"minion",range:240,minion:"snow_sprite",cd:5},"Summon a flying snow sprite that throws ice at enemies."],
- ["frost",2,"ice_bomb","Ice Bomb",{type:"lob",kind:"bomb",dmg:50,rad:30,fuse:150,split:{n:8,dmg:25,rad:16},charges:2,cd:1,pair:"ice_ball"},"Bomb that bursts into 8 ice balls."],
- ["frost",2,"frost_arrow","Frost Arrow",{type:"shot",kind:"arrow",count:1,dmg:75,rad:24,speed:9,push:12,charges:2,cd:1,pair:"frost_shards"},"Homing arrow with big knockback. 75 damage."],
- ["frost",2,"blizzard","Blizzard",{type:"target",kind:"cloud",mode:"snow",turns:4,count:6,dmg:10,rad:14,init:3,cd:5,pair:"snowball"},"A snow cloud drops heaps of snow on the target for 4 turns."],
- ["frost",2,"ice_castle","Ice Castle",{type:"self",kind:"tower",thp:75,cd:5,pair:"ice_shield"},"An ice castle that soaks up 75 damage. Jump to leave it."],
- ["frost",2,"frost_giant","Summon Frost Giant",{type:"target",kind:"minion",range:240,minion:"frost_giant",init:3,cd:5,pair:"snow_sprite"},"Summon a frost giant: slow, huge, and hits hard."],
- ["frost",3,"comet","Comet",{type:"target",kind:"meteor",dmg:50,rad:40,split:{n:10,dmg:15,rad:14},init:5,cd:5},"A comet smashes down and shatters into ice balls."],
- ["frost",3,"frost_dragon","Summon Frost Dragon",{type:"target",kind:"minion",range:240,minion:"frost_dragon",charges:1,init:5},"Summon a flying frost dragon that breathes ice."],
- // ---- Seas ----
- ["seas",1,"water_ball","Water Ball",{type:"lob",kind:"ball",dmg:30,rad:22,split:{n:15,dmg:2,rad:8,nodig:1},cd:1},"30 damage, then bursts into 15 bouncing water drops (2 each)."],
- ["seas",1,"water_trolls","Summon Water Trolls",{type:"target",kind:"minion",range:240,minion:"troll",count:2,cd:5},"Summon 2 water trolls. They can walk on water."],
- ["seas",1,"downpour","Downpour",{type:"target",kind:"barrage",mode:"drops",count:30,dmg:3,rad:8,init:3,cd:5},"Thirty water drops pour onto the target."],
- ["seas",1,"salt_spray","Salt Spray",{type:"shot",kind:"spray",count:8,dmg:7,rad:8,speed:13,spread:.07,grav:.3,salt:1,cd:1},"Sprays salt. Misses pile up into new ground."],
- ["seas",1,"salt_goblin","Summon Salt Goblin",{type:"target",kind:"minion",range:240,minion:"goblin",cd:1},"Summon a salt goblin. It explodes into salt when it dies."],
- ["seas",2,"whirlpool","Whirlpool",{type:"target",kind:"geyser",waves:[5,5,5],dmg:20,rad:22,init:3,cd:5,pair:"water_ball"},"Salt water blasts up under the target for 3 turns."],
- ["seas",2,"hydration","Hydration",{type:"self",kind:"hydrate",charges:4,init:4,pair:"water_trolls"},"All your minions gain 100 health and hit 15 harder."],
- ["seas",2,"rain_cloud","Rain Cloud",{type:"target",kind:"cloud",mode:"rain",turns:5,count:12,dmg:4,rad:8,charges:1,init:5,pair:"downpour"},"A rain cloud soaks the target for 5 turns."],
- ["seas",2,"salt_bomb","Salt Bomb",{type:"lob",kind:"bomb",dmg:40,rad:26,fuse:150,split:{n:10,dmg:6,rad:8,salt:1},charges:4,cd:1,pair:"salt_spray"},"Bomb that blasts salt in every direction."],
- ["seas",2,"clam_barrage","Clam Barrage",{type:"target",kind:"barrage",mode:"bounce",count:5,dmg:50,rad:22,charges:1,init:3,pair:"salt_goblin"},"Five clams fall, bounce around, and explode."],
- ["seas",3,"tidal_fury","Tidal Fury",{type:"self",kind:"tidal",dmg:40,rad:44,charges:1,init:5},"Huge waves crash in from both sides of the map and the sea rises."],
- ["seas",3,"sea_lord","Summon Sea Lord",{type:"target",kind:"minion",range:240,minion:"sea_lord",charges:1,init:5},"Summon the Sea Lord: 300 health and walks on water."],
- // ---- Overlight ----
- ["overlight",1,"holy_ward","Holy Ward",{type:"self",kind:"ward",absorb:50,stack:1,cd:5},"A holy shield that soaks up 50 damage. Stacks, and lasts until it's used up."],
- ["overlight",1,"light_bolt","Light Bolt",{type:"lob",kind:"ball",dmg:45,rad:20,grav:.4,cd:1},"A bright bolt that flies far and barely drops."],
- ["overlight",1,"summon_pegasus","Summon Pegasus",{type:"target",kind:"minion",range:240,minion:"pegasus",init:3,cd:5},"Summon a flying pegasus that kicks enemies."],
- ["overlight",1,"grove_seed","Grove Seed",{type:"target",kind:"seed",cd:5},"Grow a tree anywhere. It blocks spells and makes new ground."],
- ["overlight",1,"healing_orb","Healing Orb",{type:"lob",kind:"ball",dmg:25,rad:22,healHit:1,nodig:1,cd:1},"Heals everyone it hits for 25. Hurts undead for 50."],
- ["overlight",2,"sunbeam","Sunbeam",{type:"target",kind:"strike",dmg:50,rad:24,init:3,cd:5,pair:"holy_ward"},"A beam of light from the sky. Shields and clouds can't stop it."],
- ["overlight",2,"falling_stars","Falling Stars",{type:"target",kind:"cloud",mode:"stars",turns:5,dmg:25,rad:18,charges:1,init:5,pair:"light_bolt"},"Stars fall on the target for 5 turns, more each turn, ending with one big star."],
- ["overlight",2,"summon_paladin","Summon Paladin",{type:"target",kind:"minion",range:240,minion:"paladin",charges:1,init:5,pair:"summon_pegasus"},"Summon a holy paladin in golden armour."],
- ["overlight",2,"summon_pixies","Summon Pixies",{type:"target",kind:"minion",range:240,minion:"pixie",count:3,cd:5,pair:"grove_seed"},"Summon 3 pixies that fly and shoot sparks."],
- ["overlight",2,"light_castle","Light Castle",{type:"self",kind:"tower",thp:75,theal:10,charges:1,pair:"healing_orb"},"A castle of light. Soaks up 75 damage and heals you 10 a turn."],
- ["overlight",3,"divine_barrier","Divine Barrier",{type:"self",kind:"invuln",turns:3,charges:1,init:5},"Nothing can hurt you for 3 turns. Casting any other spell breaks it."],
- ["overlight",3,"angel_wings","Angel Wings",{type:"self",kind:"wings",charges:1,init:5},"Grow wings: fly for the rest of the match and heal 10 a turn. Only Arcane and Overlight spells after this, and no towers."],
- // ---- Nature ----
- ["nature",1,"thorn_volley","Thorn Volley",{type:"shot",kind:"spray",count:8,dmg:6,rad:10,speed:13,spread:.08,grav:.25,cd:1},"Fires 8 sharp thorns."],
- ["nature",1,"vine_bridge","Vine Bridge",{type:"shot",kind:"vine",cd:2},"Grow a solid vine bridge in the aimed direction."],
- ["nature",1,"summon_wolves","Summon Wolves",{type:"target",kind:"minion",range:240,minion:"wolf",count:2,cd:5},"Summon 2 fast wolves."],
- ["nature",1,"regrowth","Regrowth",{type:"self",kind:"regen",heal:15,turns:5,cd:5},"Heal 15 at the start of each of your turns for 5 turns."],
- ["nature",1,"spore_cloud","Spore Cloud",{type:"target",kind:"aura",dmg:10,rad:55,turns:4,cd:5},"A poison cloud. Enemies inside take 10 each turn for 4 turns."],
- ["nature",2,"bramble_bomb","Bramble Bomb",{type:"lob",kind:"bomb",dmg:30,rad:24,fuse:150,split:{n:8,dmg:6,rad:8},charges:4,cd:1,pair:"thorn_volley"},"Bomb that bursts into 8 thorns."],
- ["nature",2,"thorn_wall","Thorn Wall",{type:"self",kind:"firewall",dmg:30,turns:5,cd:5,pair:"vine_bridge"},"A wall of thorns in front of you. Stabs the first enemy to touch it for 30 and blocks one spell each round."],
- ["nature",2,"summon_treant","Summon Treant",{type:"target",kind:"minion",range:240,minion:"treant",init:3,cd:5,pair:"summon_wolves"},"Summon a giant treant. Very slow, very strong."],
- ["nature",2,"bloom","Bloom",{type:"self",kind:"heal",heal:40,allyHeal:25,cd:4,pair:"regrowth"},"Heal 40 and nearby allies 25."],
- ["nature",2,"entangle","Entangle",{type:"target",kind:"root",dmg:15,rad:60,turns:2,init:3,cd:5,pair:"spore_cloud"},"Roots grab every enemy near the target. They can't move for 2 turns."],
- ["nature",3,"world_tree","World Tree",{type:"self",kind:"tower",thp:150,theal:15,charges:1,init:5},"A giant tree grows around you: soaks up 150 damage and heals you 15 a turn."],
- ["nature",3,"natures_wrath","Nature's Wrath",{type:"target",kind:"geyser",waves:[5,8],dmg:25,rad:22,charges:1,init:5},"Giant roots burst up under the target over 2 turns."],
- // ---- Underdark ----
- ["underdark",1,"dark_keep","Dark Keep",{type:"self",kind:"tower",thp:75,tself:30,taura:15,charges:1},"A dark keep: soaks up 75 damage, repairs 30 a turn, and hurts enemies next to it for 15."],
- ["underdark",1,"drain_bolt","Drain Bolt",{type:"lob",kind:"ball",dmg:30,rad:18,drain:1,grav:.8,cd:1},"Steals health: you heal by the damage it deals."],
- ["underdark",1,"summon_swarm","Summon Swarm",{type:"target",kind:"minion",range:240,minion:"swarm",cd:5},"Summon a flying swarm. Enemies near it take 15 each turn."],
- ["underdark",1,"necro_orb","Necro Orb",{type:"lob",kind:"ball",dmg:25,rad:18,raise:1,cd:1},"Death magic. Minions it kills rise again on your side. Heals undead."],
- ["underdark",1,"rot_aura","Rot Aura",{type:"target",kind:"aura",dmg:15,rad:50,turns:5,cd:5},"A cursed patch. Enemies inside take 15 each turn for 5 turns."],
- ["underdark",2,"rain_of_skulls","Rain of Skulls",{type:"target",kind:"barrage",mode:"erratic",count:7,dmg:15,rad:16,push:8,init:3,cd:5,pair:"dark_keep"},"Seven wild skulls rain down around the target."],
- ["underdark",2,"decay_bomb","Decay Bomb",{type:"lob",kind:"bomb",dmg:40,rad:26,fuse:150,decay:1,charges:4,cd:1,pair:"drain_bolt"},"Explodes and leaves a cursed patch that deals 15 a turn for 5 turns."],
- ["underdark",2,"dark_knight","Summon Dark Knight",{type:"target",kind:"minion",range:240,minion:"dark_knight",charges:1,init:5,pair:"summon_swarm"},"Summon a dark knight in heavy armour."],
- ["underdark",2,"summon_wraith","Summon Wraith",{type:"target",kind:"minion",range:240,minion:"wraith",init:3,cd:5,pair:"necro_orb"},"Summon a flying undead wraith. Death magic heals it."],
- ["underdark",2,"blood_pact","Blood Pact",{type:"self",kind:"pact",charges:1,init:5,pair:"rot_aura"},"Heal to full by draining health from your own minions."],
- ["underdark",3,"devouring_pit","Devouring Pit",{type:"self",kind:"pit",charges:1,init:3},"Every living minion on the map is swallowed and leaves a cursed patch. Undead are safe."],
- ["underdark",3,"undeath","Undeath",{type:"self",kind:"lich",charges:1,init:5},"Become undead: death magic heals you, your hits heal you, enemies next to you rot. Light hurts double. Only Arcane and Underdark spells after this, and no towers."],
- // ---- Cogs ----
- ["cogs",1,"stasis_orb","Stasis Orb",{type:"lob",kind:"ball",dmg:0,rad:10,nodig:1,stasis:1,charges:4,cd:1},"Creates a time bubble for 2 turns. Enemy spells that enter it stop dead."],
- ["cogs",1,"gear_arrow","Gear Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:20,speed:7,drops:1,cd:5},"A slow homing arrow that drops gears as it flies and bursts into 15 gears after 5 seconds."],
- ["cogs",1,"clock_tower","Clock Tower",{type:"self",kind:"tower",thp:75,moves:1,cd:5},"A clock tower that walks with you. Soaks up 75 damage. Jump to leave it."],
- ["cogs",1,"time_blast","Time Blast",{type:"shot",kind:"spray",count:1,dmg:5,rad:12,speed:20,push:14,free:1,charges:4,cd:1},"A fast blast with strong knockback. Doesn't end your turn."],
- ["cogs",1,"recall_beacon","Recall Beacon",{type:"target",kind:"beacon",cd:1},"Place a beacon. Recall Bell sends enemies to your beacons."],
- ["cogs",2,"stasis_shield","Stasis Shield",{type:"self",kind:"stasis",turns:3,charges:1,init:3,pair:"stasis_orb"},"A time bubble follows you for 3 turns. Enemy spells that enter it stop dead."],
- ["cogs",2,"falling_cog","Falling Cog",{type:"target",kind:"meteor",dmg:50,rad:22,cog:1,init:3,cd:5,pair:"gear_arrow"},"A heavy cog drops from the sky and bounces into enemies."],
- ["cogs",2,"gear_burst","Gear Burst",{type:"lob",kind:"ball",dmg:60,rad:22,split:{n:4,dmg:10,rad:10},charges:4,init:3,cd:1,pair:"clock_tower"},"A clockwork ball that shatters into gears."],
- ["cogs",2,"clockwork_bomb","Clockwork Bomb",{type:"lob",kind:"bomb",dmg:50,rad:26,fuseR:[120,300],split:{n:10,dmg:5,rad:8},towerX:2,cd:1,pair:"time_blast"},"A bomb with a random timer that bursts into gears. Double damage to towers."],
- ["cogs",2,"recall_bell","Recall Bell",{type:"lob",kind:"ball",dmg:5,rad:12,bell:1,beacon:1,cd:1,pair:"recall_beacon"},"Whoever it hits is sent to one of your beacons (or a random spot if you have none)."],
- ["cogs",3,"rewind","Rewind",{type:"self",kind:"rewind",charges:1,init:5},"Every wizard's spells reset: all recharges and charges go back to the start. Only one Rewind per match."],
- ["cogs",3,"time_freeze","Time Freeze",{type:"self",kind:"freeze",charges:1,init:5},"Freeze time: every enemy skips their next turn."]
+ // ---- Arcane (Arcanists 2: all tier 1, familiar Unstable Portal) ----
+ ["arcane",1,"arcane_arrow","Arcane Arrow",{type:"shot",kind:"arrow",dmg:10,rad:12,count:4,speed:8,cd:1,lvl:1},"Fires four homing arrows (10 each)."],
+ ["arcane",1,"arcane_bomb","Arcane Bomb",{type:"lob",kind:"bomb",dmg:10,rad:30,fuse:150,flashBomb:1,split:{n:3,dmg:10,rad:12,homing:1,up:1},cd:1,lvl:7},"A bomb that goes off as a 10 damage Arcane Flash, then releases three Arcane Arrows that start by flying upward."],
+ ["arcane",1,"arcane_tower","Arcane Tower",{type:"self",kind:"tower",thp:25,tmax:100,arcTower:1,cd:5,lvl:3},"A tower with 25 health (up to 100). Arcane damage makes it stronger instead of hurting it. It gates with you and soaks up glyphs."],
+ ["arcane",1,"arcane_energiser","Arcane Energiser",{type:"self",kind:"energise",turns:5,cd:5,lvl:8},"For 5 turns every part of your Arcane attacks deals 5 extra damage."],
+ ["arcane",1,"arcane_gate","Arcane Gate",{type:"target",kind:"tele",range:300,cd:5,lvl:1},"Teleport to the target position."],
+ ["arcane",1,"arcane_portal","Arcane Portal",{type:"target",kind:"portal",cd:5,lvl:11},"Makes a two-way portal between you and the target. One wizard or small minion can pass through it each turn. Only one portal at a time."],
+ ["arcane",1,"summon_imps","Summon Imps",{type:"target",kind:"minion",range:240,minion:"imp",count:3,cd:5,lvl:4},"Summons 3 imps. Arcane damage heals imps instead of hurting them, up to 250 health."],
+ ["arcane",1,"imp_destruction","Imp Destruction",{type:"target",kind:"impdestruct",cd:1,lvl:10},"Every imp gives off a tiny flash, then turns into Arcane Arrows (more for healthier imps) that fly at the target. The imps are lost."],
+ ["arcane",1,"arcane_glyph","Arcane Glyph",{type:"self",kind:"glyph",dmg:10,count:10,charges:4,cd:1,lvl:6},"A ring of 10 glyphs around you. Each hits other wizards and minions for 10."],
+ ["arcane",1,"arcane_sigil","Arcane Sigil",{type:"target",kind:"sigil",dmg:10,count:3,charges:4,cd:1,lvl:9},"A triangle of 3 Arcane Glyphs at the target."],
+ ["arcane",1,"arcane_flash","Arcane Flash",{type:"self",kind:"flash",dmg:15,rad:70,push:14,cd:1,lvl:2},"A circle of energy bursts from you: 15 damage, huge knockback, and it digs the ground."],
+ ["arcane",1,"dragon_egg","Summon Dragon Egg",{type:"target",kind:"minion",range:240,minion:"dragon_egg",cd:5,lvl:12},"Summons a dragon egg. Arcane damage feeds it. Hatch it into a Hatchling (1-24 health), a Baby Dragon (25-149) or a full Flame, Storm or Frost Dragon (150)."],
+ ["arcane",5,"little_devil","Little Devil",{type:"target",kind:"minion",range:240,minion:"imp",free:1,cd:7,famCd:-1,famOnly:1,famAt:1},"Unstable Portal level 1. One more imp. Doesn't end your turn. Recharges 1 turn faster per familiar level."],
+ ["arcane",5,"arcane_mist","Arcane Mist",{type:"target",kind:"aura",dmg:15,rad:50,turns:5,elem:"arcane",cd:5,famOnly:1,famAt:2},"Unstable Portal level 2. An Arcane cloud: 15 a turn for 5 turns."],
+ // ---- Flame (familiar Harpy) ----
+ ["flame",1,"fireball","Fire Ball",{type:"lob",kind:"ball",dmg:50,rad:30,cd:1,lvl:1},"Basic ball spell. 50 damage."],
+ ["flame",2,"fire_arrow","Fire Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:26,speed:9,charges:4,cd:1,pair:"fireball"},"Basic arrow spell. 50 damage."],
+ ["flame",1,"lava_bomb","Lava Bomb",{type:"lob",kind:"bomb",dmg:50,rad:34,fuse:150,cd:1},"Basic bomb spell. 50 damage."],
+ ["flame",2,"magma_bomb","Magma Bomb",{type:"lob",kind:"bomb",dmg:25,rad:28,fuse:150,split:{n:5,dmg:25,rad:18},cap:125,charges:4,half:1,cd:1,pair:"lava_bomb"},"25, then releases 5 fireballs of 25. Never more than 125 to one wizard."],
+ ["flame",1,"flame_shield","Flame Shield",{type:"self",kind:"deflect",turns:5,once:1,cd:5},"For 5 turns it deflects most spells from above and melts falling snow. Once it triggers it's worn out until your next turn."],
+ ["flame",2,"flame_wall","Flame Wall",{type:"self",kind:"firewall",dmg:50,turns:5,cd:5,pair:"flame_shield"},"A Flame Shield placed on the ground. Anyone touching its base takes 50. Goes out until your next turn after it burns someone or blocks a spell."],
+ ["flame",1,"napalm","Napalm",{type:"shot",kind:"spray",count:12,dmg:5,rad:8,speed:11,spread:.12,grav:.5,napalm:1,famMore:2,cd:1},"Fires 12 napalm that stay on the ground for 5 turns and burn anyone touching them for 5."],
+ ["flame",2,"napalm_bomb","Napalm Bomb",{type:"lob",kind:"bomb",dmg:25,rad:24,fuse:150,split:{n:15,dmg:5,rad:8,napalm:1},charges:4,cd:1,pair:"napalm"},"25, then 15 napalm."],
+ ["flame",1,"rain_of_fire","Rain of Fire",{type:"target",kind:"barrage",mode:"line",count:5,dmg:25,rad:26,famMore:1,init:3,cd:5},"Five fireballs of 25 fall at an angle in a line."],
+ ["flame",2,"rain_of_arrows","Rain of Arrows",{type:"target",kind:"barrage",mode:"focus",count:5,dmg:15,rad:18,famMore:1,init:5,cd:5,pair:"rain_of_fire"},"Five fire arrows of 15, all hitting the spot you pick."],
+ ["flame",3,"volcano","Volcano",{type:"target",kind:"volcano",dmg:25,rad:26,charges:1,init:5},"A volcano grows up from under the island over 3 turns, destroying the ground above it, then erupts fireballs, lava bombs and napalm bombs for 2 more turns, stronger each turn."],
+ ["flame",3,"fire_dragon","Summon Flame Dragon",{type:"target",kind:"minion",range:240,minion:"fire_dragon",charges:1,init:5},"Summons a flying Flame Dragon. Napalm and Flame Walls can't hurt it."],
+ ["flame",5,"meteor_shower","Meteor Shower",{type:"self",kind:"meteorshower",dmg:15,rad:16,count:6,charges:1,init:5,famOnly:1},"Harpy level 5. Napalm meteors rain down on every enemy (up to 90 each)."],
+ ["flame",5,"fire_wave","Fire Wave",{type:"self",kind:"flash",dmg:25,rad:80,push:22,nodig:1,cd:1,famOnly:1},"Harpy level 5. A burst of fire that blasts everyone but you far away. 25 damage."],
+ // ---- Storm (familiar Storm Cloud) ----
+ ["storm",1,"thunderbolt","Thunder Shock",{type:"shot",kind:"spray",count:10,dmg:5,rad:10,speed:20,spread:.02,grav:0,cd:1},"A bolt that hits 10 times for 5. Very accurate, no gravity, carves through the ground."],
+ ["storm",2,"chain_lightning","Chain Lightning",{type:"shot",kind:"chain",dmg:40,rad:18,speed:22,jumps:4,jdmg:40,fixedPower:1,init:3,cd:1,pair:"thunderbolt"},"Lightning that bounces around for several 40 hits (up to 200) and tears up the ground."],
+ ["storm",1,"wind_shield","Wind Shield",{type:"self",kind:"deflect",turns:3,charges:1},"For 3 turns it deflects every incoming projectile, from any direction."],
+ ["storm",2,"hurricane","Hurricane",{type:"target",kind:"pull",rad:170,init:3,cd:5,pair:"wind_shield"},"Picks up everyone nearby, lifts them into the air, then blows them away."],
+ ["storm",1,"shock_bomb","Shock Bomb",{type:"lob",kind:"bomb",dmg:80,rad:40,nodig:1,push:12,fuse:150,charges:4,half:1,cd:1},"80 damage with medium knockback. Doesn't hurt the ground."],
+ ["storm",2,"storm_shield","Storm Shield",{type:"self",kind:"zapaura",dmg:25,rad:75,turns:5,cd:5,pair:"shock_bomb"},"Zaps anyone who touches or walks close to you, 25 a turn."],
+ ["storm",1,"summon_cyclops","Summon Cyclops",{type:"target",kind:"minion",range:240,minion:"cyclops",init:3,cd:5},"Summons a Cyclops that casts Thunder Shock and Chain Lightning."],
+ ["storm",2,"lightning_rod","Conductor Rod",{type:"lob",kind:"ball",dmg:10,rad:14,rod:1,charges:4,init:5,cd:1,pair:"summon_cyclops"},"Sticks to a wizard or the ground and lightning strikes it 1-5 times (farther throws give more), 25 each."],
+ ["storm",1,"storm_spirit","Summon Storm Spirit",{type:"target",kind:"minion",range:240,minion:"storm_spirit",cd:5},"Summons a flying Storm Spirit."],
+ ["storm",2,"flight","Flight",{type:"self",kind:"flight",turns:999,free:1,cd:5,pair:"storm_spirit"},"Fly until you cancel it or an enemy hurts you. Doesn't end your turn."],
+ ["storm",3,"storm","Storm",{type:"target",kind:"cloud",mode:"lightning",turns:3,count:6,dmg:25,rad:24,init:3,cd:5},"A storm cloud rains lightning on the target at the start of your next 3 turns. It deflects nearby projectiles."],
+ ["storm",3,"storm_dragon","Summon Storm Dragon",{type:"target",kind:"minion",range:240,minion:"storm_dragon",charges:1,init:5},"Summons a flying Storm Dragon."],
+ ["storm",5,"whistling_winds","Whistling Winds",{type:"self",kind:"flight",turns:1,halfTurn:1,free:1,cd:5,famOnly:1},"Storm Cloud level 5. Fly for the rest of this turn. You drop when your turn ends."],
+ ["storm",5,"electrostatic","Electrostatic Charge",{type:"lob",kind:"ball",dmg:0,rad:10,nodig:1,static:1,cd:1,famOnly:1},"Storm Cloud level 5. A charged ball that stays for 10 turns and zaps enemies near it for 25 whenever Thunder Shock, Chain Lightning or Storm goes off."],
+ // ---- Frost (familiar Frost Sprite) ----
+ ["frost",1,"ice_ball","Ice Ball",{type:"lob",kind:"ball",dmg:50,rad:24,split:{n:5,dmg:5,rad:8},cd:1},"A small explosion, then shatters into ice (up to 75)."],
+ ["frost",2,"ice_bomb","Ice Bomb",{type:"lob",kind:"bomb",dmg:50,rad:30,fuse:150,split:{n:8,dmg:25,rad:16},charges:2,init:3,cd:1,pair:"ice_ball"},"Releases a number of ice balls (up to 250)."],
+ ["frost",1,"frost_shards","Frost Shards",{type:"shot",kind:"spray",count:15,dmg:5,rad:8,speed:14,spread:.1,grav:.2,charges:4,cd:1},"Fires 15 frost shards (up to 75). Too close and they hit you instead."],
+ ["frost",2,"frost_arrow","Frost Arrow",{type:"shot",kind:"arrow",count:1,dmg:45,rad:24,speed:9,push:14,split:{n:6,dmg:5,rad:8},charges:2,cd:1,pair:"frost_shards"},"High knockback arrow that bursts into frost shards (up to 75)."],
+ ["frost",1,"snowball","Snow Ball",{type:"lob",kind:"ball",dmg:0,rad:16,snow:1,apex:1,cd:1},"Bursts at the top of its arc (or when it hits) and snows down on the target. Snow makes new ground."],
+ ["frost",2,"blizzard","Blizzard",{type:"target",kind:"cloud",mode:"snow",turns:4,count:10,dmg:2,rad:14,deflectCloud:1,init:3,cd:5,pair:"snowball"},"A cloud drops snow on the area at the start of your next 4 turns. It deflects missiles like Meteor and Comet."],
+ ["frost",1,"ice_shield","Ice Shield",{type:"self",kind:"icewall",free:1,charges:4,init:1,cd:5},"A thin ice barrier around you. Doesn't end your turn."],
+ ["frost",2,"ice_castle","Ice Castle",{type:"self",kind:"tower",thp:75,snowHeal:1,cd:5,pair:"ice_shield"},"An ice castle with 75 health. Snow can't hurt it; snow heals it."],
+ ["frost",1,"snow_sprite","Summon Sylph",{type:"target",kind:"minion",range:240,minion:"sylph",cd:5},"Summons a Sylph that shoots homing frost arrows."],
+ ["frost",2,"frost_giant","Summon Frost Giant",{type:"target",kind:"minion",range:240,minion:"frost_giant",init:3,cd:5,pair:"snow_sprite"},"Summons a Frost Giant with its own snow cloud that follows it."],
+ ["frost",3,"comet","Comet",{type:"target",kind:"meteor",dmg:50,rad:40,split:{n:10,dmg:45,rad:16},init:5,cd:5},"A comet hits for 50 and shatters into ice balls and frost shards (up to 500)."],
+ ["frost",3,"frost_dragon","Summon Frost Dragon",{type:"target",kind:"minion",range:240,minion:"frost_dragon",charges:1,init:5},"Summons a flying Frost Dragon."],
+ ["frost",5,"frost_leap","Frost Leap",{type:"lob",kind:"leap",free:1,cd:1,famOnly:1,famAt:1},"Frost Sprite level 1. Leap across the map, aimed like a ball. Higher levels leap farther. Doesn't end your turn."],
+ // ---- Seas (familiar Seahorse) ----
+ ["seas",1,"water_ball","Water Ball",{type:"lob",kind:"ball",dmg:30,rad:22,split:{n:15,dmg:2,rad:8,nodig:1},water:1,cd:1},"30, then bursts into 15 bouncing water droplets (up to 60)."],
+ ["seas",2,"whirlpool","Maelstrom",{type:"target",kind:"geyser",waves:[6,6,6],dmg:20,rad:22,salt:1,init:3,cd:5,pair:"water_ball"},"For 3 turns salt water sprays up from below the target (up to 360)."],
+ ["seas",1,"water_trolls","Summon Water Trolls",{type:"target",kind:"minion",range:240,minion:"troll",count:2,cd:5},"Summons 2 Water Trolls. They walk on water and deal 5 to the first enemy they touch each turn."],
+ ["seas",2,"hydration","Hydration",{type:"lob",kind:"ball",dmg:50,rad:22,hydrate:1,water:1,charges:4,init:3,cd:1,pair:"water_trolls"},"A water ball (50) that also makes your Water Trolls grow, heal and hit harder (+15, then +30)."],
+ ["seas",1,"downpour","Deluge",{type:"target",kind:"barrage",mode:"drops",count:30,dmg:3,rad:8,water:1,init:3,cd:5},"30 water droplets of 3 drop on the target. Great against towers."],
+ ["seas",2,"rain_cloud","English Summer",{type:"target",kind:"cloud",mode:"rain",turns:5,count:10,ramp:1,dmg:4,rad:8,water:1,charges:1,init:5,pair:"downpour"},"A rain cloud that pours more and more water each turn for 5 turns (up to 580)."],
+ ["seas",1,"salt_spray","Brine Bolt",{type:"shot",kind:"spray",count:10,dmg:6,rad:8,speed:13,spread:.07,grav:.3,salt:1,pointBlank:1,cd:1},"Shoots brine salt (up to 60). Misses pile up on the ground. Works at point blank."],
+ ["seas",2,"salt_bomb","Brine Bomb",{type:"lob",kind:"bomb",dmg:25,rad:26,fuse:150,split:{n:35,dmg:12,rad:9,salt:1},charges:4,cd:1,pair:"salt_spray"},"Blasts brine salt in every direction (up to 445)."],
+ ["seas",1,"salt_goblin","Summon Brine Goblin",{type:"target",kind:"minion",range:240,minion:"goblin",cd:1},"Summons a Brine Goblin (25 health, no spells). When it dies it bursts like a Brine Bomb."],
+ ["seas",2,"clam_barrage","Rain of Clams",{type:"target",kind:"barrage",mode:"bounce",count:5,dmg:50,rad:22,eat:1,charges:1,init:3,pair:"salt_goblin"},"5 clams fall, bounce around eating through the ground, then explode (50 each)."],
+ ["seas",3,"tidal_fury","Ocean's Fury",{type:"self",kind:"tidal",dmg:40,rad:44,charges:1,init:5},"Huge waves of salt water crash in from both sides, wrecking the island."],
+ ["seas",3,"sea_lord","Summon Water Lord",{type:"target",kind:"minion",range:240,minion:"sea_lord",charges:1,init:5},"Summons the Water Lord: 500 health, walks on water, but takes extra damage."],
+ ["seas",5,"summon_kraken","Summon Kraken",{type:"target",kind:"minion",range:300,minion:"kraken",charges:1,famOnly:1},"Seahorse level 5. Summons the mighty Kraken (1000 health). Weak to fire."],
+ // ---- Overlight (familiar Cherub) ----
+ ["overlight",1,"holy_ward","Protection Shield",{type:"self",kind:"ward",absorb:50,stack:1,stackCap:150,cd:5},"Absorbs 50 damage. Stacks up to 150."],
+ ["overlight",2,"sunbeam","Sky Ray",{type:"target",kind:"strike",dmg:50,rad:24,init:3,cd:5,pair:"holy_ward"},"A beam of light straight down from the sky (50). Gravity, shields and clouds can't stop it."],
+ ["overlight",1,"light_bolt","Shining Bolt",{type:"lob",kind:"ball",dmg:45,rad:20,grav:.5,cd:1},"A bright bolt that's barely pulled down (45)."],
+ ["overlight",2,"falling_stars","Rising Star",{type:"target",kind:"cloud",mode:"stars",turns:5,dmg:45,big:125,rad:18,charges:1,init:5,pair:"light_bolt"},"Over 4 turns more and more stars (45) fall around the target, then a huge star (125) lands exactly on it."],
+ ["overlight",1,"summon_pegasus","Summon Pegasus",{type:"target",kind:"minion",range:240,minion:"pegasus",init:3,cd:5},"Summons a flying Pegasus."],
+ ["overlight",2,"summon_paladin","Summon Paladin",{type:"target",kind:"minion",range:240,minion:"paladin",charges:1,init:5,pair:"summon_pegasus"},"Summons a Paladin. Bad at jumping."],
+ ["overlight",1,"grove_seed","Forest Seed",{type:"target",kind:"seed",init:1,cd:5},"Grows a magical tree at the target. It blocks spells and becomes part of the ground."],
+ ["overlight",2,"summon_pixies","Summon Pixies",{type:"target",kind:"minion",range:240,minion:"pixie",count:3,cd:5,pair:"grove_seed"},"Summons 3 pixies. A pixie can sacrifice itself to teleport friends to it."],
+ ["overlight",1,"healing_orb","Sphere of Healing",{type:"lob",kind:"ball",dmg:25,rad:22,healHit:1,nodig:1,grav:.5,cd:1},"Heals 25 instead of hurting. Hurts undead and liches for up to 50."],
+ ["overlight",2,"light_castle","Castle of Light",{type:"self",kind:"tower",thp:75,theal:10,charges:1,pair:"healing_orb"},"A tower with 75 health that heals you 10 every turn."],
+ ["overlight",3,"divine_barrier","Invulnerability Shield",{type:"self",kind:"invuln",turns:3,charges:1,init:5},"Blocks all damage for 3 turns. Casting a spell or falling in water breaks it."],
+ ["overlight",3,"angel_wings","Shining Power",{type:"self",kind:"wings",charges:1,init:5},"Wings for permanent flight and 10 healing a turn. Only Arcane and Overlight spells after this, and no towers."],
+ // ---- Nature (familiar Fungus) ----
+ ["nature",1,"thorn_ball","Thorn Ball",{type:"lob",kind:"ball",dmg:50,rad:22,mine:1,cd:1},"Hits for 50, or plants a thorn mine where it lands that waits until something sets it off."],
+ ["nature",2,"thorn_bomb","Thorn Bomb",{type:"lob",kind:"bomb",dmg:50,rad:26,fuse:150,mineRing:12,charges:4,init:3,cd:1,pair:"thorn_ball"},"Explodes and plants a ring of thorn mines around the blast."],
+ ["nature",1,"vine_whip","Vine Whip",{type:"shot",kind:"whip",dmg:5,big:20,rad:22,push:11,cd:1},"Three short bursts in front of you, then one big blast with strong knockback (35). Digs through ground."],
+ ["nature",2,"vine_bridge","Vine Bridge",{type:"shot",kind:"vine",free:1,oncePerTurn:1,charges:4,cd:1,pair:"vine_whip"},"A vine latches onto the first ground it touches and makes a bridge. Doesn't end your turn (once a turn)."],
+ ["nature",1,"entangle_ball","Entangle",{type:"lob",kind:"ball",dmg:0,rad:16,nodig:1,entangle:1,cd:1},"Whoever it hits can't jump, fly or gate until they take damage or fall in water."],
+ ["nature",2,"vine_bomb","Vine Bomb",{type:"lob",kind:"bomb",dmg:30,rad:26,fuse:150,vines:1,charges:4,cd:1,pair:"entangle_ball"},"30 damage, then flowers burst out and seal the area and everyone in it."],
+ ["nature",1,"summon_man_trap","Summon Man-Trap",{type:"target",kind:"minion",range:240,minion:"man_trap",init:3,cd:5},"Summons a Man-Trap (100 health) that casts Nature spells."],
+ ["nature",2,"sanctuary_tower","Sanctuary",{type:"self",kind:"tower",thp:75,dispel:110,cd:5,pair:"summon_man_trap"},"A flower tower (75 health) whose aura wipes out other auras, glyphs, shields, flight and thorn mines around it."],
+ ["nature",1,"summon_elves","Summon Elves",{type:"target",kind:"minion",range:240,minion:"elf",count:2,cd:5},"Summons a pair of Elves that shoot arrows."],
+ ["nature",2,"flurry","Flurry",{type:"target",kind:"flurry",dmg:20,count:3,init:3,cd:5,pair:"summon_elves"},"Every one of your Elves fires a stream of 3 arrows (20 each) at the target. Fungus adds 2 per level."],
+ ["nature",3,"natures_wrath","Nature's Wrath",{type:"target",kind:"leafstorm",dmg:25,turns:3,init:5,cd:5},"A whirlwind of leaves reaching the sky. Nobody can jump or fly through it, it flings projectiles away, and it sets off thorn mines."],
+ ["nature",3,"vine_bloom","Vine Bloom",{type:"self",kind:"bloom",charges:2,init:5,cd:5},"Your Man-Traps burst after one turn, releasing vine and thorn bombs everywhere."],
+ ["nature",5,"forestation","Forestation",{type:"target",kind:"forest",charges:1,init:8,famOnly:1},"Fungus level 5. Plants a forest across a large area."],
+ // ---- Stone (familiar Pet Rock) ----
+ ["stone",1,"pebble_shot","Pebble Shot",{type:"shot",kind:"spray",count:10,dmg:5,rad:12,speed:13,spread:.08,grav:.25,cd:1},"Fires 10 small pebbles (up to 50). Misses tear up the ground."],
+ ["stone",2,"scatter_rock","Scatter Rock",{type:"lob",kind:"ball",dmg:15,rad:22,split:{n:10,dmg:5,rad:10},charges:4,cd:1,pair:"pebble_shot"},"Shatters into small pebbles when it lands (up to 65)."],
+ ["stone",1,"quake","Quake",{type:"self",kind:"quake",init:3,cd:5},"Shakes the whole arena. Every tower takes 68 (not the Clock Tower). Wizards aren't hurt but get thrown around."],
+ ["stone",2,"mud_burst","Disruption",{type:"lob",kind:"ball",dmg:0,rad:16,split:{n:5,dmg:25,rad:20,mud:1},firstTurnHalf:1,charges:2,cd:1,pair:"quake"},"Shatters into five Mud Balls (up to 125). Weaker on the first turn of the game."],
+ ["stone",1,"mud_ball","Mud Ball",{type:"lob",kind:"ball",dmg:25,rad:26,mud:1,charges:4,cd:1},"Covers the area in mud rocks, trapping anyone inside (25)."],
+ ["stone",2,"great_boulder","Mega Boulder",{type:"lob",kind:"boulder",dmg:32,rad:26,hits:4,fuse:300,heavy:1,charges:2,init:3,cd:1,pair:"mud_ball"},"A heavy ball that turns into a giant boulder, bouncing and smashing 4 times (32 each). Doesn't fly as far."],
+ ["stone",1,"rock_slab","Rock Slab",{type:"target",kind:"slab",cd:1},"A small slab of ground. Trap someone, hide, or climb out of a hole."],
+ ["stone",2,"fortress","Fortress",{type:"self",kind:"tower",thp:100,block5:1,charges:1,pair:"rock_slab"},"The strongest tower (100 health). Every hit on it is 5 lower."],
+ ["stone",1,"summon_dwarf","Summon Dwarf",{type:"target",kind:"minion",range:240,minion:"dwarf",cd:5},"Summons a Dwarf that can Mine through the ground and set dynamite (Kablam!)."],
+ ["stone",2,"rock_golem","Summon Rock Golem",{type:"target",kind:"minion",range:240,minion:"golem",init:3,cd:5,pair:"summon_dwarf"},"Summons a Rock Golem. It shrugs off 5 damage from every hit."],
+ ["stone",3,"meteor","Meteor",{type:"target",kind:"meteor",dmg:60,rad:60,split:{n:12,dmg:8,rad:12},drill:1,charges:1,init:5},"A huge rock drops through the island, usually all the way to the sea, shattering into pebbles on the way (up to 265)."],
+ ["stone",3,"fissure","Fissure",{type:"target",kind:"geyser",waves:[4,16],dmg:15,rad:22,split:{n:5,dmg:5,rad:8},charges:1,init:5},"Scatter rocks blast up from the bottom of the map: a few this turn, a lot next turn."],
+ ["stone",5,"stepping_stone","Stepping Stone",{type:"target",kind:"slab",small:1,free:1,charges:4,cd:1,famOnly:1,famAt:1},"Pet Rock level 1. Places a small stone. Doesn't end your turn."],
+ ["stone",5,"mountain_goat","Summon Mountain Goat",{type:"target",kind:"minion",range:240,minion:"goat",init:3,cd:5,famOnly:1,famAt:3},"Pet Rock level 3. A goat that jumps really high and rams enemies for 30."],
+ // ---- Cogs (familiar Timepiece) ----
+ ["cogs",1,"stasis_orb","Static Ball",{type:"lob",kind:"ball",dmg:0,rad:10,nodig:1,stasis:1,charges:4,cd:1},"A throwable Static Shield that lasts for 2 turns. Spells that touch it freeze in place."],
+ ["cogs",2,"stasis_shield","Static Shield",{type:"self",kind:"stasis",turns:3,charges:1,init:3,pair:"stasis_orb"},"A static field moves with you for 3 turns and freezes every spell that touches it. Thunder Shock, Sky Ray and melee go through."],
+ ["cogs",1,"gear_arrow","Mechanical Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:20,speed:7,drops:1,cd:5},"A lazy arrow that drops a gear (10) every second, then bursts into 15 gears after 5 seconds. Up to 50 on a direct hit."],
+ ["cogs",2,"falling_cog","Cog Fall",{type:"target",kind:"meteor",dmg:50,rad:22,cog:1,init:3,cd:5,pair:"gear_arrow"},"A heavy cog drops from the sky (50) and bounces around, then becomes part of the ground."],
+ ["cogs",1,"recall_beacon","Recall Device",{type:"target",kind:"minion",range:240,minion:"recall",cd:5},"Summons a Recall Device (50 health). Use it to teleport back to it."],
+ ["cogs",2,"recall_bell","Calling Bell",{type:"lob",kind:"ball",dmg:0,rad:12,nodig:1,bell:1,beacon:1,cd:1,pair:"recall_beacon"},"Whoever it hits is teleported to a random Recall Device. Does nothing if there are none."],
+ ["cogs",1,"clock_tower","Clock Tower",{type:"self",kind:"tower",thp:75,moves:1,cd:5},"A tower (75 health) that walks with you. Jumping destroys it. Quake can't hurt it."],
+ ["cogs",2,"gear_burst","Cuckoo Clock",{type:"lob",kind:"ball",dmg:60,rad:22,split:{n:4,dmg:10,rad:10},charges:4,init:3,cd:1,pair:"clock_tower"},"A small ball that shatters into gears on impact (60 + 4x10)."],
+ ["cogs",1,"time_blast","Blast from the Past",{type:"shot",kind:"spray",count:1,dmg:5,rad:12,speed:20,push:14,free:1,breakShield:1,charges:4,cd:1},"A fast, small blast with knockback (5). Doesn't end your turn. Knocks out Flame Shields."],
+ ["cogs",2,"clockwork_bomb","Clockwork Bomb",{type:"lob",kind:"ball",dmg:50,rad:26,clockwork:1,split:{n:5,dmg:10,rad:8},towerX:2,cd:1,pair:"time_blast"},"Sticks where it lands like solid ground and goes off on a random later turn, bursting into gears (50 + 5x10). Double damage to towers."],
+ ["cogs",3,"rewind","Redo",{type:"self",kind:"rewind",charges:1,init:5},"Everyone's spellbook resets to how it was at the start. Anyone who had Redo loses it. Only one Redo per match, between all players."],
+ ["cogs",3,"time_freeze","Summon Steam Dragon",{type:"target",kind:"minion",range:240,minion:"steam_dragon",charges:1,init:5},"Summons a Steam Dragon (100 health) with mighty steam-powered jaws."],
+ ["cogs",5,"time_dilation","Time Dilation",{type:"self",kind:"dilate",free:1,famCharges:1,init:5,cd:1,famOnly:1,famAt:1},"Timepiece level 1. Adds 5 seconds per familiar level to your turn. One use per familiar level."],
+ // ---- Underdark (familiar Soul Jar) ----
+ ["underdark",1,"dark_keep","Den of Darkness",{type:"self",kind:"tower",thp:75,tself:30,taura:15,charges:1},"A dark castle (75 health) that repairs 30 every turn, surrounded by an Aura of Decay (15 Death a turn)."],
+ ["underdark",2,"rain_of_skulls","Rain of Chaos",{type:"target",kind:"barrage",mode:"erratic",count:7,dmg:20,rad:16,push:10,init:3,cd:5,pair:"dark_keep"},"Seven skulls fly around wildly and rain down near the target: 20 each with high knockback."],
+ ["underdark",1,"drain_bolt","Drain Bolt",{type:"lob",kind:"ball",dmg:30,rad:18,drain:1,noSelf:1,grav:.8,cd:1},"You heal by the damage it deals to living targets (30). It can't hurt you."],
+ ["underdark",2,"decay_bomb","Death Bomb",{type:"lob",kind:"bomb",dmg:40,rad:26,fuse:150,decay:1,charges:4,cd:1,pair:"drain_bolt"},"40, then leaves an Aura of Decay (15 Death a turn for 5 turns)."],
+ ["underdark",1,"summon_swarm","Summon Swarm",{type:"target",kind:"minion",range:240,minion:"swarm",maxOwn:2,init:1,cd:5},"A flying Aura of Decay (25 health). Only two swarms at a time."],
+ ["underdark",2,"dark_knight","Summon Dark Knight",{type:"target",kind:"minion",range:240,minion:"dark_knight",charges:1,init:5,pair:"summon_swarm"},"Summons a Dark Knight (100 health) that charges through the ground and drains life."],
+ ["underdark",1,"necro_orb","Raise Dead",{type:"lob",kind:"ball",dmg:25,rad:18,raise:1,elem2:"death",cd:1},"25 Death. Living minions it kills come back undead on your side. Undead minions it hits are healed."],
+ ["underdark",2,"summon_wraith","Summon Wraith",{type:"target",kind:"minion",range:240,minion:"wraith",init:3,cd:5,pair:"necro_orb"},"Summons an undead Wraith (50 health) that casts Drain Bolt. Death damage heals it."],
+ ["underdark",1,"rot_aura","Aura of Decay",{type:"target",kind:"aura",dmg:15,rad:50,turns:5,cd:5},"15 Death damage to anyone in the area now and at the start of your next 4 turns."],
+ ["underdark",2,"blood_pact","Dark Defences",{type:"self",kind:"pact",lasting:1,charges:1,init:5,pair:"rot_aura"},"Heals you to full by taking health from your minions, and keeps doing it until they're all gone."],
+ ["underdark",3,"devouring_pit","Swallowing Pit",{type:"self",kind:"pit",charges:1,init:3},"Every living minion on the map is destroyed and replaced with an Aura of Decay. Undead are safe."],
+ ["underdark",3,"undeath","Lichdom",{type:"self",kind:"lich",charges:1,init:5},"Become a Lich: Death damage heals you, you heal from damage you and your minions deal, and an Aura of Decay surrounds you. Light hurts double. Only Arcane and Underdark spells, no towers."]
 ];
 const PRESTIGE_SPELLS=[
  {id:"comet_lance",name:"Comet Lance",pres:1,type:"shot",kind:"lance",col:"#7af0ff",dmg:70,rad:20,speed:24,grav:0,pierce:1,charges:1,desc:"Piercing beam that hits every wizard in its line. Once per match."},
@@ -772,9 +791,9 @@ const SPELLS=[
  ...MINION_SPELLS.map(s=>Object.assign({book:"minion",tier:0,lvl:999,col:"#c9c2b5"},s))
 ];
 const SP=Object.fromEntries(SPELLS.map(s=>[s.id,s]));
-for(const [k,ids] of Object.entries(MINION_ABIL)) for(const id of ids) if(SP[id]) SP[id].col=MINIONS[k].col;
-const BASIC=["arcane_shot","fireball","arcane_gate"];
-const bookSpells=b=>SPELLS.filter(s=>s.book===b).map(s=>s.id);
+for(const [k,ids] of Object.entries(MINION_ABIL)) for(const id of ids) if(SP[id]&&SP[id].book==="minion") SP[id].col=MINIONS[k].col;
+const BASIC=["arcane_arrow","fireball","arcane_gate"];
+const bookSpells=b=>SPELLS.filter(s=>s.book===b&&!s.famOnly).map(s=>s.id);
 function chargesOf(s){return s.charges||s.uses||0}
 // Arcanists rules: a level 2 spell needs its level 1 partner; a level 3 spell needs 5 other spells from the same book
 function reqProblem(set,id){const s=SP[id];if(!s)return "Unknown spell";
@@ -784,7 +803,7 @@ function reqProblem(set,id){const s=SP[id];if(!s)return "Unknown spell";
 function validBook(list){let book=list.filter(id=>SP[id]);for(let pass=0;pass<4;pass++){const set=new Set(book);const next=book.filter(id=>!reqProblem(set,id));if(next.length===book.length)break;book=next}return book}
 function famBooks(list){const set=new Set(list);return BOOKS.filter(b=>b.fam&&bookSpells(b.id).every(id=>set.has(id))).map(b=>b.id)}
 function slotsFor(l){return l>=50?16:l>=40?14:l>=30?12:l>=20?10:l>=15?8:l>=10?7:l>=5?5:3}
-function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book!=="minion"&&(s.book==="prestige"?p>=s.pres:s.lvl<=l)).map(s=>s.id)}
+function unlockedFor(l,p=0){return SPELLS.filter(s=>s.book!=="minion"&&!s.famOnly&&(s.book==="prestige"?p>=s.pres:s.lvl<=l)).map(s=>s.id)}
 function effLevel(u){return u.allSpells?50:u.level}
 function effPres(u){return u.allSpells?5:(u.prestige||0)}
 const MAX_LEVEL=50, MAX_PRESTIGE=5;
@@ -797,6 +816,7 @@ const TOWER_ART={
  ice_castle:{img:"tw_ice_castle",h:102,fx:.5,fy:.119,ws:.82,over:true,glow:"#c8f3ff",spark:"#ffffff"},
  light_castle:{img:"tw_light_castle",h:100,fx:.5,fy:.107,ws:.82,over:true,glow:"#ffe58a",spark:"#fff7c8"},
  dark_keep:{img:"tw_dark_keep",h:108,fx:.5,fy:.169,ws:.82,over:true,glow:"#8d63d6"},
+ sanctuary_tower:{img:"tw_world_tree",front:"tw_world_tree_front",h:132,fx:.479,fy:.342,ws:.78,over:false,glow:"#ffd6f4",spark:"#fff3a0"},
  world_tree:{img:"tw_world_tree",front:"tw_world_tree_front",h:132,fx:.479,fy:.342,ws:.78,over:false,glow:"#9be38f",spark:"#fff3a0"}
 };
 function towerArt(u){ const ta=!u.imp&&u.tower&&TOWER_ART[u.tower.id], im=ta&&IMG[ta.img]; return im&&im.naturalWidth?ta:null }
@@ -855,10 +875,10 @@ function icon(kind){
   P.flight='<path d="M4 22c6-2 10-8 12-16 2 8 6 14 12 16-6 0-9-2-12-6-3 4-6 6-12 6z" fill="#fff"/>';
   P.rewind='<path d="M8 10a10 10 0 1 1-2 10" stroke="#fff" stroke-width="2.6" fill="none"/><path d="M4 6v7h7" stroke="#fff" stroke-width="2.6" fill="none"/><path d="M16 10v7l4 3" stroke="#fff" stroke-width="2.4" fill="none"/>';
   P.beacon='<path d="M10 22c0-8 2-14 6-14s6 6 6 14z" fill="#fff"/><path d="M8 22h16M16 4v4" stroke="#fff" stroke-width="2.4"/><circle cx="16" cy="25" r="2.4" fill="#fff"/>';
-  const A={spray:"cone",ball:"lob",barrage:"rain",strike:"bolt",glyph:"ult",sigil:"ult",flash:"ult",stasis:"ward",pull:"wind",slab:"build",seed:"build",vine:"build",icewall:"build",deflect:"shield",zapaura:"bolt",invuln:"ward",energise:"arena",lich:"mask",pact:"heal",regen:"heal",hydrate:"heal",impboom:"bomb",quake:"tremor",tidal:"wind",pit:"hole",freeze:"ward",boulder:"bomb",root:"chain"};
+  const A={spray:"cone",ball:"lob",barrage:"rain",strike:"bolt",glyph:"ult",sigil:"ult",flash:"ult",stasis:"ward",pull:"wind",slab:"build",seed:"build",vine:"build",icewall:"build",deflect:"shield",zapaura:"bolt",invuln:"ward",energise:"arena",lich:"mask",pact:"heal",regen:"heal",hydrate:"heal",impboom:"bomb",quake:"tremor",tidal:"wind",pit:"hole",freeze:"ward",boulder:"bomb",root:"chain",portal:"arena",impdestruct:"bomb",meteorshower:"rain",leap:"flight",whip:"cone",flurry:"rain",volley:"rain",leafstorm:"wind",bloom:"bomb",forest:"build",dilate:"rewind",banish:"hole",hatch:"ult",mine_dig:"cone",kablam:"bomb",market:"heal",fairyring:"beacon",recall:"beacon",volcano:"geyser"};
   return '<svg viewBox="0 0 32 32" aria-hidden="true">'+(P[kind]||P[A[kind]]||P.shot)+'</svg>';
 }
-function dmgText(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];return `${m.name}: ${m.hp} HP, hits for ${m.dmg}${(s.count||1)>1?` (×${s.count})`:""}`}
+function dmgText(s){ if(s.kind==="minion"){const m=MINIONS[s.minion];const ab=(MINION_ABIL[s.minion]||[]).map(id=>SP[id]&&SP[id].name).filter(Boolean); return `${(s.count||1)>1?s.count+"× ":""}${m.name}: ${m.hp} HP${m.dmg?`, touch ${m.dmg}`:""}${ab.length?" · "+ab.join(", "):""}`}
   if(!s.dmg) return ""; if(s.waves) return `${s.dmg} × ${s.waves.reduce((a,b)=>a+b,0)} blasts`; if(s.mode==="stars") return `${s.dmg} per star, 50 final`;
   if(s.kind==="cloud") return `${s.dmg} × ${s.count} per turn`; if(s.kind==="aura") return `${s.dmg} per turn`; if(s.kind==="chain") return `${s.dmg} + ${s.jumps} jumps of ${s.jdmg}`;
   if(s.hits) return `${s.dmg} × up to ${s.hits} hits`; if(s.rod) return "25 × 1–5 strikes";
@@ -1195,7 +1215,7 @@ const PANELS={
   const set=new Set(u.spellbook), fams=famBooks(u.spellbook);
   const tab=BK[custTab]?custTab:"arcane", bk=BK[tab];
   const tabs=[...BOOKS.map(b=>b.id),"prestige"].map(id=>{const b=BK[id],n=u.spellbook.filter(x=>SP[x]&&SP[x].book===id).length;return `<button class="btab ${tab===id?"on":""}" data-tab="${id}" type="button" style="--bc:${b.col}">${b.name}${n?` <b>${n}</b>`:""}${fams.includes(id)?" ★":""}</button>`}).join("");
-  const list=SPELLS.filter(s=>s.book===tab).sort((a,b)=>a.tier-b.tier||a.lvl-b.lvl), have=list.filter(s=>set.has(s.id)).length;
+  const list=SPELLS.filter(s=>s.book===tab&&!s.famOnly).sort((a,b)=>a.tier-b.tier||a.lvl-b.lvl), have=list.filter(s=>set.has(s.id)).length;
   const famHtml=bk.fam?`<div class="faminfo ${fams.includes(tab)?"on":""}"><b>Familiar: ${esc(bk.fam.name)}</b> · ${esc(bk.fam.desc)}<br><span>${fams.includes(tab)?"Active! In battle, tap the Familiar button to power it up (20 HP per level, up to 5).":`Bring all ${list.length} ${bk.name} spells to unlock it (${have}/${list.length}).`}</span></div>`:tab==="arcane"?'<div class="faminfo">The Arcane book has no familiar. Its spells mix well with every other book.</div>':'<div class="faminfo">Prestige spells: one strong attack and one defence for each prestige.</div>';
   const cards=list.map(s=>{const inB=set.has(s.id), lk=!unl.has(s.id), prob=!inB&&!lk?reqProblem(set,s.id):null;
     return `<button class="spell ${inB?"in":""} ${lk?"locked":""} ${prob?"needs":""}" data-sp="${s.id}" type="button" ${lk?"disabled":""}>${sico(s)}<span><b>${esc(s.name)} <i class="tier t${s.tier}">${s.tier?"L"+s.tier:"P"+s.pres}</i>${inB?" ✓":""}</b><small>${esc(s.desc)}</small><span class="meta">${esc(spellMeta(s))}</span>${lk?`<span class="req">Unlocks at ${s.book==="prestige"?"Prestige "+s.pres:"level "+s.lvl}</span>`:prob?`<span class="req">${esc(prob)}</span>`:""}</span></button>`}).join("");
@@ -1341,10 +1361,11 @@ const PANELS={
   b.querySelector("#fbSend").onclick=()=>{const t=b.querySelector("#fbText").value.trim();if(!t) return toast("Write something first.");DB.feedback.push({u:u.username,t,at:Date.now()});save();toast("Feedback saved. Thank you!");closeModal()};
  }
 };
-function fixBook(u,fill){const L=effLevel(u),P=effPres(u);const unl=new Set(unlockedFor(L,P));const slots=slotsFor(L);
+const ID_MIGRATE={arcane_shot:"arcane_arrow",arcane_rift:"dragon_egg",imp_detonation:"imp_destruction",thorn_volley:"thorn_ball",summon_wolves:"summon_man_trap",regrowth:"summon_elves",spore_cloud:"entangle_ball",bramble_bomb:"thorn_bomb",thorn_wall:"sanctuary_tower",summon_treant:"vine_whip",bloom:"flurry",entangle:"vine_bomb",world_tree:"vine_bloom"};
+function fixBook(u,fill){ u.spellbook=[...new Set((u.spellbook||[]).map(id=>ID_MIGRATE[id]||id))];const L=effLevel(u),P=effPres(u);const unl=new Set(unlockedFor(L,P));const slots=slotsFor(L);
   u.spellbook=validBook(u.spellbook.filter(id=>unl.has(id))).slice(0,slots);
   if(!fill) return; // only auto-fill when asked (new level slots, admin); an empty book stays empty
-  const order=[...BASIC,...SPELLS.filter(s=>s.book!=="prestige"&&s.book!=="minion").sort((a,b)=>a.lvl-b.lvl||a.tier-b.tier).map(s=>s.id)];
+  const order=[...BASIC,...SPELLS.filter(s=>s.book!=="prestige"&&s.book!=="minion"&&!s.famOnly).sort((a,b)=>a.lvl-b.lvl||a.tier-b.tier).map(s=>s.id)];
   for(const id of order){ if(u.spellbook.length>=slots) break; if(!unl.has(id)||u.spellbook.includes(id)||reqProblem(new Set(u.spellbook),id)) continue; u.spellbook.push(id) } }
 
 /* ================= GAME ENGINE ================= */
@@ -1391,7 +1412,7 @@ function flyMove(m,nx,ny){ const prev=PHYS_SELF; PHYS_SELF=m; const hh=m.spec.si
   const blocked=(x,y)=>bodyBlock(x,y-2)||bodyBlock(x,y-hh/2)||bodyBlock(x,y-hh+2)||isSolid(x,y-hh/2);
   if(!blocked(nx,m.y)) m.x=nx; if(!blocked(m.x,ny)) m.y=ny; PHYS_SELF=prev }
 function allBodies(){return M?[...M.units.filter(u=>u.alive),...M.imps]:[]}
-function walksWater(u){return u.imp?!!u.spec.swim:!!(u.fams&&u.fams.includes("seas")&&u.famLvl>=5)}
+function walksWater(u){return u.imp?(!!u.spec.swim||famOf(u.owner,"seas")>=1):famOf(u,"seas")>=1}
 function physBody(u,isImp){
   PHYS_SELF=u;
   if(!isImp&&u.aegisT>0&&u.absorb>0){ u.vx=0; u.vy=0; return }
@@ -1409,7 +1430,7 @@ function physBody(u,isImp){
   else { while(r<0){const s=Math.max(-1,r); if(isSolid(u.x,u.y-36+s)){u.vy=0;break} u.y+=s; r-=s;} }
 }
 function land(u,isImp){
-  if(!isImp&&u.vy>9.5){const d=Math.round((u.vy-9.5)*9);hurt(u,d,u.lastHitBy,"fall")}
+  if(u.leapSafe){u.leapSafe=false} else if(!isImp&&u.vy>9.5){const d=Math.round((u.vy-9.5)*9);hurt(u,d,u.lastHitBy,"fall")}
   u.vy=0;u.vx=0;u.grounded=true;
 }
 function walk(u,dir){
@@ -1425,10 +1446,11 @@ function walk(u,dir){
       if(!feetSolid(u.x,u.y+1)){u.grounded=false;u.vy=0} return } }
 }
 function jump(u,high){
+  if(u.entangled){ if(u.isPlayer||(u.owner&&u.owner.isPlayer)) toast("Entangled: you can't jump"); return }
   if(!u.imp&&u.tower){ M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Left "+u.tower.name,life:50,max:50}); u.tower=null }
   if(!u.imp&&u.flyT>0){ u.grounded=false; u.y-=2; u.vy=-3.4; u.vx=u.face*2.2; return }
   if(!u.grounded) return; u.grounded=false; u.y-=2;
-  const f=(!u.imp&&u.fams&&u.fams.includes("frost"))?1+.08*u.famLvl:1;
+  const f=u.imp?(1+.1*famOf(u.owner,"frost"))*(u.spec.highJump?1.6:u.spec.lowJump?.72:1):1;
   if(high){u.vy=-7.2*f;u.vx=u.face*.9}else{u.vy=-5*f;u.vx=u.face*2.4}
 }
 
@@ -1436,11 +1458,11 @@ function jump(u,high){
 const BOT_NAMES=["Ashby","Nimue","Corvin","Elowen","Garrick","Isolde","Talon","Wren","Bram","Liora","Fennick","Sable","Orla","Dax","Mabyn","Rook"];
 function makeBook(level,random,pres=0){
   const slots=slotsFor(level);
-  if(random) return SPELLS.filter(s=>s.book!=="minion"&&(s.book!=="prestige"||pres>=s.pres)).map(s=>s.id).sort(()=>Math.random()-.5).slice(0,Math.max(slots,8));
+  if(random) return SPELLS.filter(s=>s.book!=="minion"&&!s.famOnly&&(s.book!=="prestige"||pres>=s.pres)).map(s=>s.id).sort(()=>Math.random()-.5).slice(0,Math.max(slots,8));
   const unl=new Set(unlockedFor(level,pres));
   const books=BOOKS.filter(b=>b.id!=="arcane"&&bookSpells(b.id).filter(id=>unl.has(id)).length>=2);
   const main=books.length?pick(books).id:"arcane";
-  const order=[...BASIC,...bookSpells(main).sort((a,b)=>SP[a].tier-SP[b].tier),...SPELLS.filter(s=>s.book==="prestige").map(s=>s.id),...bookSpells("arcane"),...SPELLS.filter(s=>s.book!=="minion").map(s=>s.id).sort(()=>Math.random()-.5)];
+  const order=[...BASIC,...bookSpells(main).sort((a,b)=>SP[a].tier-SP[b].tier),...SPELLS.filter(s=>s.book==="prestige").map(s=>s.id),...bookSpells("arcane"),...SPELLS.filter(s=>s.book!=="minion"&&!s.famOnly).map(s=>s.id).sort(()=>Math.random()-.5)];
   const book=[]; for(const id of order){ if(book.length>=slots) break; if(!unl.has(id)||book.includes(id)) continue; if(reqProblem(new Set(book),id)) continue; book.push(id) }
   return book;
 }
@@ -1508,7 +1530,7 @@ function startMatch(cfg){
   M={cfg,map,units,imps:[],zones:[],ctrl:null,ctrlQueue:[],rewindDone:false,proj:[],parts:[],nums:[],fx:[],turnNo:0,round:1,teamTurn:Math.random()<.5?0:1,nextIdx:[0,0],
      water:H-6,wind:0,phase:"start",active:null,timer:u.opts.turn,selSpell:0,charge:0,charging:false,
      armaAt:40,warned:false,ff:false,over:false,botPlan:null,startedAt:Date.now(),dmgNums:u.opts.dmgNums};
-  for(const un of units) unstick(un);
+  for(const un of units){ unstick(un); for(const id of un.spells){ const sp=SP[id]; if(sp&&sp.half&&un.team===M.teamTurn) un.cool[id]=Math.max(un.cool[id]||0,1) } }
   show("#game"); $("#ffBtn").classList.remove("on"); fitCanvas(); setZoom(matchMedia("(pointer:coarse)").matches?1.8:1); CAM.x=W/2; CAM.y=H/2;
   banner(cfg.ranked?"Ranked duel":`${cfg.size}v${cfg.size}`,1600);
   setTimeout(()=>nextTurn(true),900);
@@ -1525,7 +1547,7 @@ function nextTurn(first){
   const team=M.units.filter(u=>u.team===M.teamTurn);
   let idx=M.nextIdx[M.teamTurn],guard=0; while(!team[idx%team.length].alive&&guard++<8) idx++;
   const u=team[idx%team.length]; M.nextIdx[M.teamTurn]=(idx+1)%team.length;
-  M.turnNo++; M.round=Math.ceil(M.turnNo/2);
+  M.turnNo++; M.round=Math.ceil(M.turnNo/2); for(const x of M.units) if(x.halfFly){x.halfFly=false;x.flyT=0}
   if(M.round>60){return endMatch(null,"Turn limit reached")}
   M.active=u; M.charge=0; M.charging=false; M.aiming=false; M.botPlan=null; M.cast=false;
   M.wind=Math.round(rand(-10,10))/10;
@@ -1570,6 +1592,7 @@ function pickMinion(){
   b.querySelectorAll("[data-mi]").forEach(x=>x.onclick=()=>{ $("#modalRoot").innerHTML=""; startControl(list[+x.dataset.mi]) });
 }
 function moveCtrlMinion(m){
+  touchCheck(m);
   if(m.rooted) return;
   const dir=keys.left?-1:keys.right?1:0;
   if(m.spec.fly){ if(dir) m.face=dir; const nx=clamp(m.x+dir*2.4,12,W-12); let ny=m.y; if(keys.up) ny=Math.max(m.spec.size*3.6+10,m.y-2.4); if(keys.down&&!isSolid(m.x,m.y+4)) ny=Math.min(M.water-4,m.y+2.4); flyMove(m,nx,ny); return }
@@ -1582,13 +1605,14 @@ function turnStart(u){
   if(u.energyT>0) u.energyT--;
   if(u.regenT>0){u.regenT--;heal(u,u.regen)}
   if(u.wings) heal(u,10);
-  if(u.fams&&u.famLvl){ if(u.fams.includes("nature")) heal(u,2*u.famLvl);
+  if(u.fams&&u.famLvl){
     if(u.fams.includes("overlight")&&(u.cherub||0)<50){const a=Math.min(u.famLvl,50-(u.cherub||0));u.cherub=(u.cherub||0)+a;u.absorb+=a;u.absorbT=Math.max(u.absorbT||0,999)} }
   if(u.tower){ if(u.tower.heal) heal(u,u.tower.heal); if(u.tower.selfHeal) u.tower.hp=Math.min(u.tower.max,u.tower.hp+u.tower.selfHeal);
     if(u.tower.aura) for(const e of enemiesNear(u.team,u.x,u.y-24,70)) dmgAny(e,u.tower.aura,u,"underdark") }
   if(u.lich){ for(const e of enemiesNear(u.team,u.x,u.y-24,60)) dmgAny(e,15,u,"underdark"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:60,life:24,max:24,col:"#5bd17a"}) }
   if(u.zapT>0){ u.zapT--; if(u.zapT>0) zapAround(u) }
   for(const m of M.imps) if(!m.dead&&m.owner===u){ if(m.rooted>0) m.rooted--; if(m.spec.undead||m.undead) mHurt(m,5,null,"") }
+  a2TurnStart(u);
   zonesTurnStart(u);
 }
 function armageddonTick(){
@@ -1613,9 +1637,11 @@ function mkProj(o){return Object.assign({age:0,trail:[],grav:0,wind:0,timer:null
 function stepProj(p,sim){
   for(let s=0;s<SUB;s++){
     if(p.grav) p.vy+=G*p.grav/SUB;
+    if(!sim&&p.spell&&p.spell.apex&&p.age>4&&p.vy>=0) return {x:p.x,y:p.y,apex:true};
     if(p.wind) p.vx+=M.wind*.045/SUB;
-    if(p.homing&&p.age>12&&!sim){const t=nearestEnemy(p.x,p.y,p.team);if(t){const want=Math.atan2(t.y-18-p.y,t.x-p.x),cur=Math.atan2(p.vy,p.vx);let d=want-cur;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const a=cur+clamp(d,-.012,.012),sp=Math.max(4,Math.hypot(p.vx,p.vy));p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp}}
+    if(p.homing&&p.age>12&&!sim){const t=p.homeX!=null?{x:p.homeX,y:p.homeY+18}:nearestEnemy(p.x,p.y,p.team);if(t){const want=Math.atan2(t.y-18-p.y,t.x-p.x),cur=Math.atan2(p.vy,p.vx);let d=want-cur;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const tr=p.homeX!=null?.06:.012, a=cur+clamp(d,-tr,tr),sp=Math.max(4,Math.hypot(p.vx,p.vy));p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp}}
     const ox=p.x,oy=p.y; p.x+=p.vx/SUB; p.y+=p.vy/SUB;
+    if(!sim&&!p.leafed&&inLeafStorm(p.x)){ p.leafed=1; p.vx=-p.vx*1.3; p.vy-=2 }
     if(p.x<-300||p.x>W+300||p.y>H+30) return {out:true};
     if(!(p.noclip&&p.age<p.noclip)&&isSolid(p.x,p.y)){
       if(p.bounce){ p.x=ox;p.y=oy; let nx=0,ny=0; for(let a=0;a<8;a++){const ang=a*Math.PI/4;if(isSolid(p.x+Math.cos(ang)*6,p.y+Math.sin(ang)*6)){nx-=Math.cos(ang);ny-=Math.sin(ang)}}
@@ -1647,7 +1673,7 @@ function stepProj(p,sim){
 }
 function nearestEnemy(x,y,team,exclude=[]){let best=null,bd=1e9;for(const u of M.units){if(!u.alive||u.team===team||exclude.includes(u))continue;const d=Math.hypot(u.x-x,u.y-18-y);if(d<bd){bd=d;best=u}}return best}
 function explode(x,y,sp,owner,opts={}){
-  const r=sp.rad||20;
+  const r=(sp.rad||20)*(sp.book==="flame"&&famOf(owner,"flame")?1+.06*famOf(owner,"flame"):1);
   if(!sp.nodig) carve(x,y,r);
   sfx(r>40?"boom":"hit");
   for(let i=0;i<Math.min(30,r);i++){const a=rand(0,6.28),v=rand(1,4+r/12);M.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,life:rand(25,50),col:Math.random()<.5?sp.col:"#5a3a1c",sz:rand(2,4)})}
@@ -1661,6 +1687,12 @@ function explode(x,y,sp,owner,opts={}){
     if(owner&&owner.fams&&owner.fams.includes("flame")&&sp.book==="flame") base*=1+.1*owner.famLvl;
     if(owner&&owner.mult&&owner.team!==u.team) base*=owner.mult;
     const dmg=Math.round(base*f);
+    if(sp.noSelf&&u===owner) continue;
+    if(sp.noAllies&&owner&&u.team===owner.team) continue;
+    if(sp.water&&!u.imp&&famOf(u,"seas")>=5) continue;
+    if(dmg>0&&elem==="arcane"&&!sp.hurtsOwner&&u===owner) continue;
+    if(dmg>0&&elem==="arcane"&&u.imp&&u.spec.arcaneFed){ const g=Math.min(dmg,u.maxHp-u.hp); u.hp+=g; if(g>0&&M.dmgNums) M.nums.push({x:u.x,y:u.y-u.spec.size*2-8,t:"+"+g,life:50,col:"#d6c4ff"}); continue }
+    if(dmg>0&&elem==="arcane"&&!u.imp&&u.tower&&u.tower.arcTower){ u.tower.hp=Math.min(u.tower.tmax||100,u.tower.hp+dmg); u.tower.max=Math.max(u.tower.max,u.tower.hp); if(M.dmgNums) M.nums.push({x:u.x,y:u.y-78,t:"tower +"+dmg,life:50,col:"#d6c4ff"}); continue }
     const push=(sp.push||Math.max(2,r/9))*(1-d/reach*.6), ang=Math.atan2(cy-y,u.x-x);
     const pinned=u.rooted||u.tower||(u.imp&&u.spec.fly)||sp.mud;
     if(sp.mud&&u!==owner&&!u.tower&&!(u.aegisT>0)) mudHits.push(u);
@@ -1674,6 +1706,7 @@ function explode(x,y,sp,owner,opts={}){
     if(sp.freeze&&u!==owner) u.frozen=1;
   }
   if(sp.mud) mudSplat(x,y,r,mudHits.filter(u=>u.imp?!u.dead:u.alive));
+  minesNear(x,y,r+12);
   if(sp.pull){ for(const u of [...M.units.filter(u=>u.alive),...M.imps.filter(i=>!i.dead&&!i.spec.fly)]){ if(u.tower) continue; const d=Math.hypot(u.x-x,u.y-y);if(d<sp.pull&&d>4){u.vx+=(x-u.x)/d*7*(1-d/sp.pull*.5);u.vy+=(y-u.y)/d*5-2;u.grounded=false;u.y-=2}} M.fx.push({t:"hole",x,y,life:40,max:40,col:sp.col}) }
   return dealt;
 }
@@ -1716,6 +1749,7 @@ function hurt(u,dmg,by,how,elem){
   if(u.fams&&u.famLvl){ if(u.fams.includes("stone")) dmg=Math.max(1,dmg-u.famLvl); if(u.fams.includes("seas")&&elem==="seas") dmg=Math.round(dmg*(1-.2*u.famLvl)) }
   if(dmg<=0) return 0;
   if(u.shield) dmg=Math.round(dmg/2);
+  if(u.tower&&u.tower.block5&&how!=="fall") dmg=Math.max(1,dmg-5);
   if(u.tower&&how!=="fall"){ const t=Math.min(u.tower.hp,dmg); towerHit(u,t); dmg-=t; if(dmg<=0) return 0 }
   const raw=dmg;
   if(u.absorb>0){ const take=Math.min(u.absorb,dmg); u.absorb-=take; dmg-=take;
@@ -1726,6 +1760,7 @@ function hurt(u,dmg,by,how,elem){
     if(u.freezeHit) by.frozen=1; }
   if(dmg<=0) return 0;
   if(u.flyT>0&&!u.wings&&how!=="fall") u.flyT=0;
+  u.entangled=false; if(u.latched){u.latched=false;u.rooted=0} u.leapSafe=false;
   u.hp=Math.max(0,u.hp-dmg); if(by&&by!==u){u.lastHitBy=by; if(by.team!==u.team) by.dmg+=dmg}
   if(M.dmgNums) M.nums.push({x:u.x,y:u.y-46,t:"-"+dmg,life:60,col:"#ffd0c8"});
   if(by&&by.lich&&by!==u&&by.team!==u.team) heal(by,Math.round(dmg*.25));
@@ -1749,6 +1784,7 @@ function mHurt(m,dmg,by,elem,sp){
   if(und&&elem==="underdark"){ m.hp=Math.min(m.maxHp,m.hp+dmg); return 0 }
   if(und&&elem==="overlight") dmg*=2;
   if(s.resist) dmg=Math.round(dmg*(1-s.resist)); if(s.weak) dmg=Math.round(dmg*s.weak);
+  if(s.flatResist) dmg=Math.max(1,dmg-s.flatResist); { const pr=famOf(m.owner,"stone"); if(pr) dmg=Math.max(1,dmg-pr) } if(s.weakTo&&elem===s.weakTo) dmg=Math.round(dmg*1.5); m.entangled=false; if(m.latched){m.latched=false;m.rooted=0}
   m.hp-=dmg; if(M.dmgNums) M.nums.push({x:m.x,y:m.y-s.size*2-8,t:"-"+dmg,life:50,col:"#ffd0c8"});
   if(m.hp<=0){
     if(sp&&sp.raise&&!und&&by){ m.hp=Math.round(m.maxHp*.5); m.undead=true; m.team=by.team; m.owner=by; M.fx.push({t:"text",x:m.x,y:m.y-40,txt:"Risen!",life:60,max:60}); return dmg }
@@ -1760,48 +1796,53 @@ function mHurt(m,dmg,by,elem,sp){
 
 /* ----- casting ----- */
 function spellState(u,id){const s=SP[id];if(!s)return{ok:false,why:"Unknown spell",cd:0,out:false};
-  const cd=u.cool[id]||0, ch=chargesOf(s), out=!!ch&&(u.used[id]||0)>=ch; let why=null;
+  const cd=u.cool[id]||0, ch=maxCharges(u,s), out=!!ch&&(u.used[id]||0)>=ch; let why=null;
   if(out) why=ch===1?"Already used this match":`All ${ch} charges used`;
   else if(cd) why=(u.used[id]?"Recharging":"Charging up")+`: ready in ${cd} turn${cd>1?"s":""}`;
   else if(u.restrict&&!u.restrict.has(s.book)) why=u.lich?"Undead can only use Arcane and Underdark spells":"With wings you can only use Arcane and Overlight spells";
   else if(s.kind==="tower"&&(u.lich||u.wings)) why="You can't use towers now";
   else if(s.kind==="tower"&&u.tower) why="You're already in a tower";
-  else if(s.kind==="rewind"&&M&&M.rewindDone) why="Rewind was already used this match";
+  else if(s.kind==="rewind"&&M&&M.rewindDone) why="Redo was already used this match";
+  else if(M&&s.oncePerTurn&&u.usedTurn&&u.usedTurn[id]===M.turnNo) why="Only once a turn";
+  else if((s.kind==="tele"||s.kind==="portal"||s.kind==="flight")&&u.entangled) why="You're entangled";
+  else if(M&&s.kind==="minion"&&s.maxOwn&&myImps(u,s.minion).length>=s.maxOwn) why=`You can only have ${s.maxOwn} at a time`;
   return {cd,out,ok:!why,why}}
 function canCast(u,id){return spellState(u,id).ok}
 const later=(d,fn)=>M.fx.push({t:"later",life:Math.max(1,d),max:Math.max(1,d),block:true,fn});
 const waitFx=n=>M.fx.push({t:"wait",life:n,max:n,block:true});
 function castSpell(u,id,tx,ty,power){
-  const s=SP[id]; if(!s||!canCast(u,id)||M.cast) return false;
+  let s=SP[id]; if(!s||!canCast(u,id)||M.cast) return false; s=adjustSpell(u,s);
   const ox=u.x, oy=u.y-(u.imp?u.spec.size:24), ang=Math.atan2(ty-oy,tx-ox), cred=u.imp?u.owner:u;
   if(s.type==="target"){
     if(s.range&&Math.hypot(tx-u.x,ty-u.y)>s.range){toast("Out of range");return false}
     if(s.kind==="tele"){ PHYS_SELF=u; if(bodyHits(tx,ty+18)||isSolid(tx,ty)){toast("Pick an open spot");return false} }
   }
   if(s.kind==="minion"&&(isSolid(tx,ty)||isSolid(tx,ty-14))){ if(u.isPlayer) toast("Pick an open spot to summon"); return false }
+  if(s.kind==="market"&&u.hp<=20){ toast("The dwarf needs more than 20 health"); return false }
   if(s.kind==="pact"&&!M.imps.some(m=>!m.dead&&m.owner===u)){ if(u.isPlayer) toast("You need minions to drain"); return false }
   if(!s.free) M.cast=true;
-  let cd=s.cd||0; if(u.fams&&u.fams.includes("storm")&&s.book==="storm") cd=Math.max(0,cd-Math.floor(u.famLvl/2));
-  u.cool[id]=cd; if(chargesOf(s)) u.used[id]=(u.used[id]||0)+1;
+  let cd=cdFor(u,s);
+  u.cool[id]=cd; if(maxCharges(u,s)) u.used[id]=(u.used[id]||0)+1; if(s.oncePerTurn){u.usedTurn=u.usedTurn||{};u.usedTurn[id]=M.turnNo}
   if(u.invulnT>0&&s.kind!=="invuln"){u.invulnT=0;M.fx.push({t:"text",x:u.x,y:u.y-70,txt:"Barrier broken",life:60,max:60})}
   u.face=tx>=u.x?1:-1; sfx(["chain","strike","cloud","zapaura"].includes(s.kind)?"zap":"cast");
   const base={spell:s,owner:cred,ownerUnit:u,team:u.team};
   switch(s.kind){
     case "shot": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,grav:s.grav||0,life:160})); break;
-    case "spray": { let n=s.count||1; if(s.id==="thunderbolt"&&u.fams&&u.fams.includes("storm")) n+=u.famLvl;
+    case "spray": { let n=s.count||1; if(s.id==="thunderbolt"&&u.fams&&u.fams.includes("storm")) n+=u.famLvl; n+=(s.famMore||0)*famOf(u,s.book);
       for(let k=0;k<n;k++){ const a=ang+rand(-1,1)*(s.spread||0), v=s.speed*rand(.93,1.07);
         later(1+k*2,()=>M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,grav:s.grav||0,life:120,small:n>1}))) } break }
     case "arrow": { const n=s.count||1; for(let k=0;k<n;k++){ const a=ang+(k-(n-1)/2)*.14;
         later(1+k*6,()=>M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(a)*s.speed,vy:Math.sin(a)*s.speed,homing:1,life:s.drops?300:260,drops:s.drops?55:0,burstEnd:!!s.drops,small:n>1}))) } break }
     case "chain": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,life:100,chain:true})); break;
     case "lance": M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*s.speed,vy:Math.sin(ang)*s.speed,pierce:true,life:120,big:true})); break;
-    case "ball": case "hole": { const v=4+power*11; M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:s.grav??1,wind:1,start:[ox,oy]})); break }
-    case "bomb": case "boulder": { const v=4+power*10, fuse=s.fuseR?Math.round(rand(s.fuseR[0],s.fuseR[1])):(s.fuse||150);
+    case "ball": case "hole": { if(s.hydrate) hydrateTrolls(cred); const v=(4+power*11)*(s.heavy?.8:1); M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:s.grav??1,wind:1,start:[ox,oy]})); break }
+    case "bomb": case "boulder": { const v=(4+power*10)*(s.heavy?.8:1), fuse=s.fuseR?Math.round(rand(s.fuseR[0],s.fuseR[1])):(s.fuse||150);
       M.proj.push(mkProj({...base,x:ox,y:oy,vx:Math.cos(ang)*v,vy:Math.sin(ang)*v,grav:1,bounce:true,timer:fuse,boulder:s.kind==="boulder",hits:0})); break }
-    case "tele": M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); u.x=tx;u.y=ty+18;u.grounded=!!(u.imp&&u.spec.fly);u.vx=0;u.vy=0;u.tower=null;if(!(u.imp&&u.spec.fly))unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); break;
-    case "vine": { const sx=ox+Math.cos(ang)*22, sy=u.y+2+Math.sin(ang)*22, ex=sx+Math.cos(ang)*175, ey=sy+Math.sin(ang)*175;
+    case "tele": M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); u.x=tx;u.y=ty+18;u.grounded=!!(u.imp&&u.spec.fly);u.vx=0;u.vy=0;if(!(u.tower&&u.tower.arcTower))u.tower=null;if(!(u.imp&&u.spec.fly))unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:s.col}); break;
+    case "vine": { const sx=ox+Math.cos(ang)*22, sy=u.y+2+Math.sin(ang)*22, L=175+25*famOf(u,"nature"), ex=sx+Math.cos(ang)*L, ey=sy+Math.sin(ang)*L;
       addRock(c=>{c.lineCap="round";c.lineWidth=13;c.strokeStyle="#2f5a20";c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.stroke();c.lineWidth=8;c.strokeStyle="#5fa83f";c.stroke()},Math.min(sx,ex)-10,Math.min(sy,ey)-10,Math.abs(ex-sx)+20,Math.abs(ey-sy)+20); waitFx(20); break }
-    case "slab": addRock(c=>{c.beginPath();c.roundRect(tx-40,ty-8,80,16,5);c.fill();c.stroke()},tx-40,ty-8,80,16); waitFx(20); break;
+    case "slab": { const sw=s.small?30:80; addRock(c=>{c.beginPath();c.roundRect(tx-sw/2,ty-8,sw,16,5);c.fill();c.stroke()},tx-sw/2,ty-8,sw,16); if(!s.free) waitFx(20); break }
+    case "forest": for(let k=0;k<5;k++) plantTree(tx+(k-2)*62+rand(-10,10),ty); waitFx(25); break;
     case "seed": { const sy=surfaceY(tx|0,Math.max(0,ty-40)); const by=sy==null?ty:Math.min(sy,ty+200);
       addRock(c=>{c.fillStyle="#6b4a2a";c.strokeStyle="#2c1a0c";c.beginPath();c.roundRect(tx-7,by-70,14,74,4);c.fill();c.stroke();c.fillStyle="#3f8f3a";c.beginPath();c.arc(tx,by-82,30,0,7);c.arc(tx-22,by-66,18,0,7);c.arc(tx+22,by-66,18,0,7);c.fill();c.stroke()},tx-44,by-114,88,118); waitFx(20); break }
     case "icewall": for(const d of [-1,1]) addRock(c=>{c.fillStyle="#d8f3ff";c.strokeStyle="#7cc0dc";c.beginPath();c.roundRect(u.x+d*22-5,u.y-58,10,62,4);c.fill();c.stroke()},u.x+d*22-5,u.y-58,10,62); sfx("hit"); break;
@@ -1811,7 +1852,7 @@ function castSpell(u,id,tx,ty,power){
         if(Math.hypot(dx,ey-oy)<reach+(e.imp?e.spec.size:8)&&(Math.sign(dx)===dir||Math.abs(dx)<12)){ dmgAny(e,s.dmg+bonus,cred,s.elem||""); hit++;
           if(!e.tower&&!e.rooted&&!(e.imp&&e.spec.fly)){ e.vx+=dir*(s.push||4)*.7; e.vy-=2+(s.push||4)*.3; e.grounded=false; e.y-=2 } if(s.root) e.rooted=Math.max(e.rooted||0,2); if(s.freeze&&!e.imp) e.frozen=1 } }
       M.fx.push({t:"slash",x:u.x+dir*reach*.6,y:oy,dir,life:14,max:14,col:"#fff"}); sfx("hit"); if(!hit&&u.owner&&u.owner.isPlayer) toast("Missed: get right next to an enemy"); waitFx(16); break }
-    case "selfboom": { const d=s.dmg||u.hp; u.dead=true; explode(u.x,oy,{...s,dmg:d,rad:s.rad||30},cred); if(s.salt) splitAt(u.x,oy,{n:8,dmg:5,rad:8,salt:1},{spell:s,owner:cred,team:u.team}); break }
+    case "selfboom": { const d=s.dmg||u.hp; u.dead=true; explode(u.x,oy,{...s,dmg:d,rad:s.dmg?(s.rad||30):Math.min(90,18+u.hp*.4)},cred); if(s.salt) splitAt(u.x,oy,{n:8,dmg:5,rad:8,salt:1},{spell:s,owner:cred,team:u.team}); break }
     case "portal": { const w=u.owner; if(w&&w.alive){ M.fx.push({t:"poof",x:w.x,y:w.y-20,life:30,max:30,col:"#ffd6f4"}); w.x=u.x; w.y=u.y+4; w.vx=w.vy=0; w.grounded=false; w.tower=null; unstick(w); M.fx.push({t:"poof",x:w.x,y:w.y-20,life:30,max:30,col:"#ffd6f4"}) } u.dead=true; waitFx(20); break }
     case "mheal": { const w=(u.owner&&u.owner.alive)?u.owner:M.units.filter(x=>x.alive&&x.team===u.team).sort((a,b)=>Math.hypot(a.x-u.x,a.y-u.y)-Math.hypot(b.x-u.x,b.y-u.y))[0]; if(w){ heal(w,s.heal); M.fx.push({t:"zap",x1:u.x,y1:oy,x2:w.x,y2:w.y-24,life:20,max:20,block:true,col:"#fff2a8"}) } sfx("heal"); break }
     case "dig": for(let k=0;k<6;k++) carve(ox+Math.cos(ang)*k*14,oy+Math.sin(ang)*k*14,15); sfx("hit"); waitFx(15); break;
@@ -1824,11 +1865,11 @@ function castSpell(u,id,tx,ty,power){
     case "beacon": M.zones.push({type:"beacon",owner:u,team:u.team,x:tx,y:ty,turns:99}); waitFx(15); break;
     case "aura": { const z={type:"aura",owner:u,team:u.team,x:tx,y:ty,r:s.rad,dmg:s.dmg,turns:s.turns,col:s.col,elem:s.elem}; M.zones.push(z); auraHit(z); waitFx(30); break }
     case "root": for(const e of enemiesNear(u.team,tx,ty,s.rad)){ dmgAny(e,s.dmg,u,s.elem); e.rooted=Math.max(e.rooted||0,s.turns+1) } M.fx.push({t:"ring",x:tx,y:ty,r:s.rad,life:30,max:30,col:s.col}); waitFx(30); break;
-    case "pull": { const vic=allNear(tx,ty,s.rad); for(const e of vic){ if(e.tower||e.rooted||(e.imp&&e.spec.fly)) continue; const d=Math.hypot(e.x-tx,e.y-ty)||1; e.vx=(tx-e.x)/d*4; e.vy=-6; e.grounded=false; e.y-=2 }
+    case "pull": { if(s.sacrifice){tx=u.x;ty=u.y-18;later(50,()=>{u.dead=true})} const vic=allNear(tx,ty,s.rad).filter(e=>e!==u); for(const e of vic){ if(e.tower||e.rooted||(e.imp&&e.spec.fly)) continue; const d=Math.hypot(e.x-tx,e.y-ty)||1; e.vx=(tx-e.x)/d*4; e.vy=-6; e.grounded=false; e.y-=2 }
       M.fx.push({t:"hole",x:tx,y:ty,life:50,max:50,col:s.col});
       later(45,()=>{for(const e of vic){ if(e.dead||e.alive===false||e.tower||(e.imp&&e.spec.fly)) continue; e.vx=(e.x>=tx?1:-1)*rand(6,9); e.vy=-rand(7,9); e.grounded=false; e.y-=2 }}); break }
     case "strike": strike(tx,s,cred); break;
-    case "barrage": barrage(s,tx,ty,u,base); break;
+    case "barrage": { const s2={...s,count:s.count+(s.famMore||0)*famOf(u,s.book)}; if(s.id==="rain_of_skulls"&&famOf(u,"underdark")>=5) s2.mode="focus"; barrage(s2,tx,ty,u,{...base,spell:s2}); break }
     case "meteor": case "ult": { const sx=tx-260, sy=-60, d=Math.hypot(tx-sx,ty-sy);
       M.proj.push(mkProj({...base,ownerUnit:null,x:sx,y:sy,vx:(tx-sx)/d*15,vy:(ty-sy)/d*15,big:!s.cog,bounce:!!s.cog,boulder:!!s.cog,hits:0,timer:s.cog?240:null,grav:s.cog?1:0})); break }
     case "cloud": { const z={type:"cloud",owner:u,team:u.team,x:tx,y:ty,cy:clamp(ty-170,50,160),turns:s.turns,total:s.turns,mode:s.mode,count:s.count,dmg:s.dmg,rad:s.rad,col:s.col,step:0,spell:s}; M.zones.push(z); cloudTick(z); break }
@@ -1838,14 +1879,14 @@ function castSpell(u,id,tx,ty,power){
     case "deflect": u.deflectT=s.turns+1; u.deflectOnce=!!s.once; u.deflectReady=true; u.deflectCol=s.col; M.fx.push({t:"ring",x:u.x,y:u.y-24,r:36,life:30,max:30,col:s.col}); waitFx(30); break;
     case "zapaura": u.zapT=s.turns+1; u.zapDmg=s.dmg; zapAround(u); waitFx(30); break;
     case "invuln": u.invulnT=s.turns+1; M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:36,max:36,col:"#fff7c8"}); waitFx(36); break;
-    case "energise": u.energyT=s.turns+1; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Arcane +5",life:70,max:70}); waitFx(30); break;
-    case "flight": u.flyT=s.turns+1; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Flight! Jump to flap",life:70,max:70}); break;
+    case "energise": u.energyT=famOf(u,"arcane")>=5?999:s.turns+1; u.energised=true; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Arcane +5",life:70,max:70}); waitFx(30); break;
+    case "flight": u.flyT=s.turns+1; if(s.halfTurn) u.halfFly=true; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Flight! Jump to flap",life:70,max:70}); break;
     case "wings": u.wings=true; u.flyT=999; u.restrict=new Set(["arcane","overlight","prestige"]); u.tower=null; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Angel Wings",life:80,max:80}); waitFx(40); break;
     case "lich": u.lich=true; u.restrict=new Set(["arcane","underdark","prestige"]); u.tower=null; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Undeath",life:80,max:80}); waitFx(40); break;
-    case "pact": { let need=u.maxHp-u.hp; for(const m of M.imps.filter(m=>!m.dead&&m.owner===u)){ if(need<=0)break; const t=Math.min(m.hp-1,need); if(t>0){m.hp-=t;need-=t;heal(u,t);M.fx.push({t:"zap",x1:m.x,y1:m.y-m.spec.size,x2:u.x,y2:u.y-24,life:20,max:20,block:true,col:"#c0365a"})} } waitFx(30); break }
+    case "pact": { if(s.lasting) u.darkDef=true; let need=u.maxHp-u.hp; for(const m of M.imps.filter(m=>!m.dead&&m.owner===u)){ if(need<=0)break; const t=Math.min(m.hp-1,need); if(t>0){m.hp-=t;need-=t;heal(u,t);M.fx.push({t:"zap",x1:m.x,y1:m.y-m.spec.size,x2:u.x,y2:u.y-24,life:20,max:20,block:true,col:"#c0365a"})} } waitFx(30); break }
     case "regen": u.regen=s.heal; u.regenT=s.turns-1; heal(u,s.heal); sfx("heal"); waitFx(25); break;
     case "hydrate": for(const m of M.imps) if(!m.dead&&m.owner===u){m.hp+=100;m.maxHp+=100;m.bonus=(m.bonus||0)+15;M.fx.push({t:"ring",x:m.x,y:m.y-10,r:24,life:30,max:30,col:s.col})} waitFx(30); break;
-    case "tower": u.tower={name:s.name,hp:s.thp,max:s.thp,heal:s.theal||0,selfHeal:s.tself||0,aura:s.taura||0,moves:!!s.moves,col:s.col,id:s.id}; u.vx=0; sfx("hit"); M.fx.push({t:"ring",x:u.x,y:u.y-30,r:40,life:30,max:30,col:s.col}); waitFx(30); break;
+    case "tower": if(s.dispel) sanctuaryDispel(u,s.dispel); u.tower={name:s.name,hp:towerStartHp(u,s),max:s.tmax||towerStartHp(u,s),tmax:s.tmax||s.thp,arcTower:!!s.arcTower,block5:!!s.block5,heal:s.theal||0,selfHeal:s.tself||0,aura:s.taura||0,moves:!!s.moves,col:s.col,id:s.id}; u.vx=0; sfx("hit"); M.fx.push({t:"ring",x:u.x,y:u.y-30,r:40,life:30,max:30,col:s.col}); waitFx(30); break;
     case "minion": { const n=s.count||1; for(let k=0;k<n;k++){ const x=clamp(tx+(k-(n-1)/2)*22,20,W-20); spawnMinion(u,s.minion,x,ty+4) } waitFx(40); break }
     case "impboom": { const imps=M.imps.filter(m=>!m.dead&&m.owner===u&&m.mk==="imp"); if(!imps.length&&u.isPlayer) toast("You have no imps");
       imps.forEach((m,k)=>later(1+k*8,()=>{ if(m.dead) return; m.dead=true; explode(m.x,m.y-10,{dmg:m.hp,rad:18+m.hp*.5,col:s.col,book:"arcane",elem:"arcane"},u) })); waitFx(20); break }
@@ -1853,9 +1894,30 @@ function castSpell(u,id,tx,ty,power){
     case "tidal": { sfx("boom"); M.water=Math.max(420,M.water-40);
       for(let k=0;k<9;k++) for(const side of [0,1]){ const x=side?W-30-k*70:30+k*70; later(1+k*10,()=>{ const sy=surfaceY(x|0,100); explode(x,(sy==null?M.water:sy)-6,s,u) }) } break }
     case "pit": for(const m of M.imps){ if(m.dead||m.spec.undead||m.undead) continue; m.dead=true; M.zones.push({type:"aura",owner:u,team:u.team,x:m.x,y:m.y-10,r:40,dmg:15,turns:5,col:"#7b4fb0",elem:"underdark"}); M.fx.push({t:"hole",x:m.x,y:m.y,life:40,max:40,col:"#3a1a4a"}) } waitFx(40); break;
-    case "rewind": M.rewindDone=true; for(const x of M.units){ x.used={}; x.cool={}; for(const i2 of x.spells){const s2=SP[i2]; if(s2&&s2.init) x.cool[i2]=s2.init} } M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Rewind!",life:80,max:80}); waitFx(40); break;
+    case "rewind": M.rewindDone=true; for(const x of M.units){ x.used={}; x.cool={}; for(const i2 of x.spells){const s2=SP[i2]; if(s2&&s2.init) x.cool[i2]=s2.init} } for(const x of M.units) if(x.spells.includes("rewind")) x.used.rewind=1; M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"Redo!",life:80,max:80}); waitFx(40); break;
     case "freeze": for(const e of M.units) if(e.alive&&e.team!==u.team){ e.skipT=1; M.fx.push({t:"ring",x:e.x,y:e.y-24,r:30,life:40,max:40,col:"#d9a441"}) } waitFx(40); break;
     case "stasis": M.zones.push({type:"stasis",owner:u,team:u.team,x:u.x,y:u.y-24,r:56,turns:s.turns,follow:u}); waitFx(25); break;
+    case "portal": { M.zones=M.zones.filter(z=>!(z.type==="portal"&&z.owner===u)); M.zones.push({type:"portal",owner:u,team:u.team,x:tx,y:ty,a:{x:u.x,y:u.y-18},b:{x:tx,y:ty},turns:999,used:M.turnNo}); M.fx.push({t:"ring",x:tx,y:ty,r:20,life:30,max:30,col:s.col}); waitFx(25); break }
+    case "impdestruct": { const imps=M.imps.filter(m=>!m.dead&&m.mk==="imp"); if(!imps.length&&u.isPlayer) toast("There are no imps");
+      imps.forEach((m,k)=>later(1+k*6,()=>{ if(m.dead) return; m.dead=true; explode(m.x,m.y-10,{dmg:1,rad:20,col:s.col,book:"arcane",elem:"arcane",push:2},cred); const n=Math.max(1,Math.round(m.hp/10));
+        for(let q=0;q<n;q++){ const a=-Math.PI/2+rand(-1,1); M.proj.push(mkProj({spell:{dmg:10,rad:12,col:s.col,book:"arcane",elem:"arcane"},owner:cred,team:u.team,x:m.x,y:m.y-12,vx:Math.cos(a)*6,vy:Math.sin(a)*6,homing:1,homeX:tx,homeY:ty,life:260,small:true})) } })); waitFx(20); break }
+    case "meteorshower": { let k=0; for(const e of M.units.filter(e=>e.alive&&e.team!==u.team)) for(let q=0;q<s.count;q++){ const x=e.x+rand(-30,30); later(1+(k++)*4,()=>M.proj.push(mkProj({...base,ownerUnit:null,spell:{...s,napalm:1},x:x-40,y:-40,vx:2,vy:12}))) } break }
+    case "leap": { const v=(4+power*11)*(1+.12*famOf(u,"frost")); u.vx=Math.cos(ang)*v*.55; u.vy=Math.sin(ang)*v*.55; u.grounded=false; u.y-=3; u.tower=null; u.leapSafe=true; sfx("cast"); break }
+    case "whip": { [20,34,48].forEach((d,k)=>later(1+k*5,()=>explode(ox+Math.cos(ang)*d,oy+Math.sin(ang)*d,{dmg:s.dmg,rad:10,col:s.col,book:"nature",elem:"nature",push:2},cred,{exclude:u})));
+      later(18,()=>explode(ox+Math.cos(ang)*64,oy+Math.sin(ang)*64,{dmg:s.big,rad:s.rad,col:s.col,book:"nature",elem:"nature",push:s.push},cred,{exclude:u})); waitFx(24); break }
+    case "flurry": { const own=u.imp?u.owner:u, elves=myImps(own,"elf"); if(!elves.length&&(u.isPlayer||(own&&own.isPlayer))) toast("You need Elves for Flurry");
+      const n=(s.count||3)+2*famOf(own,"nature"); let k=0; for(const e of elves) for(let q=0;q<n;q++) later(1+(k++)*3,()=>{ if(e.dead) return; const a=Math.atan2(ty-(e.y-12),tx-e.x)+rand(-.05,.05); M.proj.push(mkProj({spell:{dmg:s.dmg,rad:12,col:"#8ccf6a",book:"nature",elem:"nature"},owner:own,team:u.team,ownerUnit:e,x:e.x,y:e.y-12,vx:Math.cos(a)*12,vy:Math.sin(a)*12,grav:.15,small:true})) }); break }
+    case "volley": { const own=u.imp?u.owner:u; M.zones=M.zones.filter(z=>!(z.type==="volley"&&z.owner===own)); M.zones.push({type:"volley",owner:own,team:u.team,x:tx,y:ty,turns:999}); M.fx.push({t:"ring",x:tx,y:ty,r:18,life:30,max:30,col:"#8ccf6a"}); waitFx(20); break }
+    case "leafstorm": { M.zones.push({type:"leafstorm",owner:u,team:u.team,x:tx,y:ty,turns:s.turns}); for(const z of M.zones) if(z.type==="mine"&&Math.abs(z.x-tx)<40) later(5,()=>popMine(z)); waitFx(30); break }
+    case "bloom": { const traps=s.self?[u]:myImps(u,"man_trap"); if(!traps.length&&u.isPlayer) toast("You need a Man-Trap for Vine Bloom"); for(const m of traps){ m.bloomT=1; M.fx.push({t:"text",x:m.x,y:m.y-40,txt:"Blooming…",life:60,max:60}) } waitFx(20); break }
+    case "dilate": M.timer+=5*famOf(u,"cogs"); M.fx.push({t:"text",x:u.x,y:u.y-74,txt:"+"+5*famOf(u,"cogs")+" seconds",life:60,max:60}); break;
+    case "banish": u.dead=true; M.fx.push({t:"poof",x:u.x,y:u.y-10,life:24,max:24,col:"#ff5d7a"}); break;
+    case "hatch": hatchEgg(u); waitFx(30); break;
+    case "mine_dig": digLine(u,tx,ty,s,cred); waitFx(10); break;
+    case "kablam": { M.proj.push(mkProj({spell:{...s,book:"stone",elem:"stone"},owner:cred,team:u.team,x:u.x,y:u.y-6,vx:0,vy:0,grav:1,bounce:true,timer:70})); u.vx=-u.face*3.5; u.vy=-4; u.grounded=false; u.y-=2; break }
+    case "market": u.hp-=20; if(!u.spells.includes("m_pickaxe")) u.spells.push("m_pickaxe"); M.fx.push({t:"text",x:u.x,y:u.y-40,txt:"Bought a Pickaxe",life:60,max:60}); break;
+    case "fairyring": { for(const e of [...M.units.filter(x=>x.alive&&x.team===u.team),...M.imps.filter(x=>!x.dead&&x.team===u.team&&x!==u)]) if(Math.hypot(e.x-tx,e.y-18-ty)<50){ e.x=u.x+rand(-8,8); e.y=u.y; e.vx=e.vy=0; e.grounded=false; e.tower=null; unstick(e) } carve(u.x,u.y-8,16); u.dead=true; M.fx.push({t:"poof",x:u.x,y:u.y-10,life:30,max:30,col:"#ffd6f4"}); waitFx(20); break }
+    case "recall": { const w=u.owner; if(w&&w.alive){ M.fx.push({t:"poof",x:w.x,y:w.y-20,life:30,max:30,col:"#d9a441"}); w.x=u.x; w.y=u.y; w.vx=w.vy=0; w.grounded=false; w.tower=null; unstick(w) } u.dead=true; break }
     // prestige spells
     case "heal": heal(u,s.heal); for(const a of M.units) if(a!==u&&a.team===u.team&&Math.hypot(a.x-u.x,a.y-u.y)<160) heal(a,s.allyHeal||20); sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-20,r:60,life:30,max:30,col:s.col}); waitFx(40); break;
     case "ward": if(s.stack){u.absorb+=s.absorb;u.absorbT=Math.max(u.absorbT||0,999)} else {u.absorb=Math.max(u.absorb,s.absorb);u.absorbT=Math.max(u.absorbT||0,s.turns+1)} if(s.reflect)u.reflect=s.reflect; if(s.freezeHit)u.freezeHit=1; sfx("heal"); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:40,life:30,max:30,col:s.col}); waitFx(30); break;
@@ -1946,9 +2008,103 @@ function volcanoErupt(z,n,first){ const s=z.spell; if(z.cx==null) return;
 }
 function drawVolcanoes(){ for(const z of M.zones){ if(z.type!=="volcano"||!z.anim||!IMG.volcano.naturalWidth) continue; const sh=volcShape(z,z.k), j=Math.sin(performance.now()/30)*1.2;
   cx.save(); cx.translate(j,0); cx.drawImage(IMG.volcano,sh.x,sh.y,sh.w,sh.h); cx.restore() } }
+/* ===== Arcanists 2 rules: familiar rewards, uses, recharges and the newer spell effects ===== */
+const FAM_GRANTS={arcane:{1:["little_devil"],2:["arcane_mist"]},flame:{5:["meteor_shower","fire_wave"]},stone:{1:["stepping_stone"],3:["mountain_goat"]},
+ storm:{5:["whistling_winds","electrostatic"]},frost:{1:["frost_leap"]},seas:{5:["summon_kraken"]},nature:{5:["forestation"]},cogs:{1:["time_dilation"]}};
+const famOf=(u,b)=>(!u||u.imp||!u.fams||!u.fams.includes(b))?0:(u.famLvl||0);
+function maxCharges(u,s){ let c=chargesOf(s);
+  if(s.famCharges) return famOf(u,s.book)||0;
+  if(s.id==="ice_shield"&&c) c+=famOf(u,"frost");
+  if(s.id==="falling_stars"&&famOf(u,"overlight")>=5) return 0;
+  if(s.id==="wind_shield"&&famOf(u,"storm")>=5) return 0;
+  return c }
+function cdFor(u,s){ let cd=s.cd||0;
+  if(s.id==="storm") cd=Math.max(1,cd-famOf(u,"storm"));
+  if(s.id==="falling_stars"&&famOf(u,"overlight")>=5) cd=5;
+  if(s.id==="wind_shield"&&famOf(u,"storm")>=5) cd=7;
+  if(s.id==="falling_cog"&&famOf(u,"cogs")>=5) cd=3;
+  if(s.famCd) cd=Math.max(1,cd+s.famCd*famOf(u,s.book));
+  return cd }
+function grantFamSpells(u){ if(!u.fams) return; for(const b of u.fams){ const g=FAM_GRANTS[b]; if(!g) continue;
+  for(const [lv,ids] of Object.entries(g)) if(u.famLvl>=+lv) for(const id of ids) if(!u.spells.includes(id)){ u.spells.push(id); const s=SP[id]; if(s&&s.init) u.cool[id]=s.init;
+    M.fx.push({t:"text",x:u.x,y:u.y-96,txt:"Learned "+s.name,life:90,max:90}); if(u.isPlayer) toast("Your familiar taught you "+s.name) } } }
+function myImps(u,key){ return M.imps.filter(m=>!m.dead&&m.owner===u&&(!key||m.mk===key)) }
+function hydrateTrolls(u){ for(const m of myImps(u,"troll")){ m.hydr=Math.min(2,(m.hydr||0)+1); const h=Math.round(m.hp*.5); m.maxHp+=h; m.hp+=h; m.bonus=m.hydr===1?15:30; m.grow=1+.25*m.hydr;
+  M.fx.push({t:"ring",x:m.x,y:m.y-10,r:26,life:30,max:30,col:"#3fa9e6"}) } }
+/* thorn mines: sit on the ground until an enemy touches one or an explosion sets it off */
+function placeMine(x,y,owner,team){ const sy=surfaceY(x|0,Math.max(0,y-24)); M.zones.push({type:"mine",owner,team,x,y:(sy==null?y:sy)-4,dmg:50,turns:999}) }
+function popMine(z){ if(z.turns<=0) return; z.turns=0; explode(z.x,z.y,{dmg:z.dmg,rad:20,col:"#6fc26b",book:"nature",elem:"nature"},z.owner) }
+function minesNear(x,y,r){ for(const z of M.zones) if(z.type==="mine"&&z.turns>0&&Math.hypot(z.x-x,z.y-y)<r) later(3,()=>popMine(z)) }
+/* vines: like the mud shell, but flowers */
+function vineSplat(x,y,r,owner){ const hits=[...M.units.filter(u=>u.alive),...M.imps.filter(m=>!m.dead)].filter(u=>!u.tower&&Math.hypot(u.x-x,u.y-18-y)<r+16);
+  tctx.save(); tctx.strokeStyle="#1f3d16"; tctx.lineWidth=2;
+  const flower=(px,py,pr,k)=>{ tctx.fillStyle=["#3f8f3a","#5fa83f","#2f6b2a"][k%3]; tctx.beginPath(); tctx.arc(px,py,pr,0,7); tctx.fill(); tctx.stroke();
+    if(k%3===0){ tctx.fillStyle=["#ff8fc8","#ffe27a","#c89bff"][k%3===0?(k/3|0)%3:0]; for(let a=0;a<5;a++){ tctx.beginPath(); tctx.arc(px+Math.cos(a*1.26)*pr*.45,py+Math.sin(a*1.26)*pr*.45,pr*.32,0,7); tctx.fill() } } };
+  const n=24+Math.round(r/3); for(let k=0;k<n;k++){ const a=k/n*6.283+rand(-.1,.1), d=r*rand(.85,1.15); flower(x+Math.cos(a)*d,y+Math.sin(a)*d*.85,rand(6,10),k) }
+  tctx.restore(); resync(x-r*1.3-14,y-r*1.3-14,r*2.6+28,r*2.6+28);
+  for(const b of allBodies()) if(!b.dead&&!hits.includes(b)) unstick(b) }
+/* Arcane Portal: two linked ends; one wizard or small minion can pass each turn */
+function portalTick(){ for(const z of M.zones){ if(z.type!=="portal"||z.used===M.turnNo) continue;
+  for(const e of [...M.units.filter(u=>u.alive),...M.imps.filter(m=>!m.dead&&m.spec.size<=13)]){ if(e.portalCool>M.frame) continue;
+    for(const [a,b] of [[z.a,z.b],[z.b,z.a]]) if(Math.hypot(e.x-a.x,e.y-18-a.y)<16){ M.fx.push({t:"poof",x:e.x,y:e.y-20,life:24,max:24,col:"#9b7bff"}); e.x=b.x; e.y=b.y+18; e.vx=e.vy=0; e.grounded=false; unstick(e); e.portalCool=M.frame+90; z.used=M.turnNo;
+      M.fx.push({t:"poof",x:e.x,y:e.y-20,life:24,max:24,col:"#9b7bff"}); sfx("cast"); return } } } }
+/* Nature's Wrath leaf column */
+function inLeafStorm(x){ return M.zones.some(z=>z.type==="leafstorm"&&z.turns>0&&Math.abs(x-z.x)<20) }
+function hatchEgg(m){ const hp=m.hp; let key=hp>=150?pick(["fire_dragon","storm_dragon","frost_dragon"]):hp>=25?"baby_dragon":"hatchling";
+  const s=MINIONS[key]; M.fx.push({t:"poof",x:m.x,y:m.y-12,life:30,max:30,col:"#ffd6a0"}); M.fx.push({t:"text",x:m.x,y:m.y-50,txt:s.name+"!",life:70,max:70});
+  m.mk=key; m.spec=s; m.name=s.name; m.spells=(MINION_ABIL[key]||[]).slice(); m.cool={}; m.used={}; m.maxHp=key.endsWith("_dragon")?s.hp:(s.maxHp||s.hp); m.hp=key.endsWith("_dragon")?s.hp:Math.min(hp,m.maxHp);
+  if(s.fly){ m.y=Math.max(110,m.y-20); m.grounded=true } }
+function digLine(m,tx,ty,s,cred){ const sx=m.x, sy=m.y, d=Math.hypot(tx-sx,ty-sy)||1, steps=Math.max(4,Math.min(28,Math.round(d/10))), hit=new Set();
+  for(let k=1;k<=steps;k++) later(k*2,()=>{ if(m.dead) return; const x=sx+(tx-sx)*k/steps, y=sy+(ty-sy)*k/steps; carve(x,y-m.spec.size,m.spec.size+6); m.x=x; m.y=y; m.vx=m.vy=0;
+    for(const e of [...M.units.filter(u=>u.alive&&u.team!==m.team),...M.imps.filter(i=>!i.dead&&i.team!==m.team)]) if(!hit.has(e)&&Math.hypot(e.x-x,e.y-y)<m.spec.size+16){ hit.add(e); dmgAny(e,s.dmg,cred,""); if(!e.tower&&!(e.imp&&e.spec.fly)){ e.vx+=Math.sign(e.x-sx||1)*3; e.vy-=3; e.grounded=false } } });
+  later(steps*2+3,()=>{ if(!m.dead){ m.grounded=false; unstick(m) } }) }
+function a2TurnStart(u){
+  if(u.portalT){} // reserved
+  // Dark Defences keep draining your minions to heal you
+  if(u.darkDef){ const mine=myImps(u); if(!mine.length) u.darkDef=false; else { let need=u.maxHp-u.hp; for(const m of mine){ if(need<=0) break; const t=Math.min(m.hp,need); m.hp-=t; need-=t; heal(u,t); if(m.hp<=0) m.dead=true } } }
+  for(const m of myImps(u)){ m.touched=false; m.turnsAlive=(m.turnsAlive||0)+1;
+    if(m.spec.snowCloud) for(let k=0;k<6;k++) later(1+k*5,()=>{ if(!m.dead) M.proj.push(mkProj({spell:{dmg:2,rad:8,col:"#e8f6ff",book:"frost",elem:"frost",snow:1,snowSmall:1},owner:u,team:u.team,x:m.x+rand(-50,50),y:m.y-m.spec.size*3-60,vx:rand(-.4,.4),vy:2,grav:.4,small:true,ownerUnit:m})) });
+    if(m.bloomT){ m.bloomT--; if(m.bloomT<=0){ const x=m.x,y=m.y-12; m.dead=true; explode(x,y,{dmg:30,rad:30,col:"#6fc26b",book:"nature",elem:"nature"},u);
+      for(let k=0;k<8;k++){ const a=-Math.PI/2+(k/7-.5)*2.6, v=rand(5,8), sp=k%2?SP.vine_bomb:SP.thorn_bomb; M.proj.push(mkProj({spell:sp,owner:u,team:u.team,x,y:y-6,vx:Math.cos(a)*v,vy:Math.sin(a)*v,grav:1,bounce:true,timer:90+k*10})) } } } }
+  // Volley targets: all your elves shoot at them every turn
+  for(const z of M.zones) if(z.type==="volley"&&z.owner===u) for(const e of myImps(u,"elf")){ const a=Math.atan2(z.y-(e.y-12),z.x-e.x); M.proj.push(mkProj({spell:{dmg:20,rad:12,col:"#8ccf6a",book:"nature",elem:"nature"},owner:u,team:u.team,ownerUnit:e,x:e.x,y:e.y-12,vx:Math.cos(a)*11,vy:Math.sin(a)*11-2,grav:.2,small:true,homeX:z.x,homeY:z.y})) }
+  // Electrostatic charges zap enemies near them
+  for(const z of M.zones) if(z.type==="static"&&z.owner===u) for(const e of enemiesNear(u.team,z.x,z.y,70)){ M.fx.push({t:"zap",x1:z.x,y1:z.y,x2:e.x,y2:e.imp?e.y-e.spec.size:e.y-20,life:18,max:18,block:true,col:"#bfe3ff"}); dmgAny(e,25,u,"storm") }
+  // Clockwork bombs go off on a later turn
+  for(const z of M.zones) if(z.type==="clockbomb"&&z.owner===u){ z.wait--; if(z.wait<=0){ z.turns=0; tctx.save(); tctx.globalCompositeOperation="destination-out"; tctx.beginPath(); tctx.arc(z.x,z.y,9,0,7); tctx.fill(); tctx.restore(); resync(z.x-12,z.y-12,24,24);
+    explode(z.x,z.y,z.spell,u); splitAt(z.x,z.y,z.spell.split,{spell:z.spell,owner:u,team:u.team}) } }
+  if(famOf(u,"arcane")>=5&&u.energised) u.energyT=999;
+}
+function plantTree(tx,ty){ const sy=surfaceY(tx|0,Math.max(0,ty-40)); const by=sy==null?ty:Math.min(sy,ty+200);
+  addRock(c=>{c.fillStyle="#6b4a2a";c.strokeStyle="#2c1a0c";c.beginPath();c.roundRect(tx-7,by-70,14,74,4);c.fill();c.stroke();c.fillStyle="#3f8f3a";c.beginPath();c.arc(tx,by-82,30,0,7);c.arc(tx-22,by-66,18,0,7);c.arc(tx+22,by-66,18,0,7);c.fill();c.stroke()},tx-44,by-114,88,118) }
+function towerStartHp(u,s){ if(s.arcTower){ const al=famOf(u,"arcane"); return al>=5?75:al>=3?50:s.thp } return s.thp }
+function sanctuaryDispel(u,r){ M.zones=M.zones.filter(z=>!(["aura","glyph","mine","static","volley"].includes(z.type)&&Math.hypot(z.x-u.x,z.y-u.y)<r));
+  for(const e of [...M.units.filter(x=>x.alive&&x!==u),...M.imps.filter(m=>!m.dead)]) if(Math.hypot(e.x-u.x,e.y-u.y)<r){ e.absorb=0; e.cherub=0; if(e.flyT>0&&!e.imp) e.flyT=0; e.deflectT=0 }
+  M.fx.push({t:"ring",x:u.x,y:u.y-24,r,life:36,max:36,col:"#ffd6f4"}) }
+function adjustSpell(u,s){ const w=u.imp?u.owner:u; let o=null; const C=()=>o||(o={...s});
+  if(s.id==="frost_arrow"&&famOf(w,"frost")) C().dmg+=5*famOf(w,"frost");
+  if(s.id==="light_bolt"&&famOf(w,"overlight")) C().dmg+=2*famOf(w,"overlight");
+  if(s.id==="m_sunder"&&famOf(w,"overlight")) C().dmg+=5*famOf(w,"overlight");
+  if(s.id==="thorn_bomb"&&famOf(w,"nature")) C().mineRing+=2*famOf(w,"nature");
+  if(s.id==="vine_bomb"&&famOf(w,"nature")) C().rad=s.rad*(1+.12*famOf(w,"nature"));
+  if(s.firstTurnHalf&&M.round<=1){ C(); o.split={...s.split,dmg:Math.round(s.split.dmg/2)} }
+  return o||s }
+function drillMeteor(p,r){ const s=p.spell, ang=Math.atan2(p.vy,p.vx); let x=r.x,y=r.y,k=0;
+  const step=()=>{ carve(x,y,s.rad*.55); if(k%2===0) splitAt(x,y,{n:2,dmg:8,rad:10},p); explode(x,y,{dmg:15,rad:26,col:s.col,book:"stone",elem:"stone",nodig:1},p.owner); x+=Math.cos(ang)*22; y+=Math.sin(ang)*22; k++;
+    if(y<M.water-10&&k<40&&x>0&&x<W) later(3,step); else explode(x,y,{...s,split:null},p.owner) };
+  step() }
+function touchCheck(m){ if(m.spec.style!=="touch"||m.touched||m.dead) return; const e=enemiesNear(m.team,m.x,m.y-m.spec.size,m.spec.size+14)[0]; if(!e) return;
+  m.touched=true; dmgAny(e,m.spec.dmg+(m.bonus||0),m.owner,""); M.fx.push({t:"ring",x:e.x,y:e.imp?e.y-e.spec.size:e.y-20,r:14,life:14,max:14,col:"#fff"}); sfx("hit") }
+function botMinionWants(m,s,e,d){ const o=m.owner;
+  if(s.kind==="volley") return !M.zones.some(z=>z.type==="volley"&&z.owner===o);
+  if(s.kind==="flurry") return true; if(s.kind==="mine_dig") return d<(s.range||220); if(s.kind==="kablam") return d<55;
+  if(s.kind==="hatch") return m.hp>=25||(m.turnsAlive||0)>=3; if(s.kind==="zapaura") return d<110&&!(m.zapT>0);
+  if(s.kind==="ward") return m.hp<m.maxHp*.7&&!(m.absorb>0); if(s.kind==="flash") return d<(s.rad||50)+10; if(s.kind==="market") return m.hp>40&&!m.spells.includes("m_pickaxe");
+  if(s.kind==="minion") return !myImps(o,s.minion).length; return false }
+
 function zonesTurnStart(u){
   for(const z of M.zones){
-    if(z.type==="napalm") for(const e of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead)]) if(Math.abs(e.x-z.x)<12&&Math.abs(e.y-z.y)<14) dmgAny(e,z.dmg,z.owner,"flame");
+    if(z.type==="napalm") for(const e of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead&&!m.spec.immuneNapalm)]) if(Math.abs(e.x-z.x)<12&&Math.abs(e.y-z.y)<14) dmgAny(e,z.dmg,z.owner,"flame");
     if(z.owner!==u) continue;
     if(z.type==="firewall") z.ready=true;
     z.turns--; if(z.turns<=0) continue;
@@ -1960,10 +2116,13 @@ function zonesTurnStart(u){
   M.zones=M.zones.filter(z=>z.turns>0);
 }
 function zonesTick(){
+  M.frame=(M.frame||0)+1; portalTick();
   for(const z of M.zones){
+    if(z.type==="mine"&&z.turns>0&&enemiesNear(z.team,z.x,z.y,14).length) popMine(z);
+    if(z.type==="leafstorm") for(const e of [...M.units.filter(x=>x.alive),...M.imps.filter(m=>!m.dead)]) if(!e.grounded&&Math.abs(e.x-z.x)<24){ e.vx=Math.sign(e.x-z.x||1)*2.6; if(e.imp&&e.spec.fly) e.x=z.x+Math.sign(e.x-z.x||1)*26 }
     if(z.follow){ if(z.follow.alive){z.x=z.follow.x;z.y=z.follow.y-24} else z.turns=0 }
     if(z.type==="glyph"&&z.turns>0&&enemiesNear(z.team,z.x,z.y,z.r+10).length){ z.turns=0; explode(z.x,z.y,{dmg:z.dmg,rad:16,col:z.col,book:"arcane",elem:"arcane",nodig:true},z.owner) }
-    if(z.type==="firewall"&&z.ready){ for(const e of [...M.units.filter(x=>x.alive&&x.team!==z.team),...M.imps.filter(m=>!m.dead&&m.team!==z.team)]) if(Math.abs(e.x-z.x)<12&&e.y>z.y-60&&e.y<z.y+8){ z.ready=false; dmgAny(e,z.dmg,z.owner,z.elem); break } }
+    if(z.type==="firewall"&&z.ready){ for(const e of [...M.units.filter(x=>x.alive&&x.team!==z.team),...M.imps.filter(m=>!m.dead&&m.team!==z.team&&!m.spec.immuneNapalm)]) if(Math.abs(e.x-z.x)<12&&e.y>z.y-60&&e.y<z.y+8){ z.ready=false; dmgAny(e,z.dmg,z.owner,z.elem); break } }
   }
   M.zones=M.zones.filter(z=>z.turns>0);
 }
@@ -1971,14 +2130,18 @@ function addSalt(x,y){ addRock(c=>{c.fillStyle="#e6e2d6";c.strokeStyle="#b5ad99"
 function addSnow(x,y,r){ addRock(c=>{c.fillStyle="#f4fbff";c.strokeStyle="#b9d9ea";c.lineWidth=2;c.beginPath();c.ellipse(x,y,r,r*.62,0,0,7);c.fill();c.stroke()},x-r-2,y-r,2*r+4,2*r) }
 function splitAt(x,y,sp,p){ for(let k=0;k<sp.n;k++){ const a=-Math.PI/2+(sp.n>1?(k/(sp.n-1)-.5)*2.4:0)+rand(-.15,.15), v=rand(3.5,6.5);
   M.proj.push(mkProj({spell:{dmg:sp.dmg,rad:sp.rad,col:p.spell.col,book:p.spell.book,elem:p.spell.elem,nodig:sp.nodig,napalm:sp.napalm,salt:sp.salt,root:sp.root,mud:sp.mud},owner:p.owner,team:p.team,ownerUnit:null,x,y:y-6,vx:Math.cos(a)*v,vy:Math.sin(a)*v,grav:sp.homing?0:1,homing:sp.homing,speed:6,small:true,noclip:4,life:sp.homing?200:0})) } }
-function teleportUnit(u,owner){ let spot=null; const bs=owner?M.zones.filter(z=>z.type==="beacon"&&z.owner===owner):[];
-  if(bs.length){const b=pick(bs);spot=[b.x,b.y+18]} else for(let k=0;k<40&&!spot;k++){const x=rand(60,W-60),sy=surfaceY(x|0,120);if(sy!=null&&sy<M.water-20&&!bodyHits(x,sy)) spot=[x,sy]}
+function teleportUnit(u,owner){ let spot=null; const bs=owner?M.imps.filter(m=>!m.dead&&m.mk==="recall").map(m=>({x:m.x,y:m.y-18})):[];
+  if(bs.length){const b=pick(bs);spot=[b.x+14,b.y+18]} else if(owner) return; else for(let k=0;k<40&&!spot;k++){const x=rand(60,W-60),sy=surfaceY(x|0,120);if(sy!=null&&sy<M.water-20&&!bodyHits(x,sy)) spot=[x,sy]}
   if(!spot) return; M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:"#9b7bff"}); u.x=spot[0];u.y=spot[1];u.vx=u.vy=0;u.grounded=false;u.tower=null;unstick(u);M.fx.push({t:"poof",x:u.x,y:u.y-20,life:30,max:30,col:"#9b7bff"}) }
 function impact(p,r){
   const s=p.spell;
   if(r.absorbed){ M.fx.push({t:"poof",x:p.x,y:p.y,life:20,max:20,col:"#d9f0ff"}); return }
   if(p.chain&&r.unit) return chainHit(p,r);
   if(p.boulder&&r.unit&&p.hits<(s.hits||4)-1){ explode(r.x,r.y,{...s,rad:18,split:null},p.owner); p.hits++; p.vy=-5; p.vx*=.7; p.skipUnit=r.unit; p.skipUntil=p.age+25; M.proj.push(p); return }
+  if(s.apex){ const fromY=r.apex?r.y+4:r.y-80; for(let k=0;k<20;k++){ const x=r.x+rand(-40,40); later(1+k*2,()=>M.proj.push(mkProj({spell:{dmg:5,rad:8,col:"#e8f6ff",book:"frost",elem:"frost",snow:1,snowSmall:1},owner:p.owner,team:p.team,x,y:fromY,vx:rand(-.5,.5),vy:2,grav:.4,small:true}))) } if(!r.apex) addSnow(r.x,r.y,14); return }
+  if(s.mine&&!r.unit){ placeMine(r.x,r.y,p.owner,p.team); return }
+  if(s.clockwork&&!r.unit){ addRock(c=>{c.fillStyle="#9a7a3a";c.strokeStyle="#3a2a10";c.beginPath();c.arc(r.x,r.y,8,0,7);c.fill();c.stroke()},r.x-9,r.y-9,18,18); M.zones.push({type:"clockbomb",owner:p.owner,team:p.team,x:r.x,y:r.y,wait:famOf(p.owner,"cogs")>=5?1:Math.round(rand(1,3)),turns:999,spell:s}); return }
+  if(s.drill&&!r.unit){ drillMeteor(p,r); return }
   const dealt=explode(r.x,r.y,s,p.owner);
   if(s.drain&&p.owner&&p.owner.alive&&dealt>0) heal(p.owner,dealt);
   if(s.split) splitAt(r.x,r.y,s.split,p);
@@ -1988,8 +2151,13 @@ function impact(p,r){
   if(s.snow) addSnow(r.x,r.y,s.snowSmall?9:20);
   if(s.decay) M.zones.push({type:"aura",owner:p.owner,team:p.team,x:r.x,y:r.y,r:45,dmg:15,turns:5,col:"#8d63d6",elem:"underdark"});
   if(s.stasis) M.zones.push({type:"stasis",owner:p.owner,team:p.team,x:r.x,y:r.y,r:60,turns:2});
+  if(s.mineRing){ const n=s.mineRing; for(let k=0;k<n;k++){ const a=k/n*6.283; placeMine(r.x+Math.cos(a)*(s.rad+22),r.y+Math.sin(a)*(s.rad+12),p.owner,p.team) } }
+  if(s.vines) vineSplat(r.x,r.y,s.rad+8,p.owner);
+  if(s.entangle&&r.unit){ r.unit.entangled=true; r.unit.flyT=0; if(s.root){ r.unit.latched=true; r.unit.rooted=99 } M.fx.push({t:"text",x:r.unit.x,y:r.unit.y-60,txt:s.root?"Latched!":"Entangled!",life:60,max:60}) }
+  if(s.static) M.zones.push({type:"static",owner:p.owner,team:p.team,x:r.x,y:r.y-6,turns:10});
+  if(s.breakShield&&r.unit&&r.unit.deflectT>0) r.unit.deflectReady=false;
   if(s.bell&&r.unit&&!r.unit.imp) teleportUnit(r.unit,s.beacon?p.owner:null);
-  if(s.rod){ const d=p.start?Math.hypot(r.x-p.start[0],r.y-p.start[1]):0, n=clamp(Math.round(d/140),1,5); for(let k=0;k<n;k++) later(10+k*14,()=>strike(r.x+rand(-6,6),{dmg:25,rad:20,col:"#bfe3ff",book:"storm",elem:"storm"},p.owner)) }
+  if(s.rod){ const d=p.start?Math.hypot(r.x-p.start[0],r.y-p.start[1]):0, n=clamp(Math.round(d/140),1,5)+famOf(p.owner,"storm"); for(let k=0;k<n;k++) later(10+k*14,()=>strike(r.x+rand(-6,6),{dmg:25,rad:20,col:"#bfe3ff",book:"storm",elem:"storm"},p.owner)) }
 }
 function strike(x,s,u){
   let y=0; for(;y<H;y+=2){ if(isSolid(x,y)) break; if(M.units.some(t=>t.alive&&Math.abs(t.x-x)<10&&y>t.y-38&&y<t.y)) break }
@@ -2004,12 +2172,12 @@ function chainHit(p,res){
 function spawnMinion(owner,key,x,y){ const s=MINIONS[key];
   if(s.fly) y=Math.max(110,y);
   if(!s.fly){ let yy=y; while(yy<H&&!isSolid(x,yy+1)&&yy<M.water) yy++; y=yy }
-  const m={imp:true,mk:key,name:s.name,spells:(MINION_ABIL[key]||[]).slice(),cool:{},used:{},sel:0,spec:s,owner,team:owner.team,x:clamp(x,20,W-20),y:s.fly?y:y,vx:0,vy:0,grounded:!!s.fly,face:owner.face,hp:s.hp,maxHp:s.hp,dead:false,rooted:0,bonus:0};
+  const m={imp:true,mk:key,name:s.name,spells:(MINION_ABIL[key]||[]).slice(),cool:{},used:{},sel:0,spec:s,owner,team:owner.team,x:clamp(x,20,W-20),y:s.fly?y:y,vx:0,vy:0,grounded:!!s.fly,face:owner.face,hp:s.hp,maxHp:s.maxHp||s.hp,dead:false,rooted:0,bonus:0};
   if(!s.fly) unstick(m); M.imps.push(m); M.fx.push({t:"poof",x:m.x,y:m.y-s.size,life:30,max:30,col:s.col}); return m }
 function powerFamiliar(u){ if(!u.fams||!u.fams.length) return;
   if(u.famLvl>=5){ if(u.isPlayer) toast("Your familiar is at full power"); return }
   if(u.hp<=20){ if(u.isPlayer) toast("Not enough health to power your familiar"); return }
-  u.hp-=20; u.famLvl++; if(u.fams.includes("underdark")) u.lantern={x:u.x,y:u.y};
+  u.hp-=20; u.famLvl++; grantFamSpells(u); if(u.fams.includes("underdark")) u.lantern={x:u.x,y:u.y};
   if(u.fams.includes("cogs")&&M.active===u) M.timer+=6;
   M.fx.push({t:"text",x:u.x,y:u.y-78,txt:famName(u)+" level "+u.famLvl,life:70,max:70}); M.fx.push({t:"ring",x:u.x,y:u.y-24,r:30,life:24,max:24,col:BK[u.fams[0]].col}); sfx("level"); renderHud(); renderSpellbar() }
 function famName(u){return u.fams.map(b=>BK[b].fam.name).join(" + ")}
@@ -2113,7 +2281,7 @@ function runMinions(){
   for(const m of mine){
     const s=m.spec, e=nearestEnemy(m.x,m.y,m.team); if(!e) continue;
     const dir=Math.sign(e.x-m.x)||1; m.face=dir;
-    const d=Math.hypot(e.x-m.x,e.y-m.y);
+    const d=Math.hypot(e.x-m.x,e.y-m.y); touchCheck(m);
     if(M.impTimer>30&&!m.rooted){
       const stopAt=s.style==="melee"?26:s.style==="aura"?40:(s.range||200)*.6;
       if(d>stopAt){
@@ -2133,10 +2301,11 @@ function minionAct(m,e){
   if(owner&&owner.alive&&owner.hp<140&&by("mheal")) pickId=by("mheal");
   else if(d<(m.spec.size+48)&&by("melee")) pickId=by("melee");
   else if(d<160&&by("pounce")) pickId=by("pounce");
-  else { const ranged=ok.filter(id=>["shot","spray","chain","strike","ball","bomb","aura"].includes(SP[id].kind)&&(SP[id].kind!=="shot"&&SP[id].kind!=="spray"&&SP[id].kind!=="chain"||d<380));
+  else { const ranged=ok.filter(id=>["shot","spray","chain","strike","ball","bomb","aura","arrow"].includes(SP[id].kind)&&(SP[id].kind!=="shot"&&SP[id].kind!=="spray"&&SP[id].kind!=="chain"||d<380));
     if(ranged.length){ pickId=ranged.sort((a,b)=>estDmg(SP[b])-estDmg(SP[a]))[0]; const s=SP[pickId];
       if(s.type==="lob"){ let best=null; for(let a=-160;a<=-20;a+=14){const ang=a*Math.PI/180; if((e.x-m.x)*Math.cos(ang)<-20&&Math.abs(e.x-m.x)>60) continue; for(let p=.3;p<=1.001;p+=.14){const r=simShot(m,s,ang,p),sc=scoreImpact(m,estDmg(s),s.rad||20,r); if(!best||sc>best.sc) best={sc,ang,p}}}
         if(best&&best.sc>0){ tx=m.x+Math.cos(best.ang)*100; ty=my+Math.sin(best.ang)*100; pw=best.p } else pickId=null } } }
+  if(!pickId){ const t2=ok.find(id=>botMinionWants(m,SP[id],e,d)); if(t2){ pickId=t2; if(SP[t2].type!=="self"){ tx=e.x; ty=e.y-18 } } }
   if(m.mk==="imp"&&d<36&&by("selfboom")) pickId=by("selfboom");
   if(!pickId) return minionAttack(m,e);
   const was=M.cast; M.cast=false; castSpell(m,pickId,tx,ty,pw); M.cast=was;
@@ -2305,6 +2474,7 @@ function drawUnitCore(u,active){
   if(u.tower&&!IN_TOWER_ART){ const tw=u.tower, tx0=u.x-25, ty0=u.y-74; cx.save(); cx.globalAlpha=.88; cx.fillStyle=tw.col+"66"; cx.strokeStyle=tw.col; cx.lineWidth=3;
     cx.beginPath(); cx.moveTo(tx0,u.y+4); cx.lineTo(tx0,ty0+12); for(let i=0;i<5;i++){cx.lineTo(tx0+i*10,ty0+(i%2?0:12));cx.lineTo(tx0+(i+1)*10,ty0+(i%2?0:12))} cx.lineTo(tx0+50,u.y+4); cx.closePath(); cx.fill(); cx.stroke();
     cx.globalAlpha=1; cx.fillStyle="#111"; cx.fillRect(u.x-22,ty0-8,44,4); cx.fillStyle=tw.col; cx.fillRect(u.x-22,ty0-8,44*clamp(tw.hp/tw.max,0,1),4); cx.restore(); cx.lineWidth=1 }
+  if(u.entangled){ cx.strokeStyle="#3f8f3a"; cx.lineWidth=2.5; for(let k=0;k<3;k++){ cx.beginPath(); cx.moveTo(u.x-12,u.y-4-k*12); cx.quadraticCurveTo(u.x,u.y-10-k*12+Math.sin(t*3+k)*3,u.x+12,u.y-4-k*12); cx.stroke() } cx.lineWidth=1 }
   if(u.rooted>0&&!u.aegisT){ cx.strokeStyle="#3f8f3a"; cx.lineWidth=3; for(const d of [-1,1]){cx.beginPath();cx.moveTo(u.x+d*14,u.y+2);cx.quadraticCurveTo(u.x+d*4,u.y-14,u.x+d*10,u.y-22);cx.stroke()} cx.lineWidth=1 }
   if(u.aegisT>0&&u.absorb>0&&IMG.aegis_tower&&IMG.aegis_tower.naturalWidth){ const im=IMG.aegis_tower, th=AEGIS_H, tw=th*im.width/im.height, top=u.y-AEGIS_TOP;
     cx.drawImage(im,u.x-tw/2,top,tw,th);
@@ -2340,6 +2510,12 @@ function drawZones(){ const t=performance.now()/1000;
     else if(z.type==="beacon"){ cx.fillStyle="#d9a441"; cx.strokeStyle="#5a3c0a"; cx.beginPath(); cx.moveTo(z.x-7,z.y+6); cx.quadraticCurveTo(z.x-7,z.y-10,z.x,z.y-10); cx.quadraticCurveTo(z.x+7,z.y-10,z.x+7,z.y+6); cx.closePath(); cx.fill(); cx.stroke() }
     else if(z.type==="cloud"){ const c=z.mode==="lightning"?"#59627a":z.mode==="stars"?"#fff2b8":z.mode==="snow"?"#e8f2f8":"#7d8fa3"; cx.fillStyle=c; cx.globalAlpha=.9; for(let k=-2;k<=2;k++){cx.beginPath();cx.ellipse(z.x+k*22,z.cy+Math.abs(k)*4,26,16,0,0,7);cx.fill()} cx.globalAlpha=1;
       cx.font="bold 13px Barlow Condensed, sans-serif"; cx.textAlign="center"; cx.fillStyle="#111"; cx.fillText(z.turns,z.x,z.cy+5); cx.textAlign="left" }
+    else if(z.type==="mine"){ cx.save(); cx.translate(z.x,z.y); cx.rotate(t*.6); cx.fillStyle="#3f8f3a"; cx.strokeStyle="#1f3d16"; cx.lineWidth=1.5; cx.beginPath(); for(let k=0;k<8;k++){ const a=k/8*6.283, rr=k%2?4:8; cx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr) } cx.closePath(); cx.fill(); cx.stroke(); cx.restore(); cx.lineWidth=1 }
+    else if(z.type==="portal"){ for(const e of [z.a,z.b]){ cx.save(); cx.translate(e.x,e.y); const g=cx.createRadialGradient(0,0,2,0,0,20); g.addColorStop(0,"#ffffff"); g.addColorStop(.4,"#b9a2ff"); g.addColorStop(1,"rgba(155,123,255,0)"); cx.fillStyle=g; cx.beginPath(); cx.ellipse(0,0,12,20,0,0,7); cx.fill(); cx.strokeStyle="#9b7bff"; cx.lineWidth=2; cx.beginPath(); cx.ellipse(0,0,10+Math.sin(t*4)*1.5,18,0,0,7); cx.stroke(); cx.restore() } cx.lineWidth=1 }
+    else if(z.type==="leafstorm"){ for(let k=0;k<26;k++){ const ph=(t*.9+k/26)%1, yy=z.y+20-ph*(z.y+40), xx=z.x+Math.sin(t*4+k)*16; cx.fillStyle=k%3?"#5fa83f":"#9ad46a"; cx.globalAlpha=.85; cx.beginPath(); cx.ellipse(xx,yy,4,2,t*3+k,0,7); cx.fill() } cx.globalAlpha=.18; cx.fillStyle="#7fc86a"; cx.fillRect(z.x-20,0,40,z.y+20); cx.globalAlpha=1 }
+    else if(z.type==="static"){ cx.fillStyle="#cfe9ff"; cx.beginPath(); cx.arc(z.x,z.y,6,0,7); cx.fill(); cx.strokeStyle="#7fc3ff"; cx.lineWidth=1.5; for(let k=0;k<4;k++){ const a=t*5+k*1.6; cx.beginPath(); cx.moveTo(z.x,z.y); cx.lineTo(z.x+Math.cos(a)*14,z.y+Math.sin(a)*14); cx.stroke() } cx.lineWidth=1 }
+    else if(z.type==="clockbomb"){ cx.fillStyle="#fff"; cx.font="bold 11px Barlow Condensed, sans-serif"; cx.textAlign="center"; cx.fillText(z.wait,z.x,z.y-12); cx.textAlign="left" }
+    else if(z.type==="volley"&&z.owner===M.active){ cx.strokeStyle="#8ccf6a"; cx.lineWidth=2; cx.beginPath(); cx.arc(z.x,z.y,10,0,7); cx.moveTo(z.x-14,z.y); cx.lineTo(z.x+14,z.y); cx.moveTo(z.x,z.y-14); cx.lineTo(z.x,z.y+14); cx.stroke(); cx.lineWidth=1 }
     else if(z.type==="volcano"){ if(z.cx!=null){ for(let k=0;k<5;k++){ const ph=(t*.35+k/5)%1, px=z.cx+Math.sin(k*2.3+t)*10+ph*26, py=z.cy-6-ph*70, pr=7+ph*16;
         cx.globalAlpha=(1-ph)*.85; cx.fillStyle=k%2?"#fff6e0":"#f3e3c3"; cx.strokeStyle="rgba(120,100,80,.6)"; cx.lineWidth=2; cx.beginPath(); cx.arc(px,py,pr,0,7); cx.fill(); cx.stroke() } cx.globalAlpha=1; cx.lineWidth=1;
         cx.fillStyle=`rgba(255,${150+Math.sin(t*8)*50|0},40,.9)`; cx.beginPath(); cx.ellipse(z.cx,z.cy+2,9,4,0,0,7); cx.fill() } }
@@ -2349,7 +2525,7 @@ function drawZones(){ const t=performance.now()/1000;
 function drawMinion(m){ const s=m.spec, r=s.size, t=performance.now()/1000, by=m.y-(s.fly?Math.sin(t*3+m.x)*3:0);
   const active=M.phase==="mctrl"&&M.ctrl===m;
   if(active){ cx.fillStyle="#f2cf7c"; const b=Math.sin(t*6)*3, top=by-(s.img?r*3.6:r*2.6)-22; cx.beginPath(); cx.moveTo(m.x-7,top+b); cx.lineTo(m.x+7,top+b); cx.lineTo(m.x,top+9+b); cx.fill() }
-  if(s.img&&IMG[s.img]&&IMG[s.img].complete&&IMG[s.img].naturalWidth){ const im=IMG[s.img], hgt=r*3.6, wid=hgt*im.width/im.height;
+  if(s.img&&IMG[s.img]&&IMG[s.img].complete&&IMG[s.img].naturalWidth){ const im=IMG[s.img], hgt=r*3.6*(m.grow||1), wid=hgt*im.width/im.height;
     cx.save(); cx.translate(m.x,by); if(m.face>0) cx.scale(-1,1); if(m.undead&&!s.undead) cx.filter="hue-rotate(80deg)"; cx.drawImage(im,-wid/2,-hgt+4,wid,hgt); cx.restore();
     const top=by-hgt-2; cx.fillStyle="#111"; cx.fillRect(m.x-r,top,r*2,4); cx.fillStyle=m.team?"#ff7a5c":"#5fb4ff"; cx.fillRect(m.x-r,top,r*2*clamp(m.hp/m.maxHp,0,1),4); return }
   const col=(m.undead&&!s.undead)?"#86b07f":s.col;
@@ -2365,6 +2541,17 @@ function drawMinion(m){ const s=m.spec, r=s.size, t=performance.now()/1000, by=m
   else if(s.shape==="knight"){ cx.beginPath(); cx.ellipse(0,-r,r*.8,r,0,0,7); cx.fill(); cx.stroke(); cx.fillStyle=shade(col,25); cx.beginPath(); cx.roundRect(-r*.6,-r*2.6,r*1.2,r*1,3); cx.fill(); cx.stroke(); cx.fillStyle="#111"; cx.fillRect(-r*.4,-r*2.2,r*.8,2.4) }
   else if(s.shape==="beast"){ cx.beginPath(); cx.ellipse(0,-r*.9,r*1.2,r*.6,0,0,7); cx.fill(); cx.stroke(); cx.beginPath(); cx.ellipse(r*1.1,-r*1.4,r*.5,r*.42,0,0,7); cx.fill(); cx.stroke();
     for(const lx of [-r*.7,-r*.2,r*.3,r*.7]){ cx.beginPath(); cx.moveTo(lx,-r*.5); cx.lineTo(lx,0); cx.stroke() } if(s.fly){ cx.fillStyle="#fff"; cx.beginPath(); cx.moveTo(-r*.2,-r*1.2); cx.lineTo(-r*1.2,-r*2.2-Math.sin(t*8)*4); cx.lineTo(r*.4,-r*1.3); cx.fill(); cx.stroke() } eye(r*1.25,-r*1.5,1.4) }
+  else if(s.shape==="egg"){ cx.fillStyle="#efe3c2"; cx.beginPath(); cx.ellipse(0,-r*1.2,r*.9,r*1.25,0,0,7); cx.fill(); cx.stroke(); cx.fillStyle="#c9a96a"; for(const [a,b] of [[-.3,-1.6],[.35,-1],[-.2,-.6]]){ cx.beginPath(); cx.arc(a*r,b*r,r*.18,0,7); cx.fill() } }
+  else if(s.shape==="plant"){ cx.fillStyle="#3f7a2e"; cx.beginPath(); cx.roundRect(-r*.18,-r*1.4,r*.36,r*1.4,2); cx.fill(); for(const d of [-1,1]){ cx.beginPath(); cx.ellipse(d*r*.6,-r*.5,r*.55,r*.22,d*.5,0,7); cx.fill(); cx.stroke() }
+    cx.fillStyle=col; cx.beginPath(); cx.arc(0,-r*1.9,r*.85,.3,Math.PI*2-.3+Math.sin(t*3)*.15); cx.lineTo(0,-r*1.9); cx.closePath(); cx.fill(); cx.stroke(); cx.fillStyle="#fff"; for(let k=0;k<4;k++){ cx.beginPath(); cx.moveTo(r*.3+k*r*.12,-r*2.05); cx.lineTo(r*.36+k*r*.12,-r*1.85); cx.lineTo(r*.42+k*r*.12,-r*2.05); cx.fill() } }
+  else if(s.shape==="elf"){ cx.fillStyle="#3f7a2e"; cx.beginPath(); cx.roundRect(-r*.55,-r*1.5,r*1.1,r*1.5,3); cx.fill(); cx.stroke(); cx.fillStyle="#f3d2b0"; cx.beginPath(); cx.arc(0,-r*1.95,r*.55,0,7); cx.fill(); cx.stroke(); cx.beginPath(); cx.moveTo(r*.45,-r*2); cx.lineTo(r*1.1,-r*2.4); cx.lineTo(r*.5,-r*1.8); cx.fill(); cx.stroke();
+    cx.fillStyle="#2f5a20"; cx.beginPath(); cx.moveTo(-r*.6,-r*2.2); cx.lineTo(0,-r*3); cx.lineTo(r*.6,-r*2.2); cx.fill(); cx.strokeStyle="#7a5534"; cx.lineWidth=1.5; cx.beginPath(); cx.arc(r*.8,-r*1.1,r*.7,-1.3,1.3); cx.stroke(); eye(r*.2,-r*1.95,1.2) }
+  else if(s.shape==="device"){ cx.fillStyle="#8a6a2a"; cx.beginPath(); cx.roundRect(-r*.7,-r*.8,r*1.4,r*.8,2); cx.fill(); cx.stroke(); cx.fillStyle=col; cx.beginPath(); cx.arc(0,-r*1.5,r*.7,0,7); cx.fill(); cx.stroke(); cx.strokeStyle="#3a2a10"; cx.beginPath(); cx.moveTo(0,-r*1.5); cx.lineTo(Math.cos(t*2)*r*.55,-r*1.5+Math.sin(t*2)*r*.55); cx.stroke();
+    cx.fillStyle="#bfe3ff"; cx.globalAlpha=.6+Math.sin(t*5)*.3; cx.beginPath(); cx.arc(0,-r*2.4,r*.25,0,7); cx.fill(); cx.globalAlpha=1 }
+  else if(s.shape==="kraken"){ cx.fillStyle=col; for(let k=0;k<6;k++){ const lx=-r+k*r*.4; cx.beginPath(); cx.moveTo(lx,-r*.6); cx.quadraticCurveTo(lx+Math.sin(t*3+k)*r*.5,-r*.1,lx+r*.15,0); cx.lineWidth=r*.22; cx.strokeStyle=col; cx.stroke() } cx.lineWidth=2; cx.strokeStyle="rgba(0,0,0,.75)";
+    cx.beginPath(); cx.ellipse(0,-r*1.3,r*1.05,r*1.2,0,0,7); cx.fill(); cx.stroke(); eye(-r*.35,-r*1.15,2.6); eye(r*.35,-r*1.15,2.6) }
+  else if(s.shape==="ship"){ cx.fillStyle="#6b4a2a"; cx.beginPath(); cx.moveTo(-r*1.3,-r*.9); cx.lineTo(r*1.3,-r*.9); cx.lineTo(r*.9,0); cx.lineTo(-r*.9,0); cx.closePath(); cx.fill(); cx.stroke(); cx.fillStyle="#3a2a1a"; cx.fillRect(-r*.08,-r*2.6,r*.16,r*1.7);
+    cx.fillStyle="rgba(230,230,220,.85)"; cx.beginPath(); cx.moveTo(0,-r*2.5); cx.quadraticCurveTo(r*1,-r*1.9,0,-r*1.2); cx.fill(); cx.fillStyle="#111"; for(const k of [-.6,0,.6]){ cx.beginPath(); cx.arc(k*r,-r*.5,r*.12,0,7); cx.fill() } }
   else if(s.shape==="treant"){ cx.fillStyle="#6b4a2a"; cx.beginPath(); cx.roundRect(-r*.5,-r*1.8,r,r*1.8,3); cx.fill(); cx.stroke(); cx.fillStyle=col; cx.beginPath(); cx.arc(0,-r*2.1,r*.9,0,7); cx.arc(-r*.7,-r*1.7,r*.5,0,7); cx.arc(r*.7,-r*1.7,r*.5,0,7); cx.fill(); cx.stroke(); eye(-r*.2,-r*1.2,1.5); eye(r*.2,-r*1.2,1.5) }
   else { cx.beginPath(); cx.ellipse(0,-r,r*.85,r,0,0,7); cx.fill(); cx.stroke();
     if(s.shape==="imp"){ cx.fillStyle=col; cx.beginPath(); cx.moveTo(-r*.6,-r*1.7); cx.lineTo(-r,-r*2.5); cx.lineTo(-r*.2,-r*1.9); cx.moveTo(r*.6,-r*1.7); cx.lineTo(r,-r*2.5); cx.lineTo(r*.2,-r*1.9); cx.fill() }
@@ -2513,7 +2700,7 @@ function endMatch(winner,reason){
   u.games++;u.kills+=p.kills;u.orbs+=orbs;u.gems=(u.gems||0)+gems; if(won)u.wins++;else if(!draw)u.losses++;
   const before=u.level; const levelUps=[];
   if(u.level<MAX_LEVEL){ u.xp+=xp; while(u.level<MAX_LEVEL&&u.xp>=xpNeed(u.level)){u.xp-=xpNeed(u.level);u.level++;levelUps.push(u.level)} if(u.level>=MAX_LEVEL) u.xp=0 }
-  const newSpells=SPELLS.filter(s=>s.book!=="prestige"&&s.book!=="minion"&&s.lvl>before&&s.lvl<=u.level);
+  const newSpells=SPELLS.filter(s=>s.book!=="prestige"&&s.book!=="minion"&&!s.famOnly&&s.lvl>before&&s.lvl<=u.level);
   const oldSlots=slotsFor(before); fixBook(u,slotsFor(u.level)>oldSlots); save();
   if(levelUps.length) sfx("level");
   const title=draw?"Draw":won?"Victory!":"Defeat";
@@ -2572,7 +2759,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.26-0329";
+const APP_VERSION="2026.10.26-0545";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button

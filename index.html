@@ -678,23 +678,23 @@ const SPELL_ROWS=[
  ["frost",1,"ice_ball","Ice Ball",{type:"lob",kind:"ball",dmg:50,rad:24,split:{n:4,dmg:6,rad:8},cd:1},"Explodes and shatters into ice."],
  ["frost",1,"frost_shards","Frost Shards",{type:"shot",kind:"spray",count:15,dmg:5,rad:8,speed:14,spread:.1,grav:.2,charges:4,cd:1},"Fires 15 sharp ice shards."],
  ["frost",1,"snowball","Snowball",{type:"lob",kind:"ball",dmg:20,rad:18,snow:1,cd:1},"Drops a heap of snow where it lands. Build cover or bury enemies."],
- ["frost",1,"ice_shield","Ice Shield",{type:"self",kind:"icewall",free:1,cd:5},"Ice walls rise on both sides of you. Doesn't end your turn."],
+ ["frost",1,"ice_shield","Ice Shield",{type:"self",kind:"icewall",free:1,charges:4,cd:5},"Ice walls rise on both sides of you. Doesn't end your turn."],
  ["frost",1,"snow_sprite","Summon Snow Sprite",{type:"target",kind:"minion",range:240,minion:"snow_sprite",cd:5},"Summon a flying snow sprite that throws ice at enemies."],
  ["frost",2,"ice_bomb","Ice Bomb",{type:"lob",kind:"bomb",dmg:50,rad:30,fuse:150,split:{n:8,dmg:25,rad:16},charges:2,cd:1,pair:"ice_ball"},"Bomb that bursts into 8 ice balls."],
- ["frost",2,"frost_arrow","Frost Arrow",{type:"shot",kind:"arrow",count:1,dmg:50,rad:24,speed:9,push:12,split:{n:6,dmg:8,rad:8},charges:2,cd:1,pair:"frost_shards"},"Homing arrow with big knockback that bursts into shards."],
+ ["frost",2,"frost_arrow","Frost Arrow",{type:"shot",kind:"arrow",count:1,dmg:75,rad:24,speed:9,push:12,charges:2,cd:1,pair:"frost_shards"},"Homing arrow with big knockback. 75 damage."],
  ["frost",2,"blizzard","Blizzard",{type:"target",kind:"cloud",mode:"snow",turns:4,count:6,dmg:10,rad:14,init:3,cd:5,pair:"snowball"},"A snow cloud drops heaps of snow on the target for 4 turns."],
  ["frost",2,"ice_castle","Ice Castle",{type:"self",kind:"tower",thp:75,cd:5,pair:"ice_shield"},"An ice castle that soaks up 75 damage. Jump to leave it."],
  ["frost",2,"frost_giant","Summon Frost Giant",{type:"target",kind:"minion",range:240,minion:"frost_giant",init:3,cd:5,pair:"snow_sprite"},"Summon a frost giant: slow, huge, and hits hard."],
  ["frost",3,"comet","Comet",{type:"target",kind:"meteor",dmg:50,rad:40,split:{n:10,dmg:15,rad:14},init:5,cd:5},"A comet smashes down and shatters into ice balls."],
  ["frost",3,"frost_dragon","Summon Frost Dragon",{type:"target",kind:"minion",range:240,minion:"frost_dragon",charges:1,init:5},"Summon a flying frost dragon that breathes ice."],
  // ---- Seas ----
- ["seas",1,"water_ball","Water Ball",{type:"lob",kind:"ball",dmg:20,rad:22,split:{n:8,dmg:5,rad:8,nodig:1},cd:1},"Bursts into bouncing water drops."],
+ ["seas",1,"water_ball","Water Ball",{type:"lob",kind:"ball",dmg:30,rad:22,split:{n:15,dmg:2,rad:8,nodig:1},cd:1},"30 damage, then bursts into 15 bouncing water drops (2 each)."],
  ["seas",1,"water_trolls","Summon Water Trolls",{type:"target",kind:"minion",range:240,minion:"troll",count:2,cd:5},"Summon 2 water trolls. They can walk on water."],
  ["seas",1,"downpour","Downpour",{type:"target",kind:"barrage",mode:"drops",count:30,dmg:3,rad:8,init:3,cd:5},"Thirty water drops pour onto the target."],
  ["seas",1,"salt_spray","Salt Spray",{type:"shot",kind:"spray",count:8,dmg:7,rad:8,speed:13,spread:.07,grav:.3,salt:1,cd:1},"Sprays salt. Misses pile up into new ground."],
  ["seas",1,"salt_goblin","Summon Salt Goblin",{type:"target",kind:"minion",range:240,minion:"goblin",cd:1},"Summon a salt goblin. It explodes into salt when it dies."],
  ["seas",2,"whirlpool","Whirlpool",{type:"target",kind:"geyser",waves:[5,5,5],dmg:20,rad:22,init:3,cd:5,pair:"water_ball"},"Salt water blasts up under the target for 3 turns."],
- ["seas",2,"hydration","Hydration",{type:"self",kind:"hydrate",charges:2,init:5,pair:"water_trolls"},"All your minions gain 100 health and hit 15 harder."],
+ ["seas",2,"hydration","Hydration",{type:"self",kind:"hydrate",charges:4,init:4,pair:"water_trolls"},"All your minions gain 100 health and hit 15 harder."],
  ["seas",2,"rain_cloud","Rain Cloud",{type:"target",kind:"cloud",mode:"rain",turns:5,count:12,dmg:4,rad:8,charges:1,init:5,pair:"downpour"},"A rain cloud soaks the target for 5 turns."],
  ["seas",2,"salt_bomb","Salt Bomb",{type:"lob",kind:"bomb",dmg:40,rad:26,fuse:150,split:{n:10,dmg:6,rad:8,salt:1},charges:4,cd:1,pair:"salt_spray"},"Bomb that blasts salt in every direction."],
  ["seas",2,"clam_barrage","Clam Barrage",{type:"target",kind:"barrage",mode:"bounce",count:5,dmg:50,rad:22,charges:1,init:3,pair:"salt_goblin"},"Five clams fall, bounce around, and explode."],
@@ -2572,7 +2572,7 @@ function initInstallButton(){ if(!window.SKYFALL_PWA||isInstalled()) return;
 }
 
 /* ================= APP UPDATES ================= */
-const APP_VERSION="2026.10.25-1949";
+const APP_VERSION="2026.10.26-0329";
 let swReg=null, inMatch=()=>M&&!M.over;
 function showUpdate(){ const bar=$("#updBar"); if(!bar) return;
   // Apply silently if the player isn't in a match; otherwise offer the one-tap button
